@@ -14,7 +14,7 @@ function setup(fetchImpl = async () => ({ok:true,json:async()=>({success:true,ip
   return {context,elements,calls:()=>calls};
 }
 const settle = () => new Promise(resolve=>setImmediate(resolve));
-const summary = page => Object.fromEntries(['Date','User ID','Device','Poloha','Pásmo','OS version'].map((key,i)=>[key,page.elements.get('#device-summary').children[0].children[i].textContent]));
+const summary = page => Object.fromEntries(['Date','User ID','Device','Poloha','Pásmo','OS version'].map((key,i)=>[key,page.elements.get('#device-summary').children[0].children[i].children[0].title]));
 const values = list => list.children.map(row=>row.children.map(cell=>cell.textContent));
 test('loads IP without clicking and renders local cards without optional browser APIs', async()=>{
   const page=setup();await settle();
@@ -46,7 +46,7 @@ test('device estimates cover desktop, mobile, tablet and unknown',()=>{
 test('refresh does not duplicate cards or overlap IP requests',async()=>{
   let release;
   const page=setup(()=>new Promise(resolve=>{release=resolve}));
-  page.elements.get('#refresh').click();assert.equal(page.calls(),1);
+  page.context.refresh();page.context.lookupIp();assert.equal(page.calls(),1);
   assert.equal(page.elements.get('#cards').children.length,10);
   release({ok:true,json:async()=>({success:true,ip:'203.0.113.7',city:'Test City'})});await settle();
   assert.equal(page.elements.get('#ip').disabled,false);
@@ -60,7 +60,7 @@ test('location denial restores button and displays understandable error',async()
 });
 test('root and docs entry points match except asset paths and preserve introduction',()=>{
   const docs=fs.readFileSync('docs/index.html','utf8');
-  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=7"','href="docs/style.css?v=7"').replace('src="app.js?v=6"','src="docs/app.js?v=6"'));
+  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=8"','href="docs/style.css?v=8"').replace('src="app.js?v=8"','src="docs/app.js?v=8"'));
   assert.ok(docs.includes('Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz.'));
 });
 test('falls back after network, HTTP, JSON, service and incomplete responses', async()=>{
@@ -146,7 +146,7 @@ test('IP map updates to device location only after click and survives late IP an
   release({ok:true,json:async()=>({success:true,ip:'203.0.113.7',city:'Other City',latitude:50,longitude:20})});await settle();
   assert.equal(page.elements.get('#location-map').src,src);
   assert.match(summary(page).Poloha,/48.14860/);
-  page.elements.get('#refresh').click();
+  page.context.refresh();page.context.lookupIp();
   release({ok:false});await settle();
   release({ok:false});await settle();
   assert.equal(page.elements.get('#location-map').src,src);
@@ -164,4 +164,13 @@ test('IP map validates coordinates and geolocation failures preserve existing ma
   }
   page.context.showMap(91,17);assert.equal(frame.hidden,true);
   page.context.showMap(null,null);assert.equal(frame.hidden,true);
+});
+test('tapping a compact cell reveals the complete value',async()=>{
+  const page=setup();await settle();
+  const button=page.elements.get('#device-summary').children[0].children[3].children[0];
+  button.click();
+  assert.equal(page.elements.get('#summary-detail').textContent,'Poloha: Test City');
+  assert.equal(page.elements.get('#summary-detail').hidden,false);
+  assert.equal(page.elements.has('#refresh'),false);
+  assert.equal(page.elements.has('#updated'),false);
 });

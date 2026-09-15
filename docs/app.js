@@ -78,9 +78,27 @@ function updateSummary() {
   const device = identifyDevice(navigator);
   const type = ['Mobil', 'Tablet'].includes(device.type) ? 'Mobile' : device.type === 'Počítač / notebook' ? 'Desktop' : device.type;
   const row = document.createElement('tr');
-  for (const value of [summaryDate.toLocaleString('sk-SK'), summaryId, type, preciseLocation || summaryLocation, Intl.DateTimeFormat().resolvedOptions().timeZone, device.os]) {
-    const cell = document.createElement('td'); cell.textContent = value || missing; row.append(cell);
-  }
+  const labels = ['Date', 'User ID', 'Device', 'Poloha', 'Pásmo', 'OS version'];
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const values = [summaryDate.toLocaleString('sk-SK'), summaryId, type, preciseLocation || summaryLocation, zone, device.os];
+  const shortDate = `${summaryDate.getDate()}.${summaryDate.getMonth()+1}. ${summaryDate.toLocaleTimeString('sk-SK', {hour:'2-digit', minute:'2-digit'})}`;
+  const compact = [shortDate, summaryId === missing ? '—' : summaryId.slice(0, 6), type, preciseLocation ? 'Súradnice' : summaryLocation.split(',')[0], zone?.split('/').pop()?.replaceAll('_', ' '), device.os.replace('Windows', 'Win').replace('Android', 'Andr.')];
+  values.forEach((value, index) => {
+    const cell = document.createElement('td');
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'summary-value';
+    button.title = value || missing;
+    button.ariaLabel = `${labels[index]}: ${value || missing}. Zobraziť celú hodnotu.`;
+    const full = document.createElement('span'); full.className = 'summary-full'; full.textContent = value || missing;
+    const short = document.createElement('span'); short.className = 'summary-compact'; short.textContent = compact[index] || missing;
+    button.append(full, short);
+    button.addEventListener('click', () => {
+      const detail = document.querySelector('#summary-detail');
+      detail.textContent = `${labels[index]}: ${value || missing}`;
+      detail.hidden = false;
+    });
+    cell.append(button); row.append(cell);
+  });
   document.querySelector('#device-summary').replaceChildren(row);
 }
 function graphics() {
@@ -165,7 +183,6 @@ async function refresh() {
     ['Kamera, mikrofón a súbory', 'Obsah sa automaticky nečíta. Vyžaduje povolenie alebo výber používateľa.'],
     ['História a heslá', 'Prehliadač ich tejto stránke nesprístupňuje.']
   ]);
-  document.querySelector('#updated').textContent = `Aktualizované ${date.toLocaleTimeString('sk-SK')}`;
   const states = { granted: 'Povolené', denied: 'Zamietnuté', prompt: 'Vyžaduje súhlas' };
   const permissions = await Promise.all([['Poloha', 'geolocation'], ['Kamera', 'camera'], ['Mikrofón', 'microphone'], ['Notifikácie', 'notifications']].map(async ([label, name]) => {
     try { const result = await n.permissions.query({ name }); return [label, states[result.state] || result.state]; }
@@ -181,7 +198,6 @@ async function refresh() {
     } catch { rows(batteryList, [['Stav', missing]]); }
   }
 }
-document.querySelector('#refresh').addEventListener('click', () => { refresh(); lookupIp(); });
 const ipServices = [
   {
     name: 'ipwho.is', url: 'https://ipwho.is/',
