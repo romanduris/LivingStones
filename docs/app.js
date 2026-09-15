@@ -75,6 +75,7 @@ function showMap(latitude, longitude, accuracy) {
   status.textContent = precise ? `Poloha zo zariadenia · hlásená presnosť približne ${Math.round(accuracy)} m.` : 'Približná poloha podľa IP · presnosť nie je známa, bod nemusí označovať tvoju ulicu ani mestskú časť.';
 }
 function updateSummary() {
+  document.querySelector('#map-heading').textContent = preciseLocation ? `Tvoja poloha na mape: ${preciseLocation}` : 'Tvoja poloha na mape';
   const device = identifyDevice(navigator);
   const type = ['Mobil', 'Tablet'].includes(device.type) ? 'Mobile' : device.type === 'Počítač / notebook' ? 'Desktop' : device.type;
   const row = document.createElement('tr');
@@ -82,7 +83,7 @@ function updateSummary() {
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const values = [summaryDate.toLocaleString('sk-SK'), summaryId, type, preciseLocation || summaryLocation, zone, device.os];
   const shortDate = `${summaryDate.getDate()}.${summaryDate.getMonth()+1}. ${summaryDate.toLocaleTimeString('sk-SK', {hour:'2-digit', minute:'2-digit'})}`;
-  const compact = [shortDate, summaryId === missing ? '—' : summaryId.slice(0, 6), type, preciseLocation ? 'Súradnice' : summaryLocation.split(',')[0], zone?.split('/').pop()?.replaceAll('_', ' '), device.os.replace('Windows', 'Win').replace('Android', 'Andr.')];
+  const compact = [shortDate, summaryId === missing ? '—' : summaryId.slice(0, 6), type, preciseLocation || summaryLocation.split(',')[0], zone?.split('/').pop()?.replaceAll('_', ' '), device.os.replace('Windows', 'Win').replace('Android', 'Andr.')];
   values.forEach((value, index) => {
     const cell = document.createElement('td');
     const button = document.createElement('button');

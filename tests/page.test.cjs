@@ -60,7 +60,7 @@ test('location denial restores button and displays understandable error',async()
 });
 test('root and docs entry points match except asset paths and preserve introduction',()=>{
   const docs=fs.readFileSync('docs/index.html','utf8');
-  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=8"','href="docs/style.css?v=8"').replace('src="app.js?v=8"','src="docs/app.js?v=8"'));
+  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=8"','href="docs/style.css?v=8"').replace('src="app.js?v=9"','src="docs/app.js?v=9"'));
   assert.ok(docs.includes('Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz.'));
 });
 test('falls back after network, HTTP, JSON, service and incomplete responses', async()=>{
@@ -143,6 +143,8 @@ test('IP map updates to device location only after click and survives late IP an
   const src=page.elements.get('#location-map').src;
   assert.match(src,/marker=48.1486,17.1077/);
   assert.match(summary(page).Poloha,/25 m/);
+  assert.equal(page.elements.get('#map-heading').textContent, `Tvoja poloha na mape: ${summary(page).Poloha}`);
+  assert.equal(page.elements.get('#device-summary').children[0].children[3].children[0].children[1].textContent, summary(page).Poloha);
   release({ok:true,json:async()=>({success:true,ip:'203.0.113.7',city:'Other City',latitude:50,longitude:20})});await settle();
   assert.equal(page.elements.get('#location-map').src,src);
   assert.match(summary(page).Poloha,/48.14860/);
@@ -151,6 +153,8 @@ test('IP map updates to device location only after click and survives late IP an
   release({ok:false});await settle();
   assert.equal(page.elements.get('#location-map').src,src);
   assert.match(summary(page).Poloha,/25 m/);
+  assert.equal(page.elements.get('#map-heading').textContent, `Tvoja poloha na mape: ${summary(page).Poloha}`);
+  assert.equal(page.elements.get('#device-summary').children[0].children[3].children[0].children[1].textContent, summary(page).Poloha);
 });
 test('IP map validates coordinates and geolocation failures preserve existing map',async()=>{
   const page=setup(async()=>({ok:true,json:async()=>({success:true,ip:'203.0.113.7',city:'Test City',latitude:0,longitude:0})}));await settle();
