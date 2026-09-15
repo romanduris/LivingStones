@@ -20,13 +20,50 @@ function card(title, entries) {
   section.append(heading, list); document.querySelector('#cards').append(section);
   return list;
 }
+function identifyDevice(n) {
+  const ua = n.userAgent || '';
+  const ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && n.maxTouchPoints > 1);
+  const tablet = ipad || /Tablet|PlayBook|Silk/.test(ua) || (/Android/.test(ua) && !/Mobile/.test(ua));
+  const mobile = /Mobi|iPhone|iPod/.test(ua) || n.userAgentData?.mobile === true;
+  const desktop = /Windows|Macintosh|X11|CrOS|Linux/.test(ua);
+  const type = /SmartTV|SMART-TV|HbbTV/.test(ua) ? 'Smart TV' : tablet ? 'Tablet' : mobile ? 'Mobil' : desktop ? 'Počítač / notebook' : missing;
+  let os = ipad ? 'iPadOS' : /iPhone|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows NT 10/.test(ua) ? 'Windows 10 / 11' : /Windows/.test(ua) ? 'Windows' : /CrOS/.test(ua) ? 'ChromeOS' : /Macintosh/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : missing;
+  const osVersion = ua.match(/(?:Android |(?:CPU (?:iPhone )?OS) |Mac OS X )([\d_.]+)/)?.[1]?.replaceAll('_', '.');
+  if (osVersion && !ipad) os += ` ${osVersion}`;
+  const patterns = [['Edge', /(?:EdgA|EdgiOS|Edg)\/([\d.]+)/], ['Opera', /(?:OPR|OPT)\/([\d.]+)/], ['Samsung Internet', /SamsungBrowser\/([\d.]+)/], ['Firefox', /(?:Firefox|FxiOS)\/([\d.]+)/], ['Chrome / kompatibilný', /(?:Chrome|CriOS)\/([\d.]+)/], ['Safari', /Version\/([\d.]+).*Safari/]];
+  let browser = missing;
+  for (const [name, pattern] of patterns) {
+    const match = ua.match(pattern);
+    if (match) { browser = `${name} ${match[1]}`; break; }
+  }
+  return { type, os, browser };
+}
+function graphics() {
+  let gl;
+  try {
+    const canvas = document.createElement('canvas');
+    gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!gl) return [['Stav', 'WebGL je nedostupné alebo blokované']];
+    const debug = gl.getExtension('WEBGL_debug_renderer_info');
+    return [['Grafický renderer (hlásený)', debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)], ['Výrobca grafiky (hlásený)', debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR)], ['Verzia WebGL', gl.getParameter(gl.VERSION)], ['Verzia shaderov', gl.getParameter(gl.SHADING_LANGUAGE_VERSION)], ['Max. rozmer textúry', unit(gl.getParameter(gl.MAX_TEXTURE_SIZE), 'px')]];
+  } catch { return [['Stav', missing]]; }
+  finally { gl?.getExtension('WEBGL_lose_context')?.loseContext(); }
+}
+async function advancedDevice(list) {
+  try {
+    const data = await navigator.userAgentData.getHighEntropyValues(['architecture', 'bitness', 'model', 'platformVersion', 'fullVersionList', 'wow64']);
+    rows(list, [['Platforma', data.platform], ['Verzia platformy (Client Hints, nemusí byť marketingová verzia OS)', data.platformVersion], ['Model zariadenia', data.model], ['Architektúra', data.architecture], ['Architektúra – počet bitov', data.bitness], ['32-bitový proces na 64-bit Windows', yes(data.wow64)], ['Úplné verzie prehliadača', data.fullVersionList?.map(b => `${b.brand} ${b.version}`).join(', ')]]);
+  } catch { rows(list, [['Stav', 'Prehliadač rozšírené údaje neposkytuje. Základný odhad je vyššie.']]); }
+}
 let revision = 0;
 async function refresh() {
   const current = ++revision;
   document.querySelector('#cards').replaceChildren();
   const n = navigator, s = screen, c = n.connection || n.mozConnection || n.webkitConnection;
   const date = new Date();
+  const identity = identifyDevice(n);
   card('01 / Prehliadač', [
+    ['Prehliadač a verzia (odhad)', identity.browser],
     ['User agent', n.userAgent], ['Platforma (orientačne)', n.userAgentData?.platform || n.platform],
     ['Značky prehliadača', n.userAgentData?.brands?.map(b => `${b.brand} ${b.version}`).join(', ')],
     ['Mobil podľa prehliadača', yes(n.userAgentData?.mobile)], ['Výrobca prehliadača', n.vendor],
@@ -34,6 +71,7 @@ async function refresh() {
     ['Global Privacy Control', yes(n.globalPrivacyControl)], ['Automatizované ovládanie (signál)', yes(n.webdriver)]
   ]);
   card('02 / Zariadenie a obrazovka', [
+    ['Typ zariadenia (odhad)', identity.type], ['Operačný systém (odhad)', identity.os],
     ['Logické procesory (hlásené)', n.hardwareConcurrency], ['RAM (hrubý odhad)', unit(n.deviceMemory, 'GB')],
     ['Dotykové body', n.maxTouchPoints], ['Rozlíšenie (CSS pixely)', `${s.width} × ${s.height}`],
     ['Dostupná plocha', `${s.availWidth} × ${s.availHeight}`], ['Okno stránky', `${innerWidth} × ${innerHeight}`],
@@ -58,6 +96,28 @@ async function refresh() {
   ]);
   const batteryList = card('05 / Batéria', [['Stav', n.getBattery ? 'Načítavam…' : missing]]);
   const permissionsList = card('06 / Povolenia pre tento web', [['Stav', 'Načítavam…']]);
+  card('07 / Grafika', graphics());
+  const advancedList = card('08 / Rozšírené údaje zariadenia', [['Stav', 'Načítavam…']]);
+  advancedDevice(advancedList);
+  card('09 / Podporované funkcie', [
+    ['Geolokácia', yes('geolocation' in n)], ['Prístup ku kamere / mikrofónu (API, nie prítomnosť hardvéru)', yes(Boolean(n.mediaDevices?.getUserMedia))],
+    ['WebRTC', yes('RTCPeerConnection' in globalThis)], ['WebAssembly', yes('WebAssembly' in globalThis)],
+    ['WebGPU (API)', yes('gpu' in n)], ['Bluetooth (API)', yes('bluetooth' in n)], ['USB (API)', yes('usb' in n)],
+    ['Gamepad (API)', yes('getGamepads' in n)], ['Vibrácie (API)', yes('vibrate' in n)],
+    ['Service Worker', yes('serviceWorker' in n)], ['Zdieľanie zo stránky', yes('share' in n)],
+    ['PDF priamo v prehliadači', yes(n.pdfViewerEnabled)], ['Celá obrazovka', yes(document.fullscreenEnabled)],
+    ['HDR podľa prehliadača', yes(matchMedia('(dynamic-range: high)').matches)],
+    ['Široký farebný gamut P3', yes(matchMedia('(color-gamut: p3)').matches)],
+    ['Ukazovateľ podporuje hover', yes(matchMedia('(hover: hover)').matches)]
+  ]);
+  card('10 / Čo sa týmto zistiť nedá', [
+    ['Identita človeka', 'Meno, e-mail ani telefón nie sú automaticky dostupné.'],
+    ['Presný model a vek zariadenia', 'Iba ak ich prehliadač sprístupní; inak sa spoľahlivo určiť nedajú.'],
+    ['MAC, IMEI a sériové číslo', 'Bežná webová stránka k nim nemá prístup.'],
+    ['VPN / proxy', 'Z týchto údajov sa nedajú spoľahlivo potvrdiť.'],
+    ['Kamera, mikrofón a súbory', 'Obsah sa automaticky nečíta. Vyžaduje povolenie alebo výber používateľa.'],
+    ['História a heslá', 'Prehliadač ich tejto stránke nesprístupňuje.']
+  ]);
   document.querySelector('#updated').textContent = `Aktualizované ${date.toLocaleTimeString('sk-SK')}`;
   const states = { granted: 'Povolené', denied: 'Zamietnuté', prompt: 'Vyžaduje súhlas' };
   const permissions = await Promise.all([['Poloha', 'geolocation'], ['Kamera', 'camera'], ['Mikrofón', 'microphone'], ['Notifikácie', 'notifications']].map(async ([label, name]) => {
@@ -74,9 +134,10 @@ async function refresh() {
     } catch { rows(batteryList, [['Stav', missing]]); }
   }
 }
-document.querySelector('#refresh').addEventListener('click', refresh);
-document.querySelector('#ip').addEventListener('click', async event => {
-  const button = event.currentTarget, output = document.querySelector('#ip-result');
+document.querySelector('#refresh').addEventListener('click', () => { refresh(); lookupIp(); });
+async function lookupIp() {
+  const button = document.querySelector('#ip'), output = document.querySelector('#ip-result');
+  if (button.disabled) return;
   button.disabled = true; rows(output, [['Stav', 'Načítavam…']]);
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 10000);
   try {
@@ -86,7 +147,8 @@ document.querySelector('#ip').addEventListener('click', async event => {
     rows(output, [['Verejná IP', data.ip], ['Verzia IP', data.version], ['Krajina (odhad)', data.country_name], ['Región (odhad)', data.region], ['Mesto (odhad)', data.city], ['PSČ (odhad)', data.postal], ['Poskytovateľ / organizácia', data.org], ['Autonómny systém', data.asn], ['Časové pásmo podľa IP', data.timezone], ['Zemepisná šírka (odhad)', data.latitude], ['Zemepisná dĺžka (odhad)', data.longitude]]);
   } catch { rows(output, [['Stav', 'Služba je nedostupná, blokovaná alebo prekročila limit. Skús to neskôr.']]); }
   finally { clearTimeout(timeout); button.disabled = false; }
-});
+}
+document.querySelector('#ip').addEventListener('click', lookupIp);
 document.querySelector('#location').addEventListener('click', event => {
   const button = event.currentTarget, output = document.querySelector('#location-result');
   if (!navigator.geolocation) { rows(output, [['Stav', 'Tento prehliadač polohu neposkytuje.']]); return; }
@@ -101,3 +163,4 @@ document.querySelector('#location').addEventListener('click', event => {
   }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 });
 refresh();
+lookupIp();
