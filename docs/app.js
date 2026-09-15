@@ -38,6 +38,9 @@ function identifyDevice(n) {
   }
   return { type, os, browser };
 }
+function supportsPreciseLocation() {
+  return ['Mobil', 'Tablet'].includes(identifyDevice(navigator).type);
+}
 function browserId() {
   try {
     const key = 'livingstones.browserId';
@@ -95,7 +98,7 @@ function showMap(latitude, longitude, accuracy) {
   const link = document.querySelector('#map-link');
   if (!validCoordinates(latitude, longitude)) {
     frame.hidden = true; frame.src = 'about:blank'; link.hidden = true;
-    status.textContent = 'Súradnice podľa IP nie sú dostupné. Skús tlačidlo Urči presnú polohu.';
+    status.textContent = supportsPreciseLocation() ? 'Súradnice podľa IP nie sú dostupné. Skús tlačidlo Urči presnú polohu.' : 'Súradnice podľa IP nie sú dostupné. Skús znova zistiť IP.';
     return;
   }
   const precise = accuracy !== undefined;
@@ -109,6 +112,10 @@ function showMap(latitude, longitude, accuracy) {
   status.textContent = precise ? `Poloha zo zariadenia · hlásená presnosť približne ${Math.round(accuracy)} m.` : 'Približná poloha podľa IP · presnosť nie je známa, bod nemusí označovať tvoju ulicu ani mestskú časť.';
 }
 function updateSummary() {
+  const mobile = supportsPreciseLocation();
+  document.querySelector('#location').hidden = !mobile;
+  document.querySelector('#location-help').hidden = !mobile;
+  document.querySelector('#desktop-location-note').hidden = mobile;
   document.querySelector('#map-heading').textContent = preciseLocation ? `Tvoja poloha na mape: ${placeName || preciseLocation}` : 'Tvoja poloha na mape';
   const device = identifyDevice(navigator);
   const type = ['Mobil', 'Tablet'].includes(device.type) ? 'Mobile' : device.type === 'Počítač / notebook' ? 'Desktop' : device.type;
@@ -279,13 +286,13 @@ async function lookupIp() {
     }
     summaryLocation = missing; updateSummary();
     if (!preciseLocation) showMap();
-    rows(output, [['Stav', 'IP a približná poloha sú momentálne nedostupné. Služby môžu byť blokované, bez pripojenia alebo po prekročení limitu. Skús to neskôr alebo použi tlačidlo Urči presnú polohu pri mape.']]);
+    rows(output, [['Stav', 'IP a približná poloha sú momentálne nedostupné. Služby môžu byť blokované, bez pripojenia alebo po prekročení limitu. Skús znova zistiť IP neskôr.']]);
   } finally { button.disabled = false; }
 }
 document.querySelector('#ip').addEventListener('click', lookupIp);
 document.querySelector('#location').addEventListener('click', event => {
   const button = event.currentTarget, output = document.querySelector('#location-result');
-  if (button.disabled) return;
+  if (!supportsPreciseLocation() || button.disabled) return;
   if (!navigator.geolocation) { rows(output, [['Stav', 'Tento prehliadač polohu neposkytuje.']]); return; }
   button.disabled = true; rows(output, [['Stav', 'Čakám na povolenie a polohu…']]);
   const fail = error => {

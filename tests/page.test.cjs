@@ -53,14 +53,15 @@ test('refresh does not duplicate cards or overlap IP requests',async()=>{
 });
 test('location denial restores button and displays understandable error',async()=>{
   const page=setup();await settle();
-  page.context.navigator.geolocation={getCurrentPosition(success,error){error({code:1})}};
+  page.context.navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile';
+    page.context.navigator.geolocation={getCurrentPosition(success,error){error({code:1})}};
   const button=page.elements.get('#location');button.click({currentTarget:button});
   assert.equal(button.disabled,false);
   assert.match(values(page.elements.get('#location-result'))[0][1],/zamietnuté/);
 });
 test('root and docs entry points match except asset paths and preserve introduction',()=>{
   const docs=fs.readFileSync('docs/index.html','utf8');
-  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=8"','href="docs/style.css?v=8"').replace('src="app.js?v=10"','src="docs/app.js?v=10"'));
+  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=8"','href="docs/style.css?v=8"').replace('src="app.js?v=11"','src="docs/app.js?v=11"'));
   assert.ok(docs.includes('Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz.'));
 });
 test('falls back after network, HTTP, JSON, service and incomplete responses', async()=>{
@@ -134,7 +135,8 @@ test('summary handles blocked storage, failed location and mobile platforms',asy
 test('IP map updates to device location only after click and survives late IP and refresh',async()=>{
   let release, locate, requests=0;
   const page=setup(()=>new Promise(resolve=>{release=resolve}));
-  page.context.navigator.geolocation={getCurrentPosition(success,error,options){requests++;locate=success;assert.equal(options.enableHighAccuracy,true)}};
+  page.context.navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile';
+    page.context.navigator.geolocation={getCurrentPosition(success,error,options){requests++;locate=success;assert.equal(options.enableHighAccuracy,true)}};
   assert.equal(requests,0);
   const button=page.elements.get('#location');
   button.click({currentTarget:button});button.click({currentTarget:button});
@@ -162,6 +164,7 @@ test('IP map validates coordinates and geolocation failures preserve existing ma
   assert.match(frame.src,/marker=0,0/);assert.equal(frame.hidden,false);
   const original=frame.src;
   for(const code of [1,2,3]){
+    page.context.navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile';
     page.context.navigator.geolocation={getCurrentPosition(success,error){error({code})}};
     const button=page.elements.get('#location');button.click({currentTarget:button});
     assert.equal(button.disabled,false);assert.equal(frame.src,original);
@@ -187,7 +190,8 @@ test('reverse lookup replaces coordinates with area name and keeps coordinates i
     return {ok:true,json:async()=>({features:[{properties:{street:'Ľanová',locality:'Trávniky',district:'Ružinov',city:'Bratislava',country:'Slovensko'}}]})};
   }});await settle();
   assert.equal(requests,0);
-  page.context.navigator.geolocation={getCurrentPosition(success){success({coords:{latitude:48.156,longitude:17.155,accuracy:25},timestamp:Date.now()})}};
+  page.context.navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile';
+    page.context.navigator.geolocation={getCurrentPosition(success){success({coords:{latitude:48.156,longitude:17.155,accuracy:25},timestamp:Date.now()})}};
   const button=page.elements.get('#location');button.click({currentTarget:button});await settle();
   assert.equal(summary(page).Poloha,'Ľanová, Trávniky, Ružinov, Bratislava, Slovensko');
   assert.equal(page.elements.get('#map-heading').textContent,`Tvoja poloha na mape: ${summary(page).Poloha}`);
@@ -200,6 +204,7 @@ test('reverse lookup replaces coordinates with area name and keeps coordinates i
 test('reverse lookup failures preserve coordinates, map and retry',async()=>{
   for(const reverseFetch of [async()=>{throw Error('offline')},async()=>({ok:false}),async()=>({ok:true,json:async()=>({features:[]})}),async()=>({ok:true,json:async()=>{throw Error('bad JSON')}})]){
     const page=setup(undefined,{reverseFetch});await settle();
+    page.context.navigator.userAgent='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile';
     page.context.navigator.geolocation={getCurrentPosition(success){success({coords:{latitude:48.156,longitude:17.155,accuracy:25},timestamp:Date.now()})}};
     const button=page.elements.get('#location');button.click({currentTarget:button});await settle();
     assert.match(summary(page).Poloha,/48.15600/);
@@ -212,4 +217,26 @@ test('area formatting omits street when device accuracy is low',()=>{
   const page=setup();
   assert.equal(page.context.formatPlace({street:'Ľanová',locality:'Trávniky',district:'Ružinov',city:'Bratislava'},500),'Trávniky, Ružinov, Bratislava');
   assert.equal(page.context.formatPlace({city:'Bratislava',district:'Bratislava'},25),'Bratislava');
+});
+test('precise location is visible only on mobiles and tablets and desktop clicks are blocked',async()=>{
+  for(const [userAgent,maxTouchPoints,allowed] of [
+    ['Mozilla/5.0 (Windows NT 10.0; Win64; x64)',10,false],
+    ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)',0,false],
+    ['unknown',0,false],
+    ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile',5,true],
+    ['Mozilla/5.0 (Linux; Android 14) Mobile',5,true],
+    ['Mozilla/5.0 (Linux; Android 14)',5,true],
+    ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)',5,true]
+  ]){
+    let requests=0;
+    const page=setup(undefined,{navigator:{userAgent,maxTouchPoints,geolocation:{getCurrentPosition(success,error){requests++;error({code:1})}}}});
+    await settle();
+    const button=page.elements.get('#location');
+    assert.equal(button.hidden,!allowed);
+    assert.equal(page.elements.get('#location-help').hidden,!allowed);
+    assert.equal(page.elements.get('#desktop-location-note').hidden,allowed);
+    button.click({currentTarget:button});
+    assert.equal(requests,allowed?1:0);
+    assert.equal(page.calls(),1);
+  }
 });

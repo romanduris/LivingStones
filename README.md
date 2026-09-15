@@ -14,3 +14,5 @@ Koreňový `index.html` používa štýly a skript z `docs/`; pri úprave HTML u
 Hosting funguje nezávisle od Codespace. Nie všetky prehliadače poskytujú všetky údaje.
 
 Po získaní polohy zariadenia sa názov ulice alebo oblasti dohľadá cez [Photon](https://github.com/komoot/photon) z údajov OpenStreetMap. Súradnice sa odošlú službe iba po použití tlačidla na polohu. Výsledky sa uchovávajú v pamäti počas návštevy; požiadavka má limit 8 sekúnd. Pri chybe zostáva zobrazenie súradníc. Názov je mapový odhad; pri hlásenej presnosti horšej než 150 m sa ulica vynechá. Verejná služba Photon je vhodná na mierne používanie a nemá zaručenú dostupnosť.
+
+Určenie polohy zariadenia je dostupné iba pre rozpoznané mobily a tablety. Na desktope a neznámych zariadeniach je tlačidlo skryté a jeho obsluha polohu nevyžiada; IP odhad zostáva dostupný. Rozpoznanie vychádza z údajov prehliadača.
