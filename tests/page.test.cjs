@@ -8,7 +8,7 @@ function setup(fetchImpl = async () => ({ok:true,json:async()=>({success:true,ip
   let calls = 0;
   const element = () => ({children:[], disabled:false, textContent:'', append(...items){this.children.push(...items)}, replaceChildren(...items){this.children=items}, addEventListener(name,fn){this[name]=fn}});
   const document = {createElement:element,querySelector(id){if(!elements.has(id)) elements.set(id,element());return elements.get(id)},referrer:'',visibilityState:'visible'};
-  const context = {document,navigator:{userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0.0.0 Safari/537.36',language:'sk',languages:['sk'],onLine:true},screen:{width:1920,height:1080,availWidth:1920,availHeight:1040,colorDepth:24},innerWidth:1200,innerHeight:800,devicePixelRatio:1,isSecureContext:true,location:{origin:'https://example.com',pathname:'/'},matchMedia:()=>({matches:false}),Intl,Date,setTimeout,clearTimeout,AbortController,fetch:async(...args)=>{calls++;return fetchImpl(...args)}};
+  const context = {document,navigator:{userAgent:'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0.0.0 Safari/537.36',language:'sk',languages:['sk'],onLine:true},screen:{width:1920,height:1080,availWidth:1920,availHeight:1040,colorDepth:24},innerWidth:1200,innerHeight:800,devicePixelRatio:1,isSecureContext:true,location:{origin:'https://example.com',pathname:'/'},matchMedia:()=>({matches:false}),Intl,Date,setTimeout,clearTimeout,AbortController,fetch:async(...args)=>{if(args[0].startsWith('https://photon.komoot.io/')) return overrides.reverseFetch ? overrides.reverseFetch(...args) : {ok:true,json:async()=>({features:[]})};calls++;return fetchImpl(...args)}};
   Object.assign(context, overrides);
   vm.createContext(context);vm.runInContext(source,context);
   return {context,elements,calls:()=>calls};
@@ -60,7 +60,7 @@ test('location denial restores button and displays understandable error',async()
 });
 test('root and docs entry points match except asset paths and preserve introduction',()=>{
   const docs=fs.readFileSync('docs/index.html','utf8');
-  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=8"','href="docs/style.css?v=8"').replace('src="app.js?v=9"','src="docs/app.js?v=9"'));
+  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=8"','href="docs/style.css?v=8"').replace('src="app.js?v=10"','src="docs/app.js?v=10"'));
   assert.ok(docs.includes('Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz.'));
 });
 test('falls back after network, HTTP, JSON, service and incomplete responses', async()=>{
@@ -177,4 +177,39 @@ test('tapping a compact cell reveals the complete value',async()=>{
   assert.equal(page.elements.get('#summary-detail').hidden,false);
   assert.equal(page.elements.has('#refresh'),false);
   assert.equal(page.elements.has('#updated'),false);
+});
+test('reverse lookup replaces coordinates with area name and keeps coordinates in detail',async()=>{
+  let requests=0;
+  const page=setup(undefined,{reverseFetch:async(url,options)=>{
+    requests++;
+    assert.match(url,/lat=48.156&lon=17.155/);
+    assert.equal(options.credentials,'omit');
+    return {ok:true,json:async()=>({features:[{properties:{street:'Ľanová',locality:'Trávniky',district:'Ružinov',city:'Bratislava',country:'Slovensko'}}]})};
+  }});await settle();
+  assert.equal(requests,0);
+  page.context.navigator.geolocation={getCurrentPosition(success){success({coords:{latitude:48.156,longitude:17.155,accuracy:25},timestamp:Date.now()})}};
+  const button=page.elements.get('#location');button.click({currentTarget:button});await settle();
+  assert.equal(summary(page).Poloha,'Ľanová, Trávniky, Ružinov, Bratislava, Slovensko');
+  assert.equal(page.elements.get('#map-heading').textContent,`Tvoja poloha na mape: ${summary(page).Poloha}`);
+  page.elements.get('#device-summary').children[0].children[3].children[0].click();
+  assert.match(page.elements.get('#summary-detail').textContent,/Ľanová.*48.15600, 17.15500.*25 m/);
+  button.click({currentTarget:button});await settle();
+  assert.equal(requests,1);
+  assert.equal(button.disabled,false);
+});
+test('reverse lookup failures preserve coordinates, map and retry',async()=>{
+  for(const reverseFetch of [async()=>{throw Error('offline')},async()=>({ok:false}),async()=>({ok:true,json:async()=>({features:[]})}),async()=>({ok:true,json:async()=>{throw Error('bad JSON')}})]){
+    const page=setup(undefined,{reverseFetch});await settle();
+    page.context.navigator.geolocation={getCurrentPosition(success){success({coords:{latitude:48.156,longitude:17.155,accuracy:25},timestamp:Date.now()})}};
+    const button=page.elements.get('#location');button.click({currentTarget:button});await settle();
+    assert.match(summary(page).Poloha,/48.15600/);
+    assert.match(page.elements.get('#place-status').textContent,/nepodarilo/);
+    assert.match(page.elements.get('#location-map').src,/48.156,17.155/);
+    assert.equal(button.disabled,false);
+  }
+});
+test('area formatting omits street when device accuracy is low',()=>{
+  const page=setup();
+  assert.equal(page.context.formatPlace({street:'Ľanová',locality:'Trávniky',district:'Ružinov',city:'Bratislava'},500),'Trávniky, Ružinov, Bratislava');
+  assert.equal(page.context.formatPlace({city:'Bratislava',district:'Bratislava'},25),'Bratislava');
 });

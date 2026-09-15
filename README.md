@@ -12,3 +12,5 @@ Lokálne spustenie: `python3 -m http.server 8000 --directory docs`.
 Publikovanie: GitHub Pages, vetva `main`, priečinok `/` (koreň).
 Koreňový `index.html` používa štýly a skript z `docs/`; pri úprave HTML udržujte oba vstupné súbory zhodné okrem ciest k týmto súborom.
 Hosting funguje nezávisle od Codespace. Nie všetky prehliadače poskytujú všetky údaje.
+
+Po získaní polohy zariadenia sa názov ulice alebo oblasti dohľadá cez [Photon](https://github.com/komoot/photon) z údajov OpenStreetMap. Súradnice sa odošlú službe iba po použití tlačidla na polohu. Výsledky sa uchovávajú v pamäti počas návštevy; požiadavka má limit 8 sekúnd. Pri chybe zostáva zobrazenie súradníc. Názov je mapový odhad; pri hlásenej presnosti horšej než 150 m sa ulica vynechá. Verejná služba Photon je vhodná na mierne používanie a nemá zaručenú dostupnosť.

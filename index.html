@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="dark">
   <title>Čo o tebe vidí web?</title>
   <link rel="stylesheet" href="docs/style.css?v=8">
-  <script src="docs/app.js?v=9" defer></script>
+  <script src="docs/app.js?v=10" defer></script>
 </head>
 <body>
   <main>
@@ -25,7 +25,9 @@
       <iframe id="location-map" title="Mapa polohy" hidden loading="lazy" referrerpolicy="no-referrer"></iframe>
       <p><a id="map-link" hidden target="_blank" rel="noopener noreferrer">Otvoriť väčšiu mapu v OpenStreetMap</a></p>
       <button id="location" aria-describedby="location-help">Urči presnú polohu</button>
-      <p id="location-help">Po povolení sa mapa aj tabuľka aktualizujú podľa polohy zariadenia. Mobil môže použiť GPS; na počítači presnosť závisí od dostupných údajov. Zobrazíme hlásenú presnosť v metroch. OpenStreetMap dostane zobrazené súradnice a bežné údaje pripojenia.</p>
+      <p id="location-help">Po povolení sa mapa aj tabuľka aktualizujú podľa polohy zariadenia. Mobil môže použiť GPS; na počítači presnosť závisí od dostupných údajov. Zobrazíme hlásenú presnosť v metroch. OpenStreetMap dostane zobrazené súradnice a bežné údaje pripojenia. Na dohľadanie názvu ulice alebo štvrte odošleme súradnice aj službe Photon (Komoot).</p>
+      <p id="place-status" role="status"></p>
+      <p>Názvy oblastí: <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon</a> · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></p>
       <dl id="location-result" aria-live="polite"></dl>
     </section>
     <section class="extra"><h2>Verejná IP a približná poloha</h2><p>Načítava sa automaticky zo služby ipwho.is; pri zlyhaní sa skúsi ipapi.co. Poloha podľa IP je len odhad, nie presná adresa človeka; VPN či mobilná sieť ju môžu skresliť.</p><button id="ip">Znova zistiť IP</button><dl id="ip-result" aria-live="polite"></dl></section>

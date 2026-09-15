@@ -52,6 +52,40 @@ const summaryId = browserId();
 let summaryDate = new Date();
 let summaryLocation = 'Načítavam…';
 let preciseLocation = null;
+let placeName = '';
+const placeCache = new Map();
+function formatPlace(properties, accuracy) {
+  if (!properties) return '';
+  // A nearby street is useful only when the device reports a small uncertainty.
+  const street = accuracy <= 150 ? properties.street || (properties.type === 'street' ? properties.name : '') : '';
+  const parts = [street, properties.locality, properties.district, properties.city || properties.county, properties.country];
+  return [...new Set(parts.filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()))].join(', ');
+}
+async function lookupPlace(coords) {
+  const status = document.querySelector('#place-status');
+  status.textContent = 'Dohľadávam názov oblasti…';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const key = `${coords.latitude.toFixed(5)},${coords.longitude.toFixed(5)}`;
+    let properties = placeCache.get(key);
+    if (!properties) {
+      const response = await fetch(`https://photon.komoot.io/reverse?lat=${coords.latitude}&lon=${coords.longitude}&radius=1&limit=1`, {signal:controller.signal, credentials:'omit', referrerPolicy:'no-referrer'});
+      if (!response.ok) throw new Error('service');
+      const data = await response.json();
+      properties = data?.features?.[0]?.properties;
+      if (!properties) throw new Error('empty');
+      placeCache.set(key, properties);
+    }
+    const name = formatPlace(properties, coords.accuracy);
+    if (!name) throw new Error('empty');
+    placeName = name;
+    updateSummary();
+    status.textContent = 'Názov oblasti podľa mapových údajov (odhad). Presnosť závisí od polohy zariadenia; nejde o potvrdenú adresu.';
+  } catch {
+    status.textContent = 'Názov oblasti sa nepodarilo dohľadať. Súradnice a mapa zostávajú dostupné.';
+  } finally { clearTimeout(timeout); }
+}
 function validCoordinates(latitude, longitude) {
   return Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
 }
@@ -75,15 +109,15 @@ function showMap(latitude, longitude, accuracy) {
   status.textContent = precise ? `Poloha zo zariadenia · hlásená presnosť približne ${Math.round(accuracy)} m.` : 'Približná poloha podľa IP · presnosť nie je známa, bod nemusí označovať tvoju ulicu ani mestskú časť.';
 }
 function updateSummary() {
-  document.querySelector('#map-heading').textContent = preciseLocation ? `Tvoja poloha na mape: ${preciseLocation}` : 'Tvoja poloha na mape';
+  document.querySelector('#map-heading').textContent = preciseLocation ? `Tvoja poloha na mape: ${placeName || preciseLocation}` : 'Tvoja poloha na mape';
   const device = identifyDevice(navigator);
   const type = ['Mobil', 'Tablet'].includes(device.type) ? 'Mobile' : device.type === 'Počítač / notebook' ? 'Desktop' : device.type;
   const row = document.createElement('tr');
   const labels = ['Date', 'User ID', 'Device', 'Poloha', 'Pásmo', 'OS version'];
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const values = [summaryDate.toLocaleString('sk-SK'), summaryId, type, preciseLocation || summaryLocation, zone, device.os];
+  const values = [summaryDate.toLocaleString('sk-SK'), summaryId, type, placeName || preciseLocation || summaryLocation, zone, device.os];
   const shortDate = `${summaryDate.getDate()}.${summaryDate.getMonth()+1}. ${summaryDate.toLocaleTimeString('sk-SK', {hour:'2-digit', minute:'2-digit'})}`;
-  const compact = [shortDate, summaryId === missing ? '—' : summaryId.slice(0, 6), type, preciseLocation || summaryLocation.split(',')[0], zone?.split('/').pop()?.replaceAll('_', ' '), device.os.replace('Windows', 'Win').replace('Android', 'Andr.')];
+  const compact = [shortDate, summaryId === missing ? '—' : summaryId.slice(0, 6), type, placeName || preciseLocation || summaryLocation.split(',')[0], zone?.split('/').pop()?.replaceAll('_', ' '), device.os.replace('Windows', 'Win').replace('Android', 'Andr.')];
   values.forEach((value, index) => {
     const cell = document.createElement('td');
     const button = document.createElement('button');
@@ -95,7 +129,7 @@ function updateSummary() {
     button.append(full, short);
     button.addEventListener('click', () => {
       const detail = document.querySelector('#summary-detail');
-      detail.textContent = `${labels[index]}: ${value || missing}`;
+      detail.textContent = `${labels[index]}: ${value || missing}${index === 3 && placeName ? ` · ${preciseLocation}` : ''}`;
       detail.hidden = false;
     });
     cell.append(button); row.append(cell);
@@ -259,13 +293,16 @@ document.querySelector('#location').addEventListener('click', event => {
     button.disabled = false;
   };
   try {
-    navigator.geolocation.getCurrentPosition(position => {
+    navigator.geolocation.getCurrentPosition(async position => {
       const c = position.coords;
       if (!validCoordinates(c.latitude, c.longitude) || !Number.isFinite(c.accuracy) || c.accuracy < 0) { fail({code:2}); return; }
+      placeName = '';
+      document.querySelector('#summary-detail').hidden = true;
       preciseLocation = `${c.latitude.toFixed(5)}, ${c.longitude.toFixed(5)} (presnosť ~${Math.round(c.accuracy)} m)`;
       showMap(c.latitude, c.longitude, c.accuracy);
       updateSummary();
       rows(output, [['Zdroj', 'Poloha zariadenia so súhlasom'], ['Zemepisná šírka', c.latitude], ['Zemepisná dĺžka', c.longitude], ['Presnosť', unit(Math.round(c.accuracy), 'm')], ['Čas merania', new Date(position.timestamp).toLocaleString('sk-SK')]]);
+      await lookupPlace(c);
       button.disabled = false;
     }, fail, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
   } catch { fail({}); }
