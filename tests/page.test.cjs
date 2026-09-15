@@ -60,7 +60,7 @@ test('location denial restores button and displays understandable error',async()
 });
 test('root and docs entry points match except asset paths and preserve introduction',()=>{
   const docs=fs.readFileSync('docs/index.html','utf8');
-  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=5"','href="docs/style.css?v=5"').replace('src="app.js?v=6"','src="docs/app.js?v=6"'));
+  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=7"','href="docs/style.css?v=7"').replace('src="app.js?v=6"','src="docs/app.js?v=6"'));
   assert.ok(docs.includes('Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz.'));
 });
 test('falls back after network, HTTP, JSON, service and incomplete responses', async()=>{

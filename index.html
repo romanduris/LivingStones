@@ -6,7 +6,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="dark">
   <title>Čo o tebe vidí web?</title>
-  <link rel="stylesheet" href="docs/style.css?v=5">
+  <link rel="stylesheet" href="docs/style.css?v=7">
   <script src="docs/app.js?v=6" defer></script>
 </head>
 <body>
@@ -14,7 +14,8 @@
     <header><span class="badge">ŽIVÝ PREHĽAD · TVOJE ZARIADENIE</span><h1>Čo o tebe<br><em>vidí web?</em></h1><p class="intro">Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz. Každý návštevník tu uvidí údaje svojho vlastného zariadenia.</p></header>
     <aside>Údaje aplikácia zobrazuje len tu a neposiela ich do vlastnej databázy. IP a približná poloha sa automaticky zisťujú cez ipwho.is, pri zlyhaní cez záložnú ipapi.co. Kontaktovaná služba dostane tvoju IP a bežné údaje požiadavky. Náhodné ID sa ukladá iba v tomto prehliadači; nie je to identifikátor hardvéru a po vymazaní údajov webu sa zmení. Hosting spracúva bežné údaje o pripojení. Meno, e-mail, heslá, súbory ani históriu prehliadania web automaticky nezistí.</aside>
     <div class="toolbar"><button id="refresh">Obnoviť údaje</button><span id="updated" role="status"></span></div>
-    <div class="summary-scroll" role="region" aria-label="Stručný prehľad zariadenia" tabindex="0">
+    <p id="summary-hint" class="summary-hint">↔ Posuň tabuľku do strán pre ďalšie údaje.</p>
+    <div class="summary-scroll" aria-describedby="summary-hint" role="region" aria-label="Stručný prehľad zariadenia" tabindex="0">
       <table class="device-summary">
         <thead><tr><th scope="col">Date</th><th scope="col">User ID</th><th scope="col">Device</th><th scope="col">Poloha</th><th scope="col">Pásmo</th><th scope="col">OS version</th></tr></thead>
         <tbody id="device-summary" aria-live="polite"></tbody>
