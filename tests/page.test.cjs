@@ -14,7 +14,7 @@ function setup(fetchImpl = async () => ({ok:true,json:async()=>({success:true,ip
   return {context,elements,calls:()=>calls};
 }
 const settle = () => new Promise(resolve=>setImmediate(resolve));
-const summary = page => Object.fromEntries(['User ID','Device','Poloha','Pásmo','OS version'].map((key,i)=>[key,page.elements.get('#device-summary').children[0].children[i].textContent]));
+const summary = page => Object.fromEntries(['Date','User ID','Device','Poloha','Pásmo','OS version'].map((key,i)=>[key,page.elements.get('#device-summary').children[0].children[i].textContent]));
 const values = list => list.children.map(row=>row.children.map(cell=>cell.textContent));
 test('loads IP without clicking and renders local cards without optional browser APIs', async()=>{
   const page=setup();await settle();
@@ -60,7 +60,7 @@ test('location denial restores button and displays understandable error',async()
 });
 test('root and docs entry points match except asset paths and preserve introduction',()=>{
   const docs=fs.readFileSync('docs/index.html','utf8');
-  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=5"','href="docs/style.css?v=5"').replace('src="app.js?v=5"','src="docs/app.js?v=5"'));
+  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=5"','href="docs/style.css?v=5"').replace('src="app.js?v=6"','src="docs/app.js?v=6"'));
   assert.ok(docs.includes('Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz.'));
 });
 test('falls back after network, HTTP, JSON, service and incomplete responses', async()=>{

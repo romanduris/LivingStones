@@ -49,6 +49,7 @@ function browserId() {
   } catch { return missing; }
 }
 const summaryId = browserId();
+let summaryDate = new Date();
 let summaryLocation = 'Načítavam…';
 let preciseLocation = null;
 function validCoordinates(latitude, longitude) {
@@ -77,7 +78,7 @@ function updateSummary() {
   const device = identifyDevice(navigator);
   const type = ['Mobil', 'Tablet'].includes(device.type) ? 'Mobile' : device.type === 'Počítač / notebook' ? 'Desktop' : device.type;
   const row = document.createElement('tr');
-  for (const value of [summaryId, type, preciseLocation || summaryLocation, Intl.DateTimeFormat().resolvedOptions().timeZone, device.os]) {
+  for (const value of [summaryDate.toLocaleString('sk-SK'), summaryId, type, preciseLocation || summaryLocation, Intl.DateTimeFormat().resolvedOptions().timeZone, device.os]) {
     const cell = document.createElement('td'); cell.textContent = value || missing; row.append(cell);
   }
   document.querySelector('#device-summary').replaceChildren(row);
@@ -101,11 +102,12 @@ async function advancedDevice(list) {
 }
 let revision = 0;
 async function refresh() {
+  summaryDate = new Date();
   updateSummary();
   const current = ++revision;
   document.querySelector('#cards').replaceChildren();
   const n = navigator, s = screen, c = n.connection || n.mozConnection || n.webkitConnection;
-  const date = new Date();
+  const date = summaryDate;
   const identity = identifyDevice(n);
   card('01 / Prehliadač', [
     ['Prehliadač a verzia (odhad)', identity.browser],
