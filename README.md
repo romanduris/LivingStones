@@ -6,6 +6,8 @@ Living Stones – QR-coded stones that travel and build a shared real-world stor
 Statická stránka v `docs/` zobrazuje návštevníkovi údaje dostupné jeho prehliadaču.
 Bez balíčkov a bez databázy. IP a približná poloha sa zisťujú automaticky cez [ipwho.is](https://ipwhois.io/documentation), pri zlyhaní cez ipapi.co (každá požiadavka má limit 8 sekúnd); geolokácia vyžaduje povolenie prehliadača.
 
+Súhrnná tabuľka zobrazuje lokálne ID prehliadača, typ zariadenia, polohu, časové pásmo prehliadača a odhad OS. Mapa používa [vloženú mapu OpenStreetMap](https://wiki.openstreetmap.org/wiki/Export); poskytovateľ mapy dostáva zobrazované súradnice. Tlačidlo „Urči presnú polohu“ vyžiada súhlas a aktualizuje tabuľku aj mapu vrátane hlásenej presnosti. Získaná poloha zariadenia má do obnovenia stránky prednosť pred IP odhadom.
+
 Lokálne spustenie: `python3 -m http.server 8000 --directory docs`.
 Publikovanie: GitHub Pages, vetva `main`, priečinok `/` (koreň).
 Koreňový `index.html` používa štýly a skript z `docs/`; pri úprave HTML udržujte oba vstupné súbory zhodné okrem ciest k týmto súborom.

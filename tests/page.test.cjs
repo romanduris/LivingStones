@@ -14,6 +14,7 @@ function setup(fetchImpl = async () => ({ok:true,json:async()=>({success:true,ip
   return {context,elements,calls:()=>calls};
 }
 const settle = () => new Promise(resolve=>setImmediate(resolve));
+const summary = page => Object.fromEntries(['User ID','Device','Poloha','Pásmo','OS version'].map((key,i)=>[key,page.elements.get('#device-summary').children[0].children[i].textContent]));
 const values = list => list.children.map(row=>row.children.map(cell=>cell.textContent));
 test('loads IP without clicking and renders local cards without optional browser APIs', async()=>{
   const page=setup();await settle();
@@ -59,7 +60,7 @@ test('location denial restores button and displays understandable error',async()
 });
 test('root and docs entry points match except asset paths and preserve introduction',()=>{
   const docs=fs.readFileSync('docs/index.html','utf8');
-  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=4"','href="docs/style.css?v=4"').replace('src="app.js?v=4"','src="docs/app.js?v=4"'));
+  assert.equal(fs.readFileSync('index.html','utf8'),docs.replace('href="style.css?v=5"','href="docs/style.css?v=5"').replace('src="app.js?v=5"','src="docs/app.js?v=5"'));
   assert.ok(docs.includes('Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz.'));
 });
 test('falls back after network, HTTP, JSON, service and incomplete responses', async()=>{
@@ -105,15 +106,14 @@ test('summary retains browser ID across loads and updates location',async()=>{
   let generated=0;
   const overrides={localStorage:{getItem:key=>stored.get(key),setItem:(key,value)=>stored.set(key,value)},crypto:{randomUUID:()=>{generated++;return id}}};
   const first=setup(undefined,overrides);
-  assert.equal(Object.fromEntries(values(first.elements.get('#device-summary')))['Poloha (IP odhad)'],'Načítavam…');
+  assert.equal(summary(first)['Poloha'],'Načítavam…');
   await settle();
-  const result=Object.fromEntries(values(first.elements.get('#device-summary')));
-  assert.equal(result['ID prehliadača'],id);
-  assert.equal(result['Mobil'],'Nie');
-  assert.equal(result['Platforma'],'Windows');
-  assert.equal(result['Poloha (IP odhad)'],'Test City');
+  const result=summary(first);
+  assert.equal(result['User ID'],id);
+  assert.equal(result['Device'],'Desktop');
+  assert.equal(result['Poloha'],'Test City');
   const second=setup(undefined,overrides);await settle();
-  assert.equal(Object.fromEntries(values(second.elements.get('#device-summary')))['ID prehliadača'],id);
+  assert.equal(summary(second)['User ID'],id);
   assert.equal(generated,1);
 });
 test('summary handles blocked storage, failed location and mobile platforms',async()=>{
@@ -123,12 +123,45 @@ test('summary handles blocked storage, failed location and mobile platforms',asy
   ]){
     const page=setup(async()=>{throw Error('offline')},{navigator:{userAgent:ua},localStorage:{getItem(){throw Error('blocked')}}});
     await settle();
-    const result=Object.fromEntries(values(page.elements.get('#device-summary')));
-    assert.equal(result['ID prehliadača'],'Nedostupné');
-    assert.equal(result['Poloha (IP odhad)'],'Nedostupné');
-    assert.equal(result['Mobil'],'Áno');
-    assert.equal(result['Platforma'],platform);
-    assert.equal(result['OS (odhad)'],os);
+    const result=summary(page);
+    assert.equal(result['User ID'],'Nedostupné');
+    assert.equal(result['Poloha'],'Nedostupné');
+    assert.equal(result['Device'],'Mobile');
+    assert.equal(result['OS version'],os);
     assert.equal(page.elements.get('#ip').disabled,false);
   }
+});
+test('IP map updates to device location only after click and survives late IP and refresh',async()=>{
+  let release, locate, requests=0;
+  const page=setup(()=>new Promise(resolve=>{release=resolve}));
+  page.context.navigator.geolocation={getCurrentPosition(success,error,options){requests++;locate=success;assert.equal(options.enableHighAccuracy,true)}};
+  assert.equal(requests,0);
+  const button=page.elements.get('#location');
+  button.click({currentTarget:button});button.click({currentTarget:button});
+  assert.equal(requests,1);
+  locate({coords:{latitude:48.1486,longitude:17.1077,accuracy:25},timestamp:Date.now()});
+  const src=page.elements.get('#location-map').src;
+  assert.match(src,/marker=48.1486,17.1077/);
+  assert.match(summary(page).Poloha,/25 m/);
+  release({ok:true,json:async()=>({success:true,ip:'203.0.113.7',city:'Other City',latitude:50,longitude:20})});await settle();
+  assert.equal(page.elements.get('#location-map').src,src);
+  assert.match(summary(page).Poloha,/48.14860/);
+  page.elements.get('#refresh').click();
+  release({ok:false});await settle();
+  release({ok:false});await settle();
+  assert.equal(page.elements.get('#location-map').src,src);
+  assert.match(summary(page).Poloha,/25 m/);
+});
+test('IP map validates coordinates and geolocation failures preserve existing map',async()=>{
+  const page=setup(async()=>({ok:true,json:async()=>({success:true,ip:'203.0.113.7',city:'Test City',latitude:0,longitude:0})}));await settle();
+  const frame=page.elements.get('#location-map');
+  assert.match(frame.src,/marker=0,0/);assert.equal(frame.hidden,false);
+  const original=frame.src;
+  for(const code of [1,2,3]){
+    page.context.navigator.geolocation={getCurrentPosition(success,error){error({code})}};
+    const button=page.elements.get('#location');button.click({currentTarget:button});
+    assert.equal(button.disabled,false);assert.equal(frame.src,original);
+  }
+  page.context.showMap(91,17);assert.equal(frame.hidden,true);
+  page.context.showMap(null,null);assert.equal(frame.hidden,true);
 });

@@ -50,16 +50,37 @@ function browserId() {
 }
 const summaryId = browserId();
 let summaryLocation = 'Načítavam…';
+let preciseLocation = null;
+function validCoordinates(latitude, longitude) {
+  return Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
+}
+function showMap(latitude, longitude, accuracy) {
+  const frame = document.querySelector('#location-map');
+  const status = document.querySelector('#map-status');
+  const link = document.querySelector('#map-link');
+  if (!validCoordinates(latitude, longitude)) {
+    frame.hidden = true; frame.src = 'about:blank'; link.hidden = true;
+    status.textContent = 'Súradnice podľa IP nie sú dostupné. Skús tlačidlo Urči presnú polohu.';
+    return;
+  }
+  const precise = accuracy !== undefined;
+  const span = precise ? Math.max(0.002, Math.min(90, accuracy / 111000 * 2)) : 0.12;
+  const lonSpan = Math.min(180, span / Math.max(0.01, Math.cos(latitude * Math.PI / 180)));
+  const bbox = [Math.max(-180, longitude-lonSpan), Math.max(-90, latitude-span), Math.min(180, longitude+lonSpan), Math.min(90, latitude+span)];
+  frame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox.join(',')}&layer=mapnik&marker=${latitude},${longitude}`;
+  frame.hidden = false;
+  link.href = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=${precise ? 16 : 11}/${latitude}/${longitude}`;
+  link.hidden = false;
+  status.textContent = precise ? `Poloha zo zariadenia · hlásená presnosť približne ${Math.round(accuracy)} m.` : 'Približná poloha podľa IP · presnosť nie je známa, bod nemusí označovať tvoju ulicu ani mestskú časť.';
+}
 function updateSummary() {
   const device = identifyDevice(navigator);
-  const platform = /^(iOS|iPadOS|macOS)/.test(device.os) ? 'Apple' : /Android/.test(device.os) ? 'Android' : /Windows/.test(device.os) ? 'Windows' : /Linux/.test(device.os) ? 'Linux' : /ChromeOS/.test(device.os) ? 'ChromeOS' : missing;
-  rows(document.querySelector('#device-summary'), [
-    ['ID prehliadača', summaryId],
-    ['Mobil', device.type === 'Mobil' ? 'Áno' : device.type === missing ? missing : 'Nie'],
-    ['Poloha (IP odhad)', summaryLocation],
-    ['Pásmo', Intl.DateTimeFormat().resolvedOptions().timeZone],
-    ['Platforma', platform], ['OS (odhad)', device.os], ['Prehliadač', device.browser]
-  ]);
+  const type = ['Mobil', 'Tablet'].includes(device.type) ? 'Mobile' : device.type === 'Počítač / notebook' ? 'Desktop' : device.type;
+  const row = document.createElement('tr');
+  for (const value of [summaryId, type, preciseLocation || summaryLocation, Intl.DateTimeFormat().resolvedOptions().timeZone, device.os]) {
+    const cell = document.createElement('td'); cell.textContent = value || missing; row.append(cell);
+  }
+  document.querySelector('#device-summary').replaceChildren(row);
 }
 function graphics() {
   let gl;
@@ -195,6 +216,7 @@ async function lookupIp() {
           throw new Error('incomplete');
         }
         summaryLocation = [data.city, data.region, data.country_name].filter((value, index, all) => typeof value === 'string' && value.trim() && all.indexOf(value) === index).join(', ');
+        if (!preciseLocation) showMap(data.latitude, data.longitude);
         updateSummary();
         rows(output, [['Zdroj údajov', service.name], ['Verejná IP', data.ip], ['Verzia IP', data.version], ['Krajina (odhad)', data.country_name], ['Región (odhad)', data.region], ['Mesto (odhad)', data.city], ['PSČ (odhad)', data.postal], ['Poskytovateľ / organizácia', data.org], ['Autonómny systém', data.asn], ['Časové pásmo podľa IP', data.timezone], ['Zemepisná šírka (odhad)', data.latitude], ['Zemepisná dĺžka (odhad)', data.longitude]]);
         return;
@@ -203,22 +225,31 @@ async function lookupIp() {
       } finally { clearTimeout(timeout); }
     }
     summaryLocation = missing; updateSummary();
-    rows(output, [['Stav', 'IP a približná poloha sú momentálne nedostupné. Služby môžu byť blokované, bez pripojenia alebo po prekročení limitu. Skús to neskôr alebo použi polohu so súhlasom nižšie.']]);
+    if (!preciseLocation) showMap();
+    rows(output, [['Stav', 'IP a približná poloha sú momentálne nedostupné. Služby môžu byť blokované, bez pripojenia alebo po prekročení limitu. Skús to neskôr alebo použi tlačidlo Urči presnú polohu pri mape.']]);
   } finally { button.disabled = false; }
 }
 document.querySelector('#ip').addEventListener('click', lookupIp);
 document.querySelector('#location').addEventListener('click', event => {
   const button = event.currentTarget, output = document.querySelector('#location-result');
+  if (button.disabled) return;
   if (!navigator.geolocation) { rows(output, [['Stav', 'Tento prehliadač polohu neposkytuje.']]); return; }
   button.disabled = true; rows(output, [['Stav', 'Čakám na povolenie a polohu…']]);
-  navigator.geolocation.getCurrentPosition(position => {
-    const c = position.coords;
-    rows(output, [['Zemepisná šírka', c.latitude], ['Zemepisná dĺžka', c.longitude], ['Presnosť', unit(Math.round(c.accuracy), 'm')], ['Nadmorská výška', unit(c.altitude, 'm')], ['Presnosť výšky', unit(c.altitudeAccuracy, 'm')], ['Rýchlosť', unit(c.speed, 'm/s')], ['Smer pohybu', unit(c.heading, '°')], ['Čas merania', new Date(position.timestamp).toLocaleString('sk-SK')]]);
-    button.disabled = false; refresh();
-  }, error => {
+  const fail = error => {
     rows(output, [['Stav', ({1: 'Povolenie bolo zamietnuté. Zmeniť ho môžeš v nastaveniach webu v prehliadači.', 2: 'Polohu sa nepodarilo zistiť.', 3: 'Čas na získanie polohy vypršal. Skús to znovu.'})[error.code] || 'Poloha nie je dostupná.']]);
-    button.disabled = false; refresh();
-  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    button.disabled = false;
+  };
+  try {
+    navigator.geolocation.getCurrentPosition(position => {
+      const c = position.coords;
+      if (!validCoordinates(c.latitude, c.longitude) || !Number.isFinite(c.accuracy) || c.accuracy < 0) { fail({code:2}); return; }
+      preciseLocation = `${c.latitude.toFixed(5)}, ${c.longitude.toFixed(5)} (presnosť ~${Math.round(c.accuracy)} m)`;
+      showMap(c.latitude, c.longitude, c.accuracy);
+      updateSummary();
+      rows(output, [['Zdroj', 'Poloha zariadenia so súhlasom'], ['Zemepisná šírka', c.latitude], ['Zemepisná dĺžka', c.longitude], ['Presnosť', unit(Math.round(c.accuracy), 'm')], ['Čas merania', new Date(position.timestamp).toLocaleString('sk-SK')]]);
+      button.disabled = false;
+    }, fail, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  } catch { fail({}); }
 });
 refresh();
 lookupIp();

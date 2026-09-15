@@ -6,19 +6,32 @@
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="dark">
   <title>Čo o tebe vidí web?</title>
-  <link rel="stylesheet" href="style.css?v=4">
-  <script src="app.js?v=4" defer></script>
+  <link rel="stylesheet" href="style.css?v=5">
+  <script src="app.js?v=5" defer></script>
 </head>
 <body>
   <main>
     <header><span class="badge">ŽIVÝ PREHĽAD · TVOJE ZARIADENIE</span><h1>Čo o tebe<br><em>vidí web?</em></h1><p class="intro">Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz. Každý návštevník tu uvidí údaje svojho vlastného zariadenia.</p></header>
     <aside>Údaje aplikácia zobrazuje len tu a neposiela ich do vlastnej databázy. IP a približná poloha sa automaticky zisťujú cez ipwho.is, pri zlyhaní cez záložnú ipapi.co. Kontaktovaná služba dostane tvoju IP a bežné údaje požiadavky. Náhodné ID sa ukladá iba v tomto prehliadači; nie je to identifikátor hardvéru a po vymazaní údajov webu sa zmení. Hosting spracúva bežné údaje o pripojení. Meno, e-mail, heslá, súbory ani históriu prehliadania web automaticky nezistí.</aside>
     <div class="toolbar"><button id="refresh">Obnoviť údaje</button><span id="updated" role="status"></span></div>
-    <dl id="device-summary" class="device-summary" aria-label="Stručný prehľad zariadenia" aria-live="polite"></dl>
+    <div class="summary-scroll" role="region" aria-label="Stručný prehľad zariadenia" tabindex="0">
+      <table class="device-summary">
+        <thead><tr><th scope="col">User ID</th><th scope="col">Device (Mobile/Desktop)</th><th scope="col">Poloha</th><th scope="col">Pásmo</th><th scope="col">OS version</th></tr></thead>
+        <tbody id="device-summary" aria-live="polite"></tbody>
+      </table>
+    </div>
+    <section class="extra map-section" aria-labelledby="map-heading">
+      <h2 id="map-heading">Tvoja poloha na mape</h2>
+      <p id="map-status" role="status">Čakám na približnú polohu podľa IP…</p>
+      <iframe id="location-map" title="Mapa polohy" hidden loading="lazy" referrerpolicy="no-referrer"></iframe>
+      <p><a id="map-link" hidden target="_blank" rel="noopener noreferrer">Otvoriť väčšiu mapu v OpenStreetMap</a></p>
+      <button id="location" aria-describedby="location-help">Urči presnú polohu</button>
+      <p id="location-help">Po povolení sa mapa aj tabuľka aktualizujú podľa polohy zariadenia. Mobil môže použiť GPS; na počítači presnosť závisí od dostupných údajov. Zobrazíme hlásenú presnosť v metroch. OpenStreetMap dostane zobrazené súradnice a bežné údaje pripojenia.</p>
+      <dl id="location-result" aria-live="polite"></dl>
+    </section>
     <section class="extra"><h2>Verejná IP a približná poloha</h2><p>Načítava sa automaticky zo služby ipwho.is; pri zlyhaní sa skúsi ipapi.co. Poloha podľa IP je len odhad, nie presná adresa človeka; VPN či mobilná sieť ju môžu skresliť.</p><button id="ip">Znova zistiť IP</button><dl id="ip-result" aria-live="polite"></dl></section>
     <div id="cards" class="grid"></div>
 
-    <section class="extra"><h2>Poloha so súhlasom</h2><p>Prehliadač si vypýta povolenie. Súradnice sa zobrazia iba na tejto stránke; presnosť závisí od zariadenia a dostupného signálu.</p><button id="location">Povoliť zistenie polohy</button><dl id="location-result" aria-live="polite"></dl></section>
     <footer>„Nedostupné“ znamená, že prehliadač údaj neposkytuje alebo ho chráni. Technické údaje môžu byť zjednodušené či pozmenené ochranou súkromia.</footer>
     <noscript>Na zobrazenie údajov zapni JavaScript v prehliadači.</noscript>
   </main>
