@@ -6,15 +6,16 @@
   <meta name="referrer" content="no-referrer">
   <meta name="color-scheme" content="dark">
   <title>Čo o tebe vidí web?</title>
-  <link rel="stylesheet" href="docs/style.css?v=2">
-  <script src="docs/app.js?v=2" defer></script>
+  <link rel="stylesheet" href="docs/style.css?v=4">
+  <script src="docs/app.js?v=4" defer></script>
 </head>
 <body>
   <main>
     <header><span class="badge">ŽIVÝ PREHĽAD · TVOJE ZARIADENIE</span><h1>Čo o tebe<br><em>vidí web?</em></h1><p class="intro">Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz. Každý návštevník tu uvidí údaje svojho vlastného zariadenia.</p></header>
-    <aside>Údaje aplikácia zobrazuje len tu a neposiela ich do vlastnej databázy. IP a približná poloha sa automaticky zisťujú cez ipapi.co, ktorá dostane tvoju IP a bežné údaje požiadavky. Hosting spracúva bežné údaje o pripojení. Meno, e-mail, heslá, súbory ani históriu prehliadania web automaticky nezistí.</aside>
+    <aside>Údaje aplikácia zobrazuje len tu a neposiela ich do vlastnej databázy. IP a približná poloha sa automaticky zisťujú cez ipwho.is, pri zlyhaní cez záložnú ipapi.co. Kontaktovaná služba dostane tvoju IP a bežné údaje požiadavky. Náhodné ID sa ukladá iba v tomto prehliadači; nie je to identifikátor hardvéru a po vymazaní údajov webu sa zmení. Hosting spracúva bežné údaje o pripojení. Meno, e-mail, heslá, súbory ani históriu prehliadania web automaticky nezistí.</aside>
     <div class="toolbar"><button id="refresh">Obnoviť údaje</button><span id="updated" role="status"></span></div>
-    <section class="extra"><h2>Verejná IP a približná poloha</h2><p>Načítava sa automaticky zo služby ipapi.co. Poloha podľa IP je len odhad, nie presná adresa človeka; VPN či mobilná sieť ju môžu skresliť.</p><button id="ip">Znova zistiť IP</button><dl id="ip-result" aria-live="polite"></dl></section>
+    <dl id="device-summary" class="device-summary" aria-label="Stručný prehľad zariadenia" aria-live="polite"></dl>
+    <section class="extra"><h2>Verejná IP a približná poloha</h2><p>Načítava sa automaticky zo služby ipwho.is; pri zlyhaní sa skúsi ipapi.co. Poloha podľa IP je len odhad, nie presná adresa človeka; VPN či mobilná sieť ju môžu skresliť.</p><button id="ip">Znova zistiť IP</button><dl id="ip-result" aria-live="polite"></dl></section>
     <div id="cards" class="grid"></div>
 
     <section class="extra"><h2>Poloha so súhlasom</h2><p>Prehliadač si vypýta povolenie. Súradnice sa zobrazia iba na tejto stránke; presnosť závisí od zariadenia a dostupného signálu.</p><button id="location">Povoliť zistenie polohy</button><dl id="location-result" aria-live="polite"></dl></section>

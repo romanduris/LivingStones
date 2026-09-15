@@ -29,7 +29,7 @@ function identifyDevice(n) {
   const type = /SmartTV|SMART-TV|HbbTV/.test(ua) ? 'Smart TV' : tablet ? 'Tablet' : mobile ? 'Mobil' : desktop ? 'Počítač / notebook' : missing;
   let os = ipad ? 'iPadOS' : /iPhone|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows NT 10/.test(ua) ? 'Windows 10 / 11' : /Windows/.test(ua) ? 'Windows' : /CrOS/.test(ua) ? 'ChromeOS' : /Macintosh/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : missing;
   const osVersion = ua.match(/(?:Android |(?:CPU (?:iPhone )?OS) |Mac OS X )([\d_.]+)/)?.[1]?.replaceAll('_', '.');
-  if (osVersion && !ipad) os += ` ${osVersion}`;
+  if (osVersion && (!ipad || /iPad/.test(ua))) os += ` ${osVersion}`;
   const patterns = [['Edge', /(?:EdgA|EdgiOS|Edg)\/([\d.]+)/], ['Opera', /(?:OPR|OPT)\/([\d.]+)/], ['Samsung Internet', /SamsungBrowser\/([\d.]+)/], ['Firefox', /(?:Firefox|FxiOS)\/([\d.]+)/], ['Chrome / kompatibilný', /(?:Chrome|CriOS)\/([\d.]+)/], ['Safari', /Version\/([\d.]+).*Safari/]];
   let browser = missing;
   for (const [name, pattern] of patterns) {
@@ -37,6 +37,29 @@ function identifyDevice(n) {
     if (match) { browser = `${name} ${match[1]}`; break; }
   }
   return { type, os, browser };
+}
+function browserId() {
+  try {
+    const key = 'livingstones.browserId';
+    const stored = localStorage.getItem(key);
+    if (stored && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(stored)) return stored;
+    const id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+    return id;
+  } catch { return missing; }
+}
+const summaryId = browserId();
+let summaryLocation = 'Načítavam…';
+function updateSummary() {
+  const device = identifyDevice(navigator);
+  const platform = /^(iOS|iPadOS|macOS)/.test(device.os) ? 'Apple' : /Android/.test(device.os) ? 'Android' : /Windows/.test(device.os) ? 'Windows' : /Linux/.test(device.os) ? 'Linux' : /ChromeOS/.test(device.os) ? 'ChromeOS' : missing;
+  rows(document.querySelector('#device-summary'), [
+    ['ID prehliadača', summaryId],
+    ['Mobil', device.type === 'Mobil' ? 'Áno' : device.type === missing ? missing : 'Nie'],
+    ['Poloha (IP odhad)', summaryLocation],
+    ['Pásmo', Intl.DateTimeFormat().resolvedOptions().timeZone],
+    ['Platforma', platform], ['OS (odhad)', device.os], ['Prehliadač', device.browser]
+  ]);
 }
 function graphics() {
   let gl;
@@ -57,6 +80,7 @@ async function advancedDevice(list) {
 }
 let revision = 0;
 async function refresh() {
+  updateSummary();
   const current = ++revision;
   document.querySelector('#cards').replaceChildren();
   const n = navigator, s = screen, c = n.connection || n.mozConnection || n.webkitConnection;
@@ -135,18 +159,52 @@ async function refresh() {
   }
 }
 document.querySelector('#refresh').addEventListener('click', () => { refresh(); lookupIp(); });
+const ipServices = [
+  {
+    name: 'ipwho.is', url: 'https://ipwho.is/',
+    normalize: data => {
+      if (data.success !== true) throw new Error('service');
+      return { ip: data.ip, version: data.type, country_name: data.country,
+        region: data.region, city: data.city, postal: data.postal,
+        org: data.connection?.org || data.connection?.isp,
+        asn: data.connection?.asn == null ? undefined : `AS${data.connection.asn}`,
+        timezone: data.timezone?.id, latitude: data.latitude, longitude: data.longitude };
+    }
+  },
+  { name: 'ipapi.co', url: 'https://ipapi.co/json/', normalize: data => {
+    if (data.error) throw new Error('service');
+    return data;
+  } }
+];
 async function lookupIp() {
   const button = document.querySelector('#ip'), output = document.querySelector('#ip-result');
   if (button.disabled) return;
-  button.disabled = true; rows(output, [['Stav', 'Načítavam…']]);
-  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 10000);
+  button.disabled = true;
+  summaryLocation = 'Načítavam…'; updateSummary();
   try {
-    const response = await fetch('https://ipapi.co/json/', { signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (!response.ok) throw new Error('service');
-    const data = await response.json(); if (data.error) throw new Error('service');
-    rows(output, [['Verejná IP', data.ip], ['Verzia IP', data.version], ['Krajina (odhad)', data.country_name], ['Región (odhad)', data.region], ['Mesto (odhad)', data.city], ['PSČ (odhad)', data.postal], ['Poskytovateľ / organizácia', data.org], ['Autonómny systém', data.asn], ['Časové pásmo podľa IP', data.timezone], ['Zemepisná šírka (odhad)', data.latitude], ['Zemepisná dĺžka (odhad)', data.longitude]]);
-  } catch { rows(output, [['Stav', 'Služba je nedostupná, blokovaná alebo prekročila limit. Skús to neskôr.']]); }
-  finally { clearTimeout(timeout); button.disabled = false; }
+    for (const [index, service] of ipServices.entries()) {
+      rows(output, [['Stav', index === 0 ? 'Načítavam…' : 'Skúšam záložnú službu…']]);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch(service.url, { signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+        if (!response.ok) throw new Error('service');
+        const data = service.normalize(await response.json());
+        if (typeof data.ip !== 'string' || !data.ip.trim() ||
+            ![data.country_name, data.region, data.city].some(value => typeof value === 'string' && value.trim())) {
+          throw new Error('incomplete');
+        }
+        summaryLocation = [data.city, data.region, data.country_name].filter((value, index, all) => typeof value === 'string' && value.trim() && all.indexOf(value) === index).join(', ');
+        updateSummary();
+        rows(output, [['Zdroj údajov', service.name], ['Verejná IP', data.ip], ['Verzia IP', data.version], ['Krajina (odhad)', data.country_name], ['Región (odhad)', data.region], ['Mesto (odhad)', data.city], ['PSČ (odhad)', data.postal], ['Poskytovateľ / organizácia', data.org], ['Autonómny systém', data.asn], ['Časové pásmo podľa IP', data.timezone], ['Zemepisná šírka (odhad)', data.latitude], ['Zemepisná dĺžka (odhad)', data.longitude]]);
+        return;
+      } catch {
+        // A failed or incomplete response falls through to the next provider.
+      } finally { clearTimeout(timeout); }
+    }
+    summaryLocation = missing; updateSummary();
+    rows(output, [['Stav', 'IP a približná poloha sú momentálne nedostupné. Služby môžu byť blokované, bez pripojenia alebo po prekročení limitu. Skús to neskôr alebo použi polohu so súhlasom nižšie.']]);
+  } finally { button.disabled = false; }
 }
 document.querySelector('#ip').addEventListener('click', lookupIp);
 document.querySelector('#location').addEventListener('click', event => {
