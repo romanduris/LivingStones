@@ -1,6 +1,6 @@
 # Living Stones
 
-An English visual MVP for painted stones that pass between people. The map is the first part of both the home page and each stone detail. Five fictional stones have 25 finds around Bratislava, all within 100 km of the city, including nearby Austria and Hungary.
+An English visual MVP for painted stones that pass between people. An introduction explains how painted stones come to life through shared encounters and invites finders to carry them to another town or country. Maps lead both the home page and each stone detail. A compact overview table shows miniature stone images, origins, age, find counts, last addresses and latest notes; rows adapt to smaller screens. Five fictional stones have 25 finds around Bratislava, all within 100 km of the city, including nearby Austria and Hungary.
 
 Live site: https://romanduris.github.io/LivingStones/
 
@@ -20,7 +20,7 @@ Computers show the map, stone story and find history. Phones and tablets additio
 | Wildheart   | D4  | LOVE4          |
 | Ocean Echo  | E5  | WAVE5          |
 
-Enter the code and select **Continue & locate** to request device location. After permission, the UI shows a location preview with the reported GPS accuracy and a reverse-geocoded street/area. Alternatively select a fictional nearby location. Add an optional nickname and note, then submit to preview a new chapter. Cards, statistics, the overview map, journey route and address table update immediately. The new marker is purple and labelled **Your new find**.
+Enter the code and select **Continue & locate** to request device location. After permission, the UI shows a location preview with the reported GPS accuracy and a reverse-geocoded street/area. Alternatively select a fictional nearby location. Add an optional nickname and note, then submit to preview a new chapter. Overview rows, statistics, the overview map, journey route and address table update immediately. The new marker is purple and labelled **Your new find**.
 
 Finds are held only in JavaScript memory for the current visit. Refreshing clears them. There is no localStorage/sessionStorage persistence, backend, database, or server-side verification. Demo codes are intentionally visible examples. Older prototype storage is ignored.
 
@@ -34,7 +34,7 @@ GPS needs HTTPS or localhost and browser permission. No GPS or reverse-geocoding
 
 ## Data and UI
 
-`docs/data.js` contains the fictional local journeys, birthplaces, addresses and finder messages. `stoneRepository` in `docs/app.js` isolates reads and visit-only writes so an API can replace the data source later. The rest of the UI handles URL state, the native modal, browser history, sharing and maps. The five original stone illustrations are in `docs/assets/stone-*.svg`. The interface uses system fonts and does not depend on a font service.
+`docs/data.js` contains the fictional local journeys, birthplaces, addresses and finder messages. `stoneRepository` in `docs/app.js` isolates reads and visit-only writes so an API can replace the data source later. The rest of the UI handles URL state, the native modal, browser history, sharing and maps. The five original stone illustrations are in `docs/assets/stone-*.svg`. The `image` field accepts an asset path or full photo URL, so real photos can replace the illustrations without changing the overview or detail layout. A strong desaturation filter applies only to the map tiles; stone markers and route colours remain vivid. The interface uses system fonts and does not depend on a font service.
 
 ## Validation and publication
 

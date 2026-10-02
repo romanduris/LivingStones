@@ -11,10 +11,10 @@
     <title>Living Stones — A little kindness on the move</title>
     <link rel="icon" href="docs/assets/stone-1.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="docs/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="docs/style.css?v=13" />
+    <link rel="stylesheet" href="docs/style.css?v=14" />
     <script src="docs/vendor/leaflet/leaflet.js" defer></script>
     <script src="docs/data.js?v=13" defer></script>
-    <script src="docs/app.js?v=13" defer></script>
+    <script src="docs/app.js?v=14" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -30,11 +30,20 @@
     <main class="wrap">
       <section id="world" class="map-section" aria-labelledby="world-title">
         <div class="section-heading">
-          <div>
+          <div class="intro-copy">
             <h1 id="world-title">A little kindness on the move.</h1>
             <p>
-              Painted stones, shared stories. Follow their journeys around
-              Bratislava.
+              A painted stone comes to life through the people it meets. A
+              chance encounter, a shared smile, a note from a stranger — every
+              confirmed find adds a chapter to its story. Together, a small
+              stone and the people who carry it create a journey full of real
+              connections.
+            </p>
+            <p>
+              Take one with you and enjoy its company. Bring it on a day out, to
+              another town or even another country, then leave it somewhere safe
+              for someone else to find. The more it travels, the more it has to
+              tell.
             </p>
           </div>
           <span class="pill"
@@ -64,11 +73,6 @@
           </p>
           <span>Tap a stone to see its story.</span>
         </div>
-        <div
-          id="map-legend"
-          class="map-legend"
-          aria-label="Stones on the map"
-        ></div>
         <p id="world-map-status" class="map-status" role="status" hidden></p>
       </section>
       <section
@@ -80,7 +84,25 @@
           <h2 id="explore-title">Five stones. Five little adventures.</h2>
           <span class="section-label">FICTIONAL DEMO JOURNEYS</span>
         </div>
-        <div id="stone-grid" class="stone-grid"></div>
+        <div class="stone-table-frame">
+          <table class="stone-table">
+            <caption class="sr-only">
+              Stones, their origins, time travelling, finds and latest locations
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Stone</th>
+                <th scope="col">Journey started</th>
+                <th scope="col">Time travelling</th>
+                <th scope="col">Finds</th>
+                <th scope="col">Last found at</th>
+                <th scope="col">Latest chapter</th>
+                <th scope="col"><span class="sr-only">Open story</span></th>
+              </tr>
+            </thead>
+            <tbody id="stone-rows"></tbody>
+          </table>
+        </div>
         <p class="demo-note">
           The stones and their stories are fictional. New finds are previews for
           this visit only.

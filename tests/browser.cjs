@@ -42,7 +42,17 @@ process.on("exit", () => server?.kill());
       });
     });
     await page.goto(base);
-    assert.equal(await page.locator(".stone-card").count(), 5);
+    assert.equal(await page.locator(".stone-row").count(), 5);
+    assert.equal(await page.locator(".stone-thumbnail img").count(), 5);
+    assert.equal(await page.locator("#map-legend").count(), 0);
+    assert.match(
+      await page.locator(".intro-copy").innerText(),
+      /another country/,
+    );
+    assert.match(
+      await page.locator(".stone-row").first().innerText(),
+      /Bernolákov sad/,
+    );
     assert.equal(
       await page.locator("#world-map .leaflet-marker-icon").count(),
       5,
@@ -211,9 +221,15 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(".find-history script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
     assert.equal(await phone.locator("#total-finds").innerText(), "26");
+    assert.match(
+      await phone
+        .locator('.stone-row[data-stone="A1"] .overview-latest')
+        .innerText(),
+      /Tester/,
+    );
     await phone.locator("#finish-find").click();
     await phone.locator("#close-detail").click();
-    await phone.locator('.stone-card[data-stone="A1"]').click();
+    await phone.locator('.stone-link[data-stone="A1"]').click();
     assert.equal(
       await phone.locator(rows).count(),
       6,
@@ -356,6 +372,12 @@ process.on("exit", () => server?.kill());
         5,
       );
       assert.equal(await page.locator("#start-find").count(), 0);
+      await page.locator(".stone-row").last().scrollIntoViewIfNeeded();
+      await page.waitForFunction(() =>
+        [...document.querySelectorAll(".stone-thumbnail img")].every(
+          (image) => image.complete && image.naturalWidth > 0,
+        ),
+      );
       const broken = await page
         .locator("img:not(.leaflet-tile)")
         .evaluateAll((images) =>
@@ -364,7 +386,9 @@ process.on("exit", () => server?.kill());
             .map((image) => image.src),
         );
       assert.deepEqual(broken, []);
-      await page.locator('.stone-card[data-stone="A1"]').click();
+      await page
+        .locator('.stone-row[data-stone="A1"] .overview-location')
+        .click();
       assert.equal(
         await page.evaluate(() => {
           const d = document.querySelector("dialog");

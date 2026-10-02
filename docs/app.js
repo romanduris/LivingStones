@@ -4,6 +4,8 @@ const assetBase = new URL(
   "assets/",
   document.querySelector('script[src*="app.js"]').src,
 ).href;
+// Image paths can later be replaced by local JPGs or full photo URLs.
+const stoneImageURL = (stone) => new URL(stone.image, assetBase).href;
 const escapeHTML = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -135,10 +137,12 @@ function disposeMap(id) {
 }
 function renderOverview() {
   const stones = stoneRepository.list();
-  $("#stone-grid").innerHTML = stones
+  $("#stone-rows").innerHTML = stones
     .map((stone) => {
-      const last = stone.finds.at(-1);
-      return `<a class="stone-card" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${stone.finds.length} finds, last seen in ${escapeHTML(last.city)}"><div class="stone-image theme-${stone.theme}"><span class="stone-id">${stone.id}</span><img src="${assetBase}${stone.image}" alt="Painted stone: ${stone.name}" loading="lazy"></div><div class="stone-content"><h3>${stone.name}</h3><p class="stone-tagline">${stone.tagline}</p><div class="stone-metrics"><span><b>${daysTravelling(stone)}</b> days</span><span><b>${stone.finds.length}</b> finds</span></div><div class="stone-location"><strong>${escapeHTML(last.city)}, ${escapeHTML(last.country)}</strong><small>Last seen ${formatDate(last.date)}</small></div><div class="card-bottom">View story <span class="card-arrow" aria-hidden="true">↗</span></div></div></a>`;
+      const last = stone.finds.at(-1),
+        birth = stone.finds[0];
+      const countries = new Set(stone.finds.map((find) => find.country)).size;
+      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${stone.finds.length} finds, last seen in ${escapeHTML(last.city)}"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span><span class="stone-identity"><strong>${stone.name}</strong><small>${stone.id} · ${stone.tagline}</small></span></a></td><td class="overview-start" data-label="Journey started"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.city)}, ${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Time travelling"><strong>${daysTravelling(stone)} days</strong><small>On the move</small></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small>${countries} ${countries === 1 ? "country" : "countries"}</small></td><td class="overview-location" data-label="Last found at"><strong>${escapeHTML(last.city)}, ${escapeHTML(last.country)}</strong><small>${escapeHTML(last.address || "Address unavailable")}</small></td><td class="overview-latest" data-label="Latest chapter"><time datetime="${escapeHTML(last.date)}">${formatDate(last.date)}${last.local ? " · Preview" : ""}</time><small class="latest-note" title="${escapeHTML(last.message)}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
     })
     .join("");
   $("#total-finds").textContent = stones.reduce(
@@ -149,13 +153,8 @@ function renderOverview() {
     stones.flatMap((stone) => stone.finds.map((find) => find.country)),
   ).size;
   renderMap($("#world-map"), stones);
-  $("#map-legend").innerHTML = stones
-    .map(
-      (stone) =>
-        `<button data-stone="${stone.id}" style="--stone-color:${stone.color}"><span class="color-dot"></span>${stone.name}</button>`,
-    )
-    .join("");
 }
+
 function renderMap(container, stones, journey = false, previewPlace = null) {
   disposeMap(container.id);
   container.replaceChildren();
@@ -309,7 +308,7 @@ function renderDetail() {
   const last = stone.finds.at(-1),
     birth = stone.finds[0];
   $("#stone-detail").innerHTML =
-    `<div class="detail-topbar"><h2 id="detail-title"><span class="color-dot" style="--stone-color:${stone.color}"></span>${stone.name}<small>${stone.id}</small></h2><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div><div class="detail-body"><section aria-labelledby="journey-title"><h3 id="journey-title" class="sr-only">${stone.name} journey map</h3><div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${stone.name}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div><div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span>${last.local ? '<span class="new-find-key">✦ Your new find · preview</span>' : "Numbers follow the history below."}</span></div></section><div class="detail-summary"><div class="detail-image theme-${stone.theme}"><img src="${assetBase}${stone.image}" alt="${stone.name}, a painted ${stone.theme} stone"></div><div class="detail-copy"><h3>${stone.tagline}</h3><p class="detail-story">${stone.story}</p><p class="origin-note">Born in ${escapeHTML(birth.city)} · ${escapeHTML(birth.address)} · ${formatDate(stone.started)}</p><div class="detail-stats"><span><strong>${daysTravelling(stone)}</strong> days travelling</span><span><strong>${stone.finds.length}</strong> finds</span><span><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> countries</span></div><div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone ↗</button>' : ""}<button class="button secondary" id="share-stone">Share story ↗</button></div>${supportsPreciseLocation() ? "" : '<p class="desktop-note">You’re viewing this story on a computer. Open the same link on your phone to mark a find.</p>'}<div id="share-fallback" class="share-fallback" hidden></div></div></div><div id="find-container"></div><section class="detail-section" aria-labelledby="history-title"><h3 id="history-title">The people along the way.</h3><p class="section-subtitle">From its first home to its latest little adventure.</p><div class="table-scroll"><table class="find-history"><caption class="sr-only">Find history, including dates, addresses, finders and messages</caption><thead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Location / address</th><th scope="col">Finder</th><th scope="col">Their note</th></tr></thead><tbody>${historyHTML(stone)}</tbody></table></div></section><p class="detail-footnote">Fictional demo history. New finds are previews for this visit only; refreshing resets them. Opening a story never records a find.</p></div>`;
+    `<div class="detail-topbar"><h2 id="detail-title"><span class="color-dot" style="--stone-color:${stone.color}"></span>${stone.name}<small>${stone.id}</small></h2><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div><div class="detail-body"><section aria-labelledby="journey-title"><h3 id="journey-title" class="sr-only">${stone.name} journey map</h3><div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${stone.name}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div><div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span>${last.local ? '<span class="new-find-key">✦ Your new find · preview</span>' : "Numbers follow the history below."}</span></div></section><div class="detail-summary"><div class="detail-image theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${stone.name}, a painted ${stone.theme} stone"></div><div class="detail-copy"><h3>${stone.tagline}</h3><p class="detail-story">${stone.story}</p><p class="origin-note">Born in ${escapeHTML(birth.city)} · ${escapeHTML(birth.address)} · ${formatDate(stone.started)}</p><div class="detail-stats"><span><strong>${daysTravelling(stone)}</strong> days travelling</span><span><strong>${stone.finds.length}</strong> finds</span><span><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> countries</span></div><div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone ↗</button>' : ""}<button class="button secondary" id="share-stone">Share story ↗</button></div>${supportsPreciseLocation() ? "" : '<p class="desktop-note">You’re viewing this story on a computer. Open the same link on your phone to mark a find.</p>'}<div id="share-fallback" class="share-fallback" hidden></div></div></div><div id="find-container"></div><section class="detail-section" aria-labelledby="history-title"><h3 id="history-title">The people along the way.</h3><p class="section-subtitle">From its first home to its latest little adventure.</p><div class="table-scroll"><table class="find-history"><caption class="sr-only">Find history, including dates, addresses, finders and messages</caption><thead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Location / address</th><th scope="col">Finder</th><th scope="col">Their note</th></tr></thead><tbody>${historyHTML(stone)}</tbody></table></div></section><p class="detail-footnote">Fictional demo history. New finds are previews for this visit only; refreshing resets them. Opening a story never records a find.</p></div>`;
   renderMap($("#journey-map"), [stone], true);
   $("#close-detail").addEventListener("click", closeDetail);
   $("#share-stone").addEventListener("click", shareStone);
@@ -366,7 +365,7 @@ function syncURL() {
     const focusTarget = returnFocus?.isConnected
       ? returnFocus
       : document.querySelector(
-          `.stone-card[data-stone="${returnFocus?.dataset?.stone || ""}"]`,
+          `.stone-link[data-stone="${returnFocus?.dataset?.stone || ""}"]`,
         );
     focusTarget?.focus({ preventScroll: true });
     if (id)
