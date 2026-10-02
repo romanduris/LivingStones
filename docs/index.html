@@ -3,222 +3,125 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f6f5ef" />
+    <meta name="theme-color" content="#ffffff" />
     <meta
       name="description"
-      content="Small stones. Unexpected connections. Follow five painted stones as they travel the world, one kind stranger at a time."
+      content="Follow five painted stones around Bratislava. Explore their journeys, meet their finders, and add your own little moment."
     />
-    <title>Living Stones — Small stones. Big stories.</title>
+    <title>Living Stones — A little kindness on the move</title>
     <link rel="icon" href="assets/stone-1.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="style.css?v=12" />
-    <script src="data.js?v=12" defer></script>
-    <script src="app.js?v=12" defer></script>
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="style.css?v=13" />
+    <script src="vendor/leaflet/leaflet.js" defer></script>
+    <script src="data.js?v=13" defer></script>
+    <script src="app.js?v=13" defer></script>
   </head>
   <body>
-    <a class="skip-link" href="#explore">Skip to the stones</a>
+    <a class="skip-link" href="#world">Skip to the map</a>
     <header class="site-header wrap">
       <a class="wordmark" href="./" aria-label="Living Stones home"
-        ><span class="brand-symbol" aria-hidden="true">✳</span> living
-        stones<span class="brand-dot">.</span></a
+        ><span class="brand-symbol" aria-hidden="true">✳</span> Living Stones</a
       >
       <nav aria-label="Main navigation">
-        <a href="#explore">The stones</a><a href="#how-it-works">How it works</a
-        ><a class="nav-cta" href="#world"
-          >Follow the journey <span aria-hidden="true">↗</span></a
-        >
+        <a href="#world">Map</a><a href="#explore">Stones</a
+        ><a href="#how-it-works">About</a>
       </nav>
     </header>
-    <main>
-      <section class="hero wrap" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <span class="eyebrow"
-            ><span class="live-dot"></span> A LITTLE KINDNESS, ON THE MOVE</span
-          >
-          <h1 id="hero-title">
-            Small stones.<br />Big <span class="serif">stories.</span
-            ><span class="title-spark" aria-hidden="true">✳</span>
-          </h1>
-          <p>
-            A painted stone. A chance encounter. A story that keeps going.
-            Follow little pieces of happiness as they pass from one person to
-            the next.
-          </p>
-          <div class="hero-actions">
-            <a class="button primary" href="#explore"
-              >Meet the stones <span aria-hidden="true">↗</span></a
-            ><a class="text-link" href="#how-it-works"
-              >How does it work? <span aria-hidden="true">↓</span></a
-            >
-          </div>
-          <div class="hero-proof">
-            <span class="mini-stones" aria-hidden="true"
-              ><img src="assets/stone-1.svg" alt="" /><img
-                src="assets/stone-2.svg"
-                alt="" /><img src="assets/stone-3.svg" alt="" /></span
-            ><span
-              >Five little stones.<br /><strong
-                >So many human connections.</strong
-              ></span
-            >
-          </div>
-        </div>
-        <div
-          class="hero-art"
-          aria-label="Illustrated painted stones: Sunny Side, Little Luna and Wildheart"
-        >
-          <div class="orbit orbit-one"></div>
-          <div class="orbit orbit-two"></div>
-          <span class="art-spark spark-one" aria-hidden="true">✧</span
-          ><span class="art-spark spark-two" aria-hidden="true">✳</span>
-          <span class="floating-label label-top"
-            ><span class="live-dot"></span> Somewhere, a new story begins.</span
-          >
-          <img
-            class="hero-stone hero-sun"
-            src="assets/stone-1.svg"
-            alt="Sunny Side, a golden stone with a smiling sun"
-          />
-          <img
-            class="hero-stone hero-moon"
-            src="assets/stone-2.svg"
-            alt="Little Luna, a lavender stone with a crescent moon"
-          />
-          <img
-            class="hero-stone hero-heart"
-            src="assets/stone-4.svg"
-            alt="Wildheart, a peach stone with a painted red heart"
-          />
-          <span class="floating-label label-bottom"
-            ><span aria-hidden="true">↗</span> Made to wander. Meant to
-            connect.</span
-          ><span class="art-caption"
-            >REAL CONNECTIONS. ONE STONE AT A TIME.</span
-          >
-        </div>
-      </section>
-      <section class="numbers wrap" aria-label="Journey statistics">
-        <div><strong>5</strong><span>stones out exploring</span></div>
-        <div>
-          <strong id="total-finds">25</strong><span>moments of connection</span>
-        </div>
-        <div>
-          <strong id="total-countries">20</strong
-          ><span>countries in the story</span>
-        </div>
-        <p>
-          Small enough for your pocket.<br />Big enough to make your day.
-          <span aria-hidden="true">☺</span>
-        </p>
-      </section>
-      <section
-        id="explore"
-        class="section wrap"
-        aria-labelledby="explore-title"
-      >
+    <main class="wrap">
+      <section id="world" class="map-section" aria-labelledby="world-title">
         <div class="section-heading">
           <div>
-            <span class="eyebrow">THE LITTLE EXPLORERS</span>
-            <h2 id="explore-title">
-              Every stone has a <span class="serif">story.</span>
-            </h2>
+            <h1 id="world-title">A little kindness on the move.</h1>
             <p>
-              Meet the wanderers. Pick a stone and see where life has taken it.
+              Painted stones, shared stories. Follow their journeys around
+              Bratislava.
             </p>
           </div>
           <span class="pill"
-            ><span class="live-dot"></span> 5 demo journeys</span
+            ><span class="live-dot"></span> Demo · Bratislava &amp; nearby</span
           >
         </div>
-        <div id="stone-grid" class="stone-grid"></div>
-        <p class="demo-note">
-          <span aria-hidden="true">✳</span> A little preview of a big idea.
-          These five stones and their journeys are fictional demo stories.
-        </p>
-      </section>
-      <section id="world" class="section wrap" aria-labelledby="world-title">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">A WORLD OF POSSIBILITY</span>
-            <h2 id="world-title">
-              Little stones. <span class="serif">No borders.</span>
-            </h2>
-            <p>
-              Five journeys, one shared world. Tap a marker to meet its stone.
-            </p>
-          </div>
-          <span class="map-key"
-            ><span class="live-dot"></span> Last known locations</span
+        <div class="map-frame">
+          <div
+            id="world-map"
+            class="map-panel"
+            role="region"
+            aria-label="Interactive map of the stones’ last known locations"
+          ></div>
+          <button
+            class="map-reset"
+            data-reset-map="world-map"
+            aria-label="Show all stones on the map"
           >
+            Show all stones ⤢
+          </button>
         </div>
-        <div id="world-map" class="map-panel"></div>
+        <div class="map-bottom">
+          <p>
+            <span class="live-dot"></span> Last known locations ·
+            <strong id="total-finds">25</strong> finds ·
+            <strong id="total-countries">3</strong> countries
+          </p>
+          <span>Tap a stone to see its story.</span>
+        </div>
         <div
           id="map-legend"
           class="map-legend"
           aria-label="Stones on the map"
         ></div>
+        <p id="world-map-status" class="map-status" role="status" hidden></p>
+      </section>
+      <section
+        id="explore"
+        class="stones-section"
+        aria-labelledby="explore-title"
+      >
+        <div class="section-heading">
+          <h2 id="explore-title">Five stones. Five little adventures.</h2>
+          <span class="section-label">FICTIONAL DEMO JOURNEYS</span>
+        </div>
+        <div id="stone-grid" class="stone-grid"></div>
+        <p class="demo-note">
+          The stones and their stories are fictional. New finds are previews for
+          this visit only.
+        </p>
       </section>
       <section
         id="how-it-works"
-        class="how-section"
+        class="about-section"
         aria-labelledby="how-title"
       >
-        <div class="wrap">
-          <div class="section-heading">
-            <div>
-              <span class="eyebrow">A TINY ADVENTURE, THREE SIMPLE STEPS</span>
-              <h2 id="how-title">
-                Find it. Feel it. <span class="serif">Pass it on.</span>
-              </h2>
-            </div>
-            <span class="how-spark" aria-hidden="true">✳</span>
-          </div>
-          <div class="steps">
-            <article>
-              <span class="step-number">01 / FIND</span
-              ><span class="step-icon" aria-hidden="true">⌕</span>
-              <h3>A little surprise.</h3>
-              <p>
-                Spot a painted stone on a park bench, a trail, or somewhere
-                unexpected. Pick it up. It has a story to tell.
-              </p>
-            </article>
-            <article>
-              <span class="step-number">02 / CONNECT</span
-              ><span class="step-icon" aria-hidden="true">♡</span>
-              <h3>Become part of its story.</h3>
-              <p>
-                Scan its QR code to open its journey. On your phone, enter the
-                Find Code on the stone and add your little moment.
-              </p>
-            </article>
-            <article>
-              <span class="step-number">03 / RELEASE</span
-              ><span class="step-icon" aria-hidden="true">↗</span>
-              <h3>Let the adventure continue.</h3>
-              <p>
-                Enjoy its company, then leave it somewhere safe for the next
-                person. A public place, a little kindness, a new chapter.
-              </p>
-            </article>
-          </div>
+        <h2 id="how-title">Find it. Add a moment. Pass it on.</h2>
+        <div class="steps">
+          <article>
+            <span>01</span>
+            <h3>Find a stone</h3>
+            <p>
+              Scan its QR code to open its story. Looking never records a find.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Add your chapter</h3>
+            <p>
+              On your phone, enter its Find Code. Allow location access and
+              leave an optional note.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Keep it moving</h3>
+            <p>
+              Take me with you, enjoy my company, then leave me somewhere new —
+              ideally in another town — where someone else can find me.
+            </p>
+          </article>
         </div>
-      </section>
-      <section class="closing wrap">
-        <span aria-hidden="true">✧</span>
-        <h2>The next chapter could be <span class="serif">yours.</span></h2>
-        <p>You never know how far a little kindness will travel.</p>
-        <a class="button primary" href="#explore"
-          >Find your favourite stone <span aria-hidden="true">↗</span></a
-        >
       </section>
     </main>
     <footer class="wrap">
-      <a class="wordmark" href="./"
-        ><span class="brand-symbol" aria-hidden="true">✳</span> living
-        stones<span class="brand-dot">.</span></a
-      >
-      <p>A little art. A little adventure. A lot of heart.</p>
-      <span>Visual prototype · Made for connection</span>
+      <span>Living Stones · Small moments, shared.</span
+      ><span>Visual MVP · No backend</span>
     </footer>
     <dialog id="stone-dialog" aria-labelledby="detail-title">
       <div id="stone-detail"></div>
@@ -226,8 +129,7 @@
     <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
     <noscript
       ><p class="wrap">
-        Enable JavaScript to explore the stones, maps and their stories. Opening
-        a stone never records a find.
+        Enable JavaScript to explore the maps, stones and stories.
       </p></noscript
     >
   </body>

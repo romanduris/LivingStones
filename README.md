@@ -1,16 +1,16 @@
 # Living Stones
 
-A mobile-first visual MVP for painted stones that travel between people. The interface is in English and uses five fictional stones with 25 seeded finds. There is no backend, database, account system, or server-side find verification.
+An English visual MVP for painted stones that pass between people. The map is the first part of both the home page and each stone detail. Five fictional stones have 25 finds around Bratislava, all within 100 km of the city, including nearby Austria and Hungary.
 
 Live site: https://romanduris.github.io/LivingStones/
 
 ## Run locally
 
-Run `python3 -m http.server 8000` and open http://localhost:8000. The root entry point uses assets from `docs/`. Alternatively serve `docs/` directly. Both entry points support `?stone=A1`, `B2`, `C3`, `D4`, or `E5`. Opening a story never records a find.
+Run `python3 -m http.server 8000`, then open http://localhost:8000. Alternatively serve `docs/` directly. Both entry points support `?stone=A1`, `B2`, `C3`, `D4`, or `E5`. Opening or sharing a stone never records a find.
 
 ## Try a find
 
-On a phone or tablet, open a stone and choose **I found this stone**. Device detection preserves the original user-agent, Client Hints and iPad touch checks; narrow desktop windows do not enable the mobile flow.
+Computers show the map, stone story and find history. Phones and tablets additionally show **I found this stone**. Detection uses user-agent, Client Hints and iPad touch checks; resizing a computer window does not enable the mobile flow.
 
 | Stone       | ID  | Demo Find Code |
 | ----------- | --- | -------------- |
@@ -20,18 +20,26 @@ On a phone or tablet, open a stone and choose **I found this stone**. Device det
 | Wildheart   | D4  | LOVE4          |
 | Ocean Echo  | E5  | WAVE5          |
 
-Enter the code, explicitly request device location or choose a clearly labelled demo city, then optionally add a nickname and message. Submission updates cards, statistics, last location, journey map and timeline immediately. Additions persist under `livingstones.demo.finds.v1` in local storage; blocked storage falls back to memory. Remove that key in browser devtools to reset local finds. Codes are intentionally visible demo data, not secure verification.
+Enter the code and select **Continue & locate** to request device location. After permission, the UI shows a location preview with the reported GPS accuracy and a reverse-geocoded street/area. Alternatively select a fictional nearby location. Add an optional nickname and note, then submit to preview a new chapter. Cards, statistics, the overview map, journey route and address table update immediately. The new marker is purple and labelled **Your new find**.
 
-GPS requires a secure context (HTTPS or localhost) and browser permission. The button sends coordinates to Photon/Komoot for reverse lookup with an eight-second timeout; failure preserves coordinates. GPS denial, timeout or unavailability can be retried or bypassed with a demo city. No IP lookup, GPS request or location-service call happens merely by opening a page or stone.
+Finds are held only in JavaScript memory for the current visit. Refreshing clears them. There is no localStorage/sessionStorage persistence, backend, database, or server-side verification. Demo codes are intentionally visible examples. Older prototype storage is ignored.
 
-## Architecture and assets
+Finders are invited to take the stone along, enjoy its company, and leave it somewhere new — ideally another town — where someone else can find it.
 
-`docs/data.js` holds realistic fictional journeys. `stoneRepository` in `docs/app.js` isolates reads and writes so an API can replace demo persistence later. URL state, native modal focus/escape behavior, browser history, sharing, chronological finds and maps are handled by the presentation layer.
+## Maps and location
 
-Original stone illustrations live in `docs/assets/stone-*.svg`. The self-hosted world silhouette is derived from [Natural Earth 1:110m land](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson), public-domain geographic data. Maps use equirectangular coordinates and support zoom/reset. Numbered route markers match the chronological timeline; they illustrate connections between finds, not actual travel paths. Maps and illustrations need no external API. Google Fonts supplies optional fonts; local fallbacks work offline.
+The self-hosted [Leaflet 1.9.4](https://leafletjs.com/) library uses [OpenStreetMap](https://www.openstreetmap.org/copyright) tiles, following the map implementation of the supplied BTS Flight Scanner reference. Maps support dragging, zooming, marker popups and reset controls. The overview shows last known locations; numbered detail markers and a dashed line follow the chronological table. Connections illustrate the sequence of finds rather than actual travel paths. External tile requests require internet access; if tiles fail, markers and controls remain available with a status message. Leaflet's BSD license is included under `docs/vendor/leaflet/LICENSE`.
+
+GPS needs HTTPS or localhost and browser permission. No GPS or reverse-geocoding request occurs simply by viewing a stone. After a valid code and the explicit **Continue & locate** action, GPS is requested with a 15-second timeout. Coordinates are sent to [Photon](https://photon.komoot.io/) only to look up the address/area (eight-second timeout). Address lookup failure preserves exact coordinates; denied, unavailable or timed-out GPS can be retried or replaced with a demo location. Streets and house numbers are omitted when reported accuracy exceeds 150 m. Addresses are map estimates, not verified postal addresses. Canceling a pending request discards its result.
+
+## Data and UI
+
+`docs/data.js` contains the fictional local journeys, birthplaces, addresses and finder messages. `stoneRepository` in `docs/app.js` isolates reads and visit-only writes so an API can replace the data source later. The rest of the UI handles URL state, the native modal, browser history, sharing and maps. The five original stone illustrations are in `docs/assets/stone-*.svg`. The interface uses system fonts and does not depend on a font service.
 
 ## Validation and publication
 
-Run `node --test tests/page.test.cjs` for model/device/location checks. Browser tests live in `tests/browser.cjs` and require Playwright (`npm install --no-save --package-lock=false playwright`, then `npx playwright install chromium`) and Python 3. Run `node tests/browser.cjs`; it starts its own temporary server on port 8137.
+Run `node --test tests/page.test.cjs` for data, distance, device detection, coordinate/address and memory-only repository checks.
+
+Browser checks require Python 3 and Playwright (`npm install --no-save --package-lock=false playwright`, then `npx playwright install chromium`). Run `node tests/browser.cjs`; it starts a temporary local server on port 8137. Tests cover map-first ordering, map controls/markers, mobile-only finding, automatic GPS after code confirmation, address lookup, permission failures, canceled requests, preview-only data, URL/history/sharing, safe user text, unavailable map tiles and responsive layouts.
 
 GitHub Pages serves `main` at the repository root. Keep root and docs HTML identical apart from asset paths. Commit and push confirmed changes to `main`, then verify the live publication.

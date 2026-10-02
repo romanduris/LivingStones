@@ -29,7 +29,23 @@ test("five distinct demo stones have realistic chronological journeys and valid 
     for (let i = 0; i < stone.finds.length; i++) {
       const find = stone.finds[i];
       assert.ok(context.validCoordinates(find.lat, find.lon));
-      assert.ok(find.city && find.country && find.nickname && find.message);
+      assert.ok(
+        find.city &&
+          find.country &&
+          find.address &&
+          find.nickname &&
+          find.message,
+      );
+      const rad = (n) => (n * Math.PI) / 180;
+      const a =
+        Math.sin(rad(find.lat - 48.1486) / 2) ** 2 +
+        Math.cos(rad(48.1486)) *
+          Math.cos(rad(find.lat)) *
+          Math.sin(rad(find.lon - 17.1077) / 2) ** 2;
+      assert.ok(
+        6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) < 100,
+        `${stone.id}: ${find.city} within 100 km of Bratislava`,
+      );
       assert.ok(Date.parse(find.date) <= Date.now());
       if (i)
         assert.ok(Date.parse(find.date) > Date.parse(stone.finds[i - 1].date));
@@ -99,4 +115,68 @@ test("root and docs entry points match except their asset paths", () => {
   const root = fs.readFileSync("index.html", "utf8");
   assert.equal(root.replaceAll('"docs/', '"'), docs);
   assert.ok(docs.includes('<html lang="en">'));
+});
+
+test("finds are visit-only and never access browser persistence", () => {
+  const sandbox = vm.createContext({
+    localStorage: {
+      getItem() {
+        throw Error("Storage must not be accessed");
+      },
+      setItem() {
+        throw Error("Storage must not be accessed");
+      },
+    },
+  });
+  vm.runInContext(
+    fs.readFileSync("docs/data.js", "utf8") +
+      "\n" +
+      functions +
+      "\n" +
+      source.slice(
+        source.indexOf("// This repository"),
+        source.indexOf("let selectedId"),
+      ) +
+      ";globalThis.repo = stoneRepository;",
+    sandbox,
+  );
+  const before = sandbox.repo.get("A1");
+  sandbox.repo.addFind("A1", {
+    date: new Date().toISOString(),
+    city: "Bratislava",
+    country: "Slovakia",
+    address: "Demo address",
+    lat: 48.1486,
+    lon: 17.1077,
+    nickname: "Test",
+    message: "Hello",
+    source: "demo",
+  });
+  assert.equal(before.finds.length, 5);
+  assert.equal(sandbox.repo.get("A1").finds.length, 6);
+  assert.equal(sandbox.repo.get("B2").finds.length, 5);
+  assert.equal(sandbox.repo.get("A1").finds.at(-1).local, true);
+  assert.throws(() => sandbox.repo.addFind("A1", { lat: 200, lon: 17 }));
+});
+test("a house number is included only with a sufficiently accurate street", () => {
+  assert.equal(
+    context.formatPlace(
+      {
+        street: "Ľanová",
+        housenumber: "8",
+        district: "Ružinov",
+        city: "Bratislava",
+        country: "Slovakia",
+      },
+      25,
+    ),
+    "Ľanová 8, Ružinov, Bratislava, Slovakia",
+  );
+  assert.equal(
+    context.formatPlace(
+      { street: "Ľanová", housenumber: "8", city: "Bratislava" },
+      500,
+    ),
+    "Bratislava",
+  );
 });

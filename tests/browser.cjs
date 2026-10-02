@@ -11,206 +11,381 @@ process.on("exit", () => server?.kill());
     await new Promise((resolve, reject) => {
       server.stdout.once("data", resolve);
       server.once("error", reject);
-      server.once("exit", (code) =>
-        reject(Error("Test server exited: " + code)),
-      );
+      server.once("exit", (code) => reject(Error("Server exited: " + code)));
     });
   const browser = await chromium.launch({ headless: true });
-  const errors = [];
-  const attach = (page) => {
-    page.on("pageerror", (error) => errors.push(error.message));
-  };
-  const desktop = await browser.newContext({
-    viewport: { width: 1440, height: 1050 },
-  });
-  const page = await desktop.newPage();
-  attach(page);
-  await page.goto(base);
-  await page.locator(".stone-card").last().waitFor();
-  assert.equal(await page.locator(".stone-card").count(), 5);
-  assert.equal(await page.locator("#total-finds").innerText(), "25");
-  await page.screenshot({
-    path: "/tmp/livingstones-desktop.png",
-    fullPage: true,
-  });
-  await page.locator('[data-stone="A1"]').first().click();
-  await page.waitForURL("**/?stone=A1");
-  assert.equal(await page.locator("#detail-title").innerText(), "Sunny Side");
-  assert.equal(await page.locator("#start-find").count(), 0);
-  assert.equal(await page.locator(".timeline li").count(), 5);
-  assert.equal(
-    await page.evaluate(() =>
-      localStorage.getItem("livingstones.demo.finds.v1"),
-    ),
-    null,
-  );
-  await page.keyboard.press("Escape");
-  await page.waitForURL(base + "/");
-  await page.goForward();
-  await page.locator("#stone-dialog[open]").waitFor();
-  await page.locator("#close-detail").click();
-  await page.waitForURL(base + "/");
-  await page.goto(base + "/?stone=E5");
-  assert.equal(await page.locator("#detail-title").innerText(), "Ocean Echo");
-  await page.locator("#close-detail").click();
-  assert.equal(await page.locator("dialog[open]").count(), 0);
-  await page.goto(base + "/docs/?stone=C3");
-  assert.equal(await page.locator("#detail-title").innerText(), "Slow Bloom");
-  await page.goto(base + "/?stone=unknown");
-  assert.equal(await page.locator("dialog[open]").count(), 0);
-  // Simulate all GPS outcomes without relying on operating-system permission dialogs.
-  const mobile = await browser.newContext({ ...devices["iPhone 13"] });
-  const phone = await mobile.newPage();
-  attach(phone);
-  let locationRequests = 0;
-  phone.on("request", (request) => {
-    if (request.url().includes("photon.komoot.io")) locationRequests++;
-  });
-  await phone.addInitScript(() => {
-    window.gpsMode = "denied";
-    window.gpsCalls = 0;
-    Object.defineProperty(navigator, "geolocation", {
-      value: {
-        getCurrentPosition(success, error) {
-          window.gpsCalls++;
-          if (window.gpsMode === "denied") error({ code: 1 });
-          else if (window.gpsMode === "timeout") error({ code: 3 });
-          else if (window.gpsMode === "unavailable") error({ code: 2 });
-          else
-            success({
-              coords: { latitude: 0, longitude: 0, accuracy: 25 },
-              timestamp: Date.now(),
-            });
+  try {
+    const errors = [];
+    const attach = (page) =>
+      page.on("pageerror", (error) => errors.push(error.message));
+    const rows = ".find-history tbody tr";
+    const desktop = await browser.newContext({
+      viewport: { width: 1440, height: 1050 },
+    });
+    const page = await desktop.newPage();
+    attach(page);
+    await page.addInitScript(() => {
+      window.gpsCalls = 0;
+      Object.defineProperty(navigator, "geolocation", {
+        value: {
+          getCurrentPosition() {
+            window.gpsCalls++;
+          },
         },
-      },
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        value: {
+          async writeText(text) {
+            window.copiedLink = text;
+          },
+        },
+      });
     });
-  });
-  await phone.goto(base + "/?stone=A1");
-  assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
-  assert.equal(locationRequests, 0);
-  assert.equal(await phone.locator("#start-find").count(), 1);
-  await phone.locator("#start-find").click();
-  await phone.locator("#find-code").fill("WRONG");
-  await phone.locator("#find-form button[type=submit]").click();
-  assert.match(await phone.locator("#find-error").innerText(), /doesn’t match/);
-  await phone.locator("#find-code").fill("sun24");
-  await phone.locator("#find-form button[type=submit]").click();
-  await phone.locator("#use-gps").click();
-  assert.match(await phone.locator("#location-status").innerText(), /denied/);
-  assert.equal(await phone.locator("#use-gps").isEnabled(), true);
-  assert.equal(await phone.locator("#location-next").isEnabled(), false);
-  for (const mode of ["timeout", "unavailable"]) {
-    await phone.evaluate((mode) => (window.gpsMode = mode), mode);
-    await phone.locator("#use-gps").click();
-    assert.equal(await phone.locator("#use-gps").isEnabled(), true);
-  }
-  await phone.locator("#demo-city").selectOption("3");
-  await phone.locator("#location-next").click();
-  await phone.locator("#nickname").fill("<b>Tester</b>");
-  await phone
-    .locator("#find-message")
-    .fill("A sunny surprise! <script>alert(1)</script>");
-  await phone.locator("#find-form button[type=submit]").click();
-  assert.equal(
-    await phone.locator("#success-title").innerText(),
-    "You’re part of the story.",
-  );
-  assert.equal(await phone.locator(".timeline li").count(), 6);
-  assert.match(
-    await phone.locator(".timeline li").last().innerText(),
-    /London, United Kingdom/,
-  );
-  assert.match(
-    await phone.locator(".timeline li").last().innerText(),
-    /<b>Tester<\/b>/,
-  );
-  assert.equal(await phone.locator(".timeline script").count(), 0);
-  assert.equal(await phone.locator("#total-finds").innerText(), "26");
-  await phone.screenshot({
-    path: "/tmp/livingstones-find.png",
-    fullPage: true,
-  });
-  await phone.reload();
-  assert.equal(await phone.locator(".timeline li").count(), 6);
-  await phone.locator("#close-detail").click();
-  await phone.screenshot({
-    path: "/tmp/livingstones-mobile.png",
-    fullPage: true,
-  });
-  // GPS success with failed reverse geocoding preserves coordinates including 0,0.
-  await phone.route("https://photon.komoot.io/**", (route) => route.abort());
-  await phone.goto(base + "/?stone=B2");
-  await phone.evaluate(() => (window.gpsMode = "success"));
-  await phone.locator("#start-find").click();
-  await phone.locator("#find-code").fill("MOON7");
-  await phone.locator("#find-form button[type=submit]").click();
-  await phone.locator("#use-gps").click();
-  await phone.locator("#location-status.ready").waitFor();
-  assert.match(
-    await phone.locator("#location-status").innerText(),
-    /0.0000, 0.0000/,
-  );
-  await phone.locator("#location-next").click();
-  await phone.locator("#find-form button[type=submit]").click();
-  assert.match(
-    await phone.locator(".timeline li").last().innerText(),
-    /GPS accuracy: approximately 25 m/,
-  );
-  assert.ok(locationRequests > 0);
-  await phone.reload();
-  assert.equal(await phone.locator(".timeline li").count(), 6);
-  // No storage still permits a complete in-memory demo.
-  const memory = await browser.newContext({ ...devices["iPhone 13"] });
-  const memoryPage = await memory.newPage();
-  attach(memoryPage);
-  await memoryPage.addInitScript(() => {
-    Object.defineProperty(window, "localStorage", {
-      get() {
-        throw Error("blocked");
-      },
-    });
-  });
-  await memoryPage.goto(base + "/?stone=C3");
-  await memoryPage.locator("#start-find").click();
-  await memoryPage.locator("#find-code").fill("GROW3");
-  await memoryPage.locator("#find-form button[type=submit]").click();
-  await memoryPage.locator("#demo-city").selectOption("0");
-  await memoryPage.locator("#location-next").click();
-  await memoryPage.locator("#find-form button[type=submit]").click();
-  assert.match(
-    await memoryPage.locator(".success-panel").innerText(),
-    /this visit only/,
-  );
-  assert.equal(await memoryPage.locator(".timeline li").count(), 6);
-  // Failed fonts/external services leave maps/images/navigation intact.
-  await page.route("https://**/*", (route) => route.abort());
-  for (const width of [320, 375, 768, 1440]) {
-    await page.setViewportSize({ width, height: 1000 });
     await page.goto(base);
+    assert.equal(await page.locator(".stone-card").count(), 5);
+    assert.equal(
+      await page.locator("#world-map .leaflet-marker-icon").count(),
+      5,
+    );
+    assert.equal(await page.locator("#total-finds").innerText(), "25");
+    assert.equal(await page.locator("#total-countries").innerText(), "3");
+    assert.equal(
+      await page.evaluate(() => document.querySelector("main>section").id),
+      "world",
+    );
+    assert.ok(
+      await page.evaluate(
+        () =>
+          parseFloat(getComputedStyle(document.querySelector("h1")).fontSize) <=
+          26,
+      ),
+    );
+    assert.equal(await page.locator(".hero").count(), 0);
+    assert.match(
+      await page.locator("#how-it-works").innerText(),
+      /ideally in another town/,
+    );
+    const zoom = await page.evaluate(() =>
+      mapInstances.get("world-map").map.getZoom(),
+    );
+    await page.locator("#world-map .leaflet-control-zoom-in").click();
+    await page.waitForFunction(
+      (z) => mapInstances.get("world-map").map.getZoom() > z,
+      zoom,
+    );
+    await page.locator('[data-reset-map="world-map"]').click();
+    await page
+      .locator('#world-map .leaflet-marker-icon[title^="Sunny Side"]')
+      .click();
+    await page.waitForURL("**/?stone=A1");
+    assert.match(await page.locator("#detail-title").innerText(), /Sunny Side/);
+    assert.equal(await page.locator("#start-find").count(), 0);
+    assert.equal(await page.locator(rows).count(), 5);
+    assert.equal(await page.evaluate(() => window.gpsCalls), 0);
     assert.equal(
       await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
+        () =>
+          document
+            .querySelector(".detail-body")
+            .firstElementChild.querySelector(".map-panel").id,
       ),
-      true,
-      `No horizontal overflow at ${width}`,
+      "journey-map",
     );
-    assert.equal(await page.locator("#world-map svg a").count(), 5);
-    assert.equal(await page.locator("#start-find").count(), 0);
-    const broken = await page
-      .locator("img")
-      .evaluateAll((images) =>
-        images
-          .filter((image) => !image.complete || !image.naturalWidth)
-          .map((image) => image.src),
+    assert.ok(
+      await page.evaluate(
+        () => mapInstances.get("journey-map").map.getSize().x > 400,
+      ),
+    );
+    await page.locator("#share-stone").click();
+    assert.match(await page.evaluate(() => window.copiedLink), /stone=A1/);
+    assert.equal(await page.locator(rows).count(), 5);
+    await page.keyboard.press("Escape");
+    await page.waitForURL(base + "/");
+    await page.goForward();
+    await page.locator("dialog[open]").waitFor();
+    await page.locator("#close-detail").click();
+    await page.waitForURL(base + "/");
+    await page.goto(base + "/?stone=E5");
+    assert.match(await page.locator("#detail-title").innerText(), /Ocean Echo/);
+    await page.locator("#close-detail").click();
+    assert.equal(await page.locator("dialog[open]").count(), 0);
+    await page.goto(base + "/docs/?stone=C3");
+    assert.match(await page.locator("#detail-title").innerText(), /Slow Bloom/);
+    await page.goto(base + "/?stone=unknown");
+    assert.equal(await page.locator("dialog[open]").count(), 0);
+    const mobile = await browser.newContext({ ...devices["iPhone 13"] });
+    const phone = await mobile.newPage();
+    attach(phone);
+    let lookups = 0;
+    phone.on("request", (request) => {
+      if (request.url().includes("photon.komoot.io")) lookups++;
+    });
+    await phone.addInitScript(() => {
+      window.gpsMode = "denied";
+      window.gpsCalls = 0;
+      Object.defineProperty(navigator, "geolocation", {
+        value: {
+          getCurrentPosition(success, error) {
+            window.gpsCalls++;
+            if (window.gpsMode === "denied") error({ code: 1 });
+            else if (window.gpsMode === "timeout") error({ code: 3 });
+            else if (window.gpsMode === "unavailable") error({ code: 2 });
+            else if (window.gpsMode === "invalid")
+              success({
+                coords: { latitude: 200, longitude: 17, accuracy: 25 },
+              });
+            else if (window.gpsMode === "zero")
+              success({ coords: { latitude: 0, longitude: 0, accuracy: 25 } });
+            else if (window.gpsMode === "late")
+              window.releaseGPS = () =>
+                success({
+                  coords: { latitude: 48.156, longitude: 17.155, accuracy: 25 },
+                });
+            else
+              success({
+                coords: { latitude: 48.156, longitude: 17.155, accuracy: 25 },
+                timestamp: Date.now(),
+              });
+          },
+        },
+      });
+    });
+    await phone.goto(base + "/?stone=A1");
+    assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
+    assert.equal(lookups, 0);
+    await phone.locator("#start-find").click();
+    assert.match(
+      await phone.locator(".find-panel").innerText(),
+      /enjoy my company/,
+    );
+    await phone.locator("#find-code").fill("WRONG");
+    await phone.locator("#find-form button[type=submit]").click();
+    assert.match(
+      await phone.locator("#find-error").innerText(),
+      /doesn’t match/,
+    );
+    assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
+    await phone.locator("#find-code").fill("sun24");
+    await phone.locator("#find-form button[type=submit]").click();
+    assert.equal(
+      await phone.evaluate(() => window.gpsCalls),
+      1,
+      "GPS is requested directly after the correct code",
+    );
+    assert.match(await phone.locator("#location-status").innerText(), /denied/);
+    assert.equal(await phone.locator("#location-next").isEnabled(), false);
+    for (const mode of ["timeout", "unavailable", "invalid"]) {
+      await phone.evaluate((mode) => (window.gpsMode = mode), mode);
+      await phone.locator("#use-gps").click();
+      assert.equal(await phone.locator("#use-gps").isEnabled(), true);
+    }
+    await phone.locator("#demo-city").selectOption("3");
+    assert.equal(
+      await phone.locator("#location-preview .leaflet-marker-icon").count(),
+      1,
+    );
+    assert.match(
+      await phone.locator("#location-status").innerText(),
+      /Bernolákov sad/,
+    );
+    assert.equal(
+      await phone.locator(rows).count(),
+      5,
+      "A location preview does not record a find",
+    );
+    await phone.locator("#location-next").click();
+    await phone.locator("#nickname").fill("<b>Tester</b>");
+    await phone
+      .locator("#find-message")
+      .fill("Hello! <script>alert(1)</script>");
+    await phone.locator("#find-form button[type=submit]").click();
+    assert.equal(await phone.locator(rows).count(), 6);
+    assert.match(
+      await phone.locator(rows).last().innerText(),
+      /Bernolákov sad/,
+    );
+    assert.match(
+      await phone.locator(rows).last().innerText(),
+      /<b>Tester<\/b>/,
+    );
+    assert.equal(await phone.locator(".find-history script").count(), 0);
+    assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
+    assert.equal(await phone.locator("#total-finds").innerText(), "26");
+    await phone.locator("#finish-find").click();
+    await phone.locator("#close-detail").click();
+    await phone.locator('.stone-card[data-stone="A1"]').click();
+    assert.equal(
+      await phone.locator(rows).count(),
+      6,
+      "Preview remains while exploring this visit",
+    );
+    await phone.reload();
+    assert.equal(
+      await phone.locator(rows).count(),
+      5,
+      "Refresh resets previews",
+    );
+    // Actual GPS coordinates, successful reverse lookup, map and address table.
+    await phone.route("https://photon.komoot.io/**", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          features: [
+            {
+              properties: {
+                street: "Ľanová",
+                housenumber: "8",
+                district: "Ružinov",
+                city: "Bratislava",
+                country: "Slovakia",
+              },
+            },
+          ],
+        }),
+      }),
+    );
+    await phone.evaluate(() => (window.gpsMode = "success"));
+    await phone.locator("#start-find").click();
+    await phone.locator("#find-code").fill("SUN24");
+    await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#location-status.ready").waitFor();
+    assert.match(
+      await phone.locator("#location-status").innerText(),
+      /Ľanová 8, Ružinov, Bratislava, Slovakia/,
+    );
+    const preview = await phone.evaluate(() => {
+      const p = mapInstances.get("location-preview").markers[0].getLatLng();
+      return [p.lat, p.lng];
+    });
+    assert.deepEqual(preview, [48.156, 17.155]);
+    assert.equal(await phone.locator(rows).count(), 5);
+    await phone.locator("#location-next").click();
+    await phone.locator("#find-form button[type=submit]").click();
+    assert.match(await phone.locator(rows).last().innerText(), /Ľanová 8/);
+    assert.match(
+      await phone.locator(rows).last().innerText(),
+      /GPS accuracy ~25 m/,
+    );
+    const pin = await phone.evaluate(() => {
+      const p = mapInstances.get("journey-map").markers.at(-1).getLatLng();
+      return [p.lat, p.lng];
+    });
+    assert.deepEqual(pin, [48.156, 17.155]);
+    assert.deepEqual(
+      await phone.evaluate(() => {
+        const p = mapInstances.get("world-map").markers[0].getLatLng();
+        return [p.lat, p.lng];
+      }),
+      [48.156, 17.155],
+    );
+    await phone.screenshot({ path: "/tmp/livingstones-v2-gps.png" });
+    assert.ok(lookups > 0);
+    await phone.reload();
+    assert.equal(await phone.locator(rows).count(), 5);
+    // A failed lookup still displays the exact point, including zero coordinates.
+    await phone.unroute("https://photon.komoot.io/**");
+    await phone.route("https://photon.komoot.io/**", (route) => route.abort());
+    await phone.goto(base + "/?stone=B2");
+    await phone.evaluate(() => (window.gpsMode = "zero"));
+    await phone.locator("#start-find").click();
+    await phone.locator("#find-code").fill("MOON7");
+    await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#location-status.ready").waitFor();
+    assert.match(
+      await phone.locator("#location-status").innerText(),
+      /0.0000, 0.0000/,
+    );
+    await phone.locator("#location-next").click();
+    await phone.locator("#find-form button[type=submit]").click();
+    assert.match(
+      await phone.locator(rows).last().innerText(),
+      /Address unavailable — 0.00000, 0.00000/,
+    );
+    // Canceling a pending GPS request must not create or alter a find.
+    await phone.goto(base + "/?stone=D4");
+    await phone.evaluate(() => (window.gpsMode = "late"));
+    await phone.locator("#start-find").click();
+    await phone.locator("#find-code").fill("LOVE4");
+    await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#cancel-find").click();
+    await phone.evaluate(() => window.releaseGPS());
+    assert.equal(await phone.locator(rows).count(), 5);
+    assert.equal(await phone.locator("#find-container").innerText(), "");
+    // No browser storage is needed or accessed.
+    const memory = await browser.newContext({ ...devices["iPhone 13"] });
+    const mp = await memory.newPage();
+    attach(mp);
+    await mp.addInitScript(() => {
+      Object.defineProperty(window, "localStorage", {
+        get() {
+          throw Error("Storage accessed");
+        },
+      });
+      Object.defineProperty(navigator, "geolocation", { value: undefined });
+    });
+    await mp.goto(base + "/?stone=C3");
+    await mp.locator("#start-find").click();
+    await mp.locator("#find-code").fill("GROW3");
+    await mp.locator("#find-form button[type=submit]").click();
+    assert.match(
+      await mp.locator("#location-status").innerText(),
+      /unavailable/,
+    );
+    await mp.locator("#demo-city").selectOption("0");
+    await mp.locator("#location-next").click();
+    await mp.locator("#find-form button[type=submit]").click();
+    assert.equal(await mp.locator(rows).count(), 6);
+    assert.match(
+      await mp.locator(".success-panel").innerText(),
+      /this visit only/,
+    );
+    // Offline map tiles retain working controls and pins, with an honest status.
+    await page.route("https://**/*", (route) => route.abort());
+    for (const width of [320, 375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto(base);
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        true,
+        `No page overflow at ${width}`,
       );
-    assert.deepEqual(broken, []);
+      assert.equal(
+        await page.locator("#world-map .leaflet-marker-icon").count(),
+        5,
+      );
+      assert.equal(await page.locator("#start-find").count(), 0);
+      const broken = await page
+        .locator("img:not(.leaflet-tile)")
+        .evaluateAll((images) =>
+          images
+            .filter((image) => !image.complete || !image.naturalWidth)
+            .map((image) => image.src),
+        );
+      assert.deepEqual(broken, []);
+      await page.locator('.stone-card[data-stone="A1"]').click();
+      assert.equal(
+        await page.evaluate(() => {
+          const d = document.querySelector("dialog");
+          return d.scrollWidth <= d.clientWidth;
+        }),
+        true,
+        `No dialog overflow at ${width}`,
+      );
+      assert.equal(
+        await page.locator("#journey-map .leaflet-marker-icon").count(),
+        5,
+      );
+    }
+    assert.deepEqual(errors, []);
+    console.log(
+      "Passed: map-first layouts, Leaflet controls/pins, mobile-only finds, automatic GPS, addresses, safe notes, canceled GPS, visit-only data, URLs/history/sharing and responsive layouts.",
+    );
+  } finally {
+    await browser.close();
+    server?.kill();
   }
-  assert.deepEqual(errors, []);
-  await browser.close();
-  server?.kill();
-  console.log(
-    "Browser checks passed: desktop/mobile, URLs/history, finding, GPS failures/success, persistence, safe text, offline assets and responsive layouts.",
-  );
 })().catch((error) => {
   console.error(error);
   process.exit(1);
