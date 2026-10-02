@@ -105,10 +105,16 @@ h3 {
   align-items: center;
 }
 .brand-symbol {
-  font-size: 24px;
-  color: var(--purple);
-  line-height: 1;
+  width: 36px;
+  height: 36px;
+  display: block;
+  flex-shrink: 0;
 }
+h1 em {
+  font-style: italic;
+  font-weight: inherit;
+}
+
 nav {
   display: flex;
   gap: 26px;
@@ -817,7 +823,8 @@ body:has(dialog[open]) {
     font-size: 15px;
   }
   .brand-symbol {
-    font-size: 21px;
+    width: 32px;
+    height: 32px;
   }
   nav {
     gap: 17px;
