@@ -1,41 +1,234 @@
 <!doctype html>
-<html lang="sk">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="no-referrer">
-  <meta name="color-scheme" content="dark">
-  <title>Čo o tebe vidí web?</title>
-  <link rel="stylesheet" href="docs/style.css?v=8">
-  <script src="docs/app.js?v=11" defer></script>
-</head>
-<body>
-  <main>
-    <header><span class="badge">ŽIVÝ PREHĽAD · TVOJE ZARIADENIE</span><h1>Čo o tebe<br><em>vidí web?</em></h1><p class="intro">Pozri sa, aké informácie sprístupňuje tvoj prehliadač práve teraz. Každý návštevník tu uvidí údaje svojho vlastného zariadenia.</p></header>
-    <div class="summary-container" role="region" aria-label="Stručný prehľad zariadenia">
-      <table class="device-summary">
-        <thead><tr><th scope="col">Date</th><th scope="col">User ID</th><th scope="col">Device</th><th scope="col">Poloha</th><th scope="col">Pásmo</th><th scope="col">OS version</th></tr></thead>
-        <tbody id="device-summary" aria-live="polite"></tbody>
-      </table>
-    </div>
-    <p id="summary-detail" class="summary-detail" role="status" hidden></p>
-    <section class="extra map-section" aria-labelledby="map-heading">
-      <h2 id="map-heading">Tvoja poloha na mape</h2>
-      <p id="map-status" role="status">Čakám na približnú polohu podľa IP…</p>
-      <iframe id="location-map" title="Mapa polohy" hidden loading="lazy" referrerpolicy="no-referrer"></iframe>
-      <p><a id="map-link" hidden target="_blank" rel="noopener noreferrer">Otvoriť väčšiu mapu v OpenStreetMap</a></p>
-      <button id="location" hidden aria-describedby="location-help">Urči presnú polohu</button>
-      <p id="location-help" hidden>Po povolení sa mapa aj tabuľka aktualizujú podľa polohy zariadenia. Určenie presnej polohy je dostupné iba na mobiloch a tabletoch; zariadenie môže použiť GPS. Zobrazíme hlásenú presnosť v metroch. OpenStreetMap dostane zobrazené súradnice a bežné údaje pripojenia. Na dohľadanie názvu ulice alebo štvrte odošleme súradnice aj službe Photon (Komoot).</p>
-      <p id="desktop-location-note">Na počítači zobrazujeme približnú polohu podľa IP. Presnú polohu môžeš určiť na mobile alebo tablete.</p>
-      <p id="place-status" role="status"></p>
-      <p>Názvy oblastí: <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon</a> · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></p>
-      <dl id="location-result" aria-live="polite"></dl>
-    </section>
-    <section class="extra"><h2>Verejná IP a približná poloha</h2><p>Načítava sa automaticky zo služby ipwho.is; pri zlyhaní sa skúsi ipapi.co. Poloha podľa IP je len odhad, nie presná adresa človeka; VPN či mobilná sieť ju môžu skresliť.</p><button id="ip">Znova zistiť IP</button><dl id="ip-result" aria-live="polite"></dl></section>
-    <div id="cards" class="grid"></div>
-
-    <footer>„Nedostupné“ znamená, že prehliadač údaj neposkytuje alebo ho chráni. Technické údaje môžu byť zjednodušené či pozmenené ochranou súkromia.</footer>
-    <noscript>Na zobrazenie údajov zapni JavaScript v prehliadači.</noscript>
-  </main>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f5ef" />
+    <meta
+      name="description"
+      content="Small stones. Unexpected connections. Follow five painted stones as they travel the world, one kind stranger at a time."
+    />
+    <title>Living Stones — Small stones. Big stories.</title>
+    <link rel="icon" href="docs/assets/stone-1.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="docs/style.css?v=12" />
+    <script src="docs/data.js?v=12" defer></script>
+    <script src="docs/app.js?v=12" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#explore">Skip to the stones</a>
+    <header class="site-header wrap">
+      <a class="wordmark" href="./" aria-label="Living Stones home"
+        ><span class="brand-symbol" aria-hidden="true">✳</span> living
+        stones<span class="brand-dot">.</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#explore">The stones</a><a href="#how-it-works">How it works</a
+        ><a class="nav-cta" href="#world"
+          >Follow the journey <span aria-hidden="true">↗</span></a
+        >
+      </nav>
+    </header>
+    <main>
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <span class="eyebrow"
+            ><span class="live-dot"></span> A LITTLE KINDNESS, ON THE MOVE</span
+          >
+          <h1 id="hero-title">
+            Small stones.<br />Big <span class="serif">stories.</span
+            ><span class="title-spark" aria-hidden="true">✳</span>
+          </h1>
+          <p>
+            A painted stone. A chance encounter. A story that keeps going.
+            Follow little pieces of happiness as they pass from one person to
+            the next.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#explore"
+              >Meet the stones <span aria-hidden="true">↗</span></a
+            ><a class="text-link" href="#how-it-works"
+              >How does it work? <span aria-hidden="true">↓</span></a
+            >
+          </div>
+          <div class="hero-proof">
+            <span class="mini-stones" aria-hidden="true"
+              ><img src="docs/assets/stone-1.svg" alt="" /><img
+                src="docs/assets/stone-2.svg"
+                alt="" /><img src="docs/assets/stone-3.svg" alt="" /></span
+            ><span
+              >Five little stones.<br /><strong
+                >So many human connections.</strong
+              ></span
+            >
+          </div>
+        </div>
+        <div
+          class="hero-art"
+          aria-label="Illustrated painted stones: Sunny Side, Little Luna and Wildheart"
+        >
+          <div class="orbit orbit-one"></div>
+          <div class="orbit orbit-two"></div>
+          <span class="art-spark spark-one" aria-hidden="true">✧</span
+          ><span class="art-spark spark-two" aria-hidden="true">✳</span>
+          <span class="floating-label label-top"
+            ><span class="live-dot"></span> Somewhere, a new story begins.</span
+          >
+          <img
+            class="hero-stone hero-sun"
+            src="docs/assets/stone-1.svg"
+            alt="Sunny Side, a golden stone with a smiling sun"
+          />
+          <img
+            class="hero-stone hero-moon"
+            src="docs/assets/stone-2.svg"
+            alt="Little Luna, a lavender stone with a crescent moon"
+          />
+          <img
+            class="hero-stone hero-heart"
+            src="docs/assets/stone-4.svg"
+            alt="Wildheart, a peach stone with a painted red heart"
+          />
+          <span class="floating-label label-bottom"
+            ><span aria-hidden="true">↗</span> Made to wander. Meant to
+            connect.</span
+          ><span class="art-caption"
+            >REAL CONNECTIONS. ONE STONE AT A TIME.</span
+          >
+        </div>
+      </section>
+      <section class="numbers wrap" aria-label="Journey statistics">
+        <div><strong>5</strong><span>stones out exploring</span></div>
+        <div>
+          <strong id="total-finds">25</strong><span>moments of connection</span>
+        </div>
+        <div>
+          <strong id="total-countries">20</strong
+          ><span>countries in the story</span>
+        </div>
+        <p>
+          Small enough for your pocket.<br />Big enough to make your day.
+          <span aria-hidden="true">☺</span>
+        </p>
+      </section>
+      <section
+        id="explore"
+        class="section wrap"
+        aria-labelledby="explore-title"
+      >
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">THE LITTLE EXPLORERS</span>
+            <h2 id="explore-title">
+              Every stone has a <span class="serif">story.</span>
+            </h2>
+            <p>
+              Meet the wanderers. Pick a stone and see where life has taken it.
+            </p>
+          </div>
+          <span class="pill"
+            ><span class="live-dot"></span> 5 demo journeys</span
+          >
+        </div>
+        <div id="stone-grid" class="stone-grid"></div>
+        <p class="demo-note">
+          <span aria-hidden="true">✳</span> A little preview of a big idea.
+          These five stones and their journeys are fictional demo stories.
+        </p>
+      </section>
+      <section id="world" class="section wrap" aria-labelledby="world-title">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">A WORLD OF POSSIBILITY</span>
+            <h2 id="world-title">
+              Little stones. <span class="serif">No borders.</span>
+            </h2>
+            <p>
+              Five journeys, one shared world. Tap a marker to meet its stone.
+            </p>
+          </div>
+          <span class="map-key"
+            ><span class="live-dot"></span> Last known locations</span
+          >
+        </div>
+        <div id="world-map" class="map-panel"></div>
+        <div
+          id="map-legend"
+          class="map-legend"
+          aria-label="Stones on the map"
+        ></div>
+      </section>
+      <section
+        id="how-it-works"
+        class="how-section"
+        aria-labelledby="how-title"
+      >
+        <div class="wrap">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">A TINY ADVENTURE, THREE SIMPLE STEPS</span>
+              <h2 id="how-title">
+                Find it. Feel it. <span class="serif">Pass it on.</span>
+              </h2>
+            </div>
+            <span class="how-spark" aria-hidden="true">✳</span>
+          </div>
+          <div class="steps">
+            <article>
+              <span class="step-number">01 / FIND</span
+              ><span class="step-icon" aria-hidden="true">⌕</span>
+              <h3>A little surprise.</h3>
+              <p>
+                Spot a painted stone on a park bench, a trail, or somewhere
+                unexpected. Pick it up. It has a story to tell.
+              </p>
+            </article>
+            <article>
+              <span class="step-number">02 / CONNECT</span
+              ><span class="step-icon" aria-hidden="true">♡</span>
+              <h3>Become part of its story.</h3>
+              <p>
+                Scan its QR code to open its journey. On your phone, enter the
+                Find Code on the stone and add your little moment.
+              </p>
+            </article>
+            <article>
+              <span class="step-number">03 / RELEASE</span
+              ><span class="step-icon" aria-hidden="true">↗</span>
+              <h3>Let the adventure continue.</h3>
+              <p>
+                Enjoy its company, then leave it somewhere safe for the next
+                person. A public place, a little kindness, a new chapter.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section class="closing wrap">
+        <span aria-hidden="true">✧</span>
+        <h2>The next chapter could be <span class="serif">yours.</span></h2>
+        <p>You never know how far a little kindness will travel.</p>
+        <a class="button primary" href="#explore"
+          >Find your favourite stone <span aria-hidden="true">↗</span></a
+        >
+      </section>
+    </main>
+    <footer class="wrap">
+      <a class="wordmark" href="./"
+        ><span class="brand-symbol" aria-hidden="true">✳</span> living
+        stones<span class="brand-dot">.</span></a
+      >
+      <p>A little art. A little adventure. A lot of heart.</p>
+      <span>Visual prototype · Made for connection</span>
+    </footer>
+    <dialog id="stone-dialog" aria-labelledby="detail-title">
+      <div id="stone-detail"></div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+    <noscript
+      ><p class="wrap">
+        Enable JavaScript to explore the stones, maps and their stories. Opening
+        a stone never records a find.
+      </p></noscript
+    >
+  </body>
 </html>

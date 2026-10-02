@@ -1,318 +1,596 @@
-'use strict';
-const missing = 'Nedostupné';
-const yes = value => value === undefined ? missing : value ? 'Áno' : 'Nie';
-const unit = (value, suffix) => value == null ? missing : `${value} ${suffix}`;
-function rows(target, entries) {
-  target.replaceChildren();
-  for (const [label, value] of entries) {
-    const row = document.createElement('div');
-    const key = document.createElement('dt');
-    const data = document.createElement('dd');
-    key.textContent = label;
-    data.textContent = value == null || value === '' ? missing : String(value);
-    row.append(key, data); target.append(row);
-  }
-}
-function card(title, entries) {
-  const section = document.createElement('section');
-  const heading = document.createElement('h2'); heading.textContent = title;
-  const list = document.createElement('dl'); rows(list, entries);
-  section.append(heading, list); document.querySelector('#cards').append(section);
-  return list;
-}
+"use strict";
+const $ = (selector) => document.querySelector(selector);
+const assetBase = new URL(
+  "assets/",
+  document.querySelector('script[src*="app.js"]').src,
+).href;
+const escapeHTML = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
+const formatDate = (value) =>
+  new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(value));
+const daysTravelling = (stone) =>
+  Math.max(
+    0,
+    Math.floor(
+      (Date.now() - new Date(stone.started + "T00:00:00Z")) / 86400000,
+    ),
+  );
 function identifyDevice(n) {
-  const ua = n.userAgent || '';
-  const ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && n.maxTouchPoints > 1);
-  const tablet = ipad || /Tablet|PlayBook|Silk/.test(ua) || (/Android/.test(ua) && !/Mobile/.test(ua));
-  const mobile = /Mobi|iPhone|iPod/.test(ua) || n.userAgentData?.mobile === true;
-  const desktop = /Windows|Macintosh|X11|CrOS|Linux/.test(ua);
-  const type = /SmartTV|SMART-TV|HbbTV/.test(ua) ? 'Smart TV' : tablet ? 'Tablet' : mobile ? 'Mobil' : desktop ? 'Počítač / notebook' : missing;
-  let os = ipad ? 'iPadOS' : /iPhone|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows NT 10/.test(ua) ? 'Windows 10 / 11' : /Windows/.test(ua) ? 'Windows' : /CrOS/.test(ua) ? 'ChromeOS' : /Macintosh/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : missing;
-  const osVersion = ua.match(/(?:Android |(?:CPU (?:iPhone )?OS) |Mac OS X )([\d_.]+)/)?.[1]?.replaceAll('_', '.');
-  if (osVersion && (!ipad || /iPad/.test(ua))) os += ` ${osVersion}`;
-  const patterns = [['Edge', /(?:EdgA|EdgiOS|Edg)\/([\d.]+)/], ['Opera', /(?:OPR|OPT)\/([\d.]+)/], ['Samsung Internet', /SamsungBrowser\/([\d.]+)/], ['Firefox', /(?:Firefox|FxiOS)\/([\d.]+)/], ['Chrome / kompatibilný', /(?:Chrome|CriOS)\/([\d.]+)/], ['Safari', /Version\/([\d.]+).*Safari/]];
-  let browser = missing;
-  for (const [name, pattern] of patterns) {
-    const match = ua.match(pattern);
-    if (match) { browser = `${name} ${match[1]}`; break; }
-  }
-  return { type, os, browser };
+  const ua = n.userAgent || "";
+  const ipad =
+    /iPad/.test(ua) || (/Macintosh/.test(ua) && n.maxTouchPoints > 1);
+  const tablet =
+    ipad ||
+    /Tablet|PlayBook|Silk/.test(ua) ||
+    (/Android/.test(ua) && !/Mobile/.test(ua));
+  const mobile =
+    /Mobi|iPhone|iPod/.test(ua) || n.userAgentData?.mobile === true;
+  return {
+    type: tablet ? "Tablet" : mobile ? "Mobile" : "Desktop",
+    os: ipad
+      ? "iPadOS"
+      : /iPhone|iPod/.test(ua)
+        ? "iOS"
+        : /Android/.test(ua)
+          ? "Android"
+          : /Windows/.test(ua)
+            ? "Windows"
+            : /Macintosh/.test(ua)
+              ? "macOS"
+              : /Linux/.test(ua)
+                ? "Linux"
+                : "Unknown",
+  };
 }
 function supportsPreciseLocation() {
-  return ['Mobil', 'Tablet'].includes(identifyDevice(navigator).type);
+  return ["Mobile", "Tablet"].includes(identifyDevice(navigator).type);
 }
-function browserId() {
-  try {
-    const key = 'livingstones.browserId';
-    const stored = localStorage.getItem(key);
-    if (stored && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(stored)) return stored;
-    const id = crypto.randomUUID();
-    localStorage.setItem(key, id);
-    return id;
-  } catch { return missing; }
+function validCoordinates(lat, lon) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lon) <= 180
+  );
 }
-const summaryId = browserId();
-let summaryDate = new Date();
-let summaryLocation = 'Načítavam…';
-let preciseLocation = null;
-let placeName = '';
-const placeCache = new Map();
 function formatPlace(properties, accuracy) {
-  if (!properties) return '';
-  // A nearby street is useful only when the device reports a small uncertainty.
-  const street = accuracy <= 150 ? properties.street || (properties.type === 'street' ? properties.name : '') : '';
-  const parts = [street, properties.locality, properties.district, properties.city || properties.county, properties.country];
-  return [...new Set(parts.filter(value => typeof value === 'string' && value.trim()).map(value => value.trim()))].join(', ');
+  if (!properties) return "";
+  const street =
+    accuracy <= 150
+      ? properties.street ||
+        (properties.type === "street" ? properties.name : "")
+      : "";
+  return [
+    ...new Set(
+      [
+        street,
+        properties.locality,
+        properties.district,
+        properties.city || properties.county,
+        properties.country,
+      ]
+        .filter((value) => typeof value === "string" && value.trim())
+        .map((value) => value.trim()),
+    ),
+  ].join(", ");
 }
+// This repository is the only persistence boundary. It intentionally performs
+// no server writes, and opening a stone only calls read methods.
+const stoneRepository = (() => {
+  const key = "livingstones.demo.finds.v1";
+  let additions = {};
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) || "{}");
+    for (const stone of DEMO_STONES) {
+      if (!Array.isArray(stored?.[stone.id])) continue;
+      additions[stone.id] = stored[stone.id]
+        .filter(
+          (find) =>
+            find &&
+            validCoordinates(find.lat, find.lon) &&
+            typeof find.city === "string" &&
+            typeof find.country === "string" &&
+            typeof find.nickname === "string" &&
+            typeof find.message === "string" &&
+            Number.isFinite(Date.parse(find.date)) &&
+            Date.parse(find.date) >= Date.parse(stone.started) &&
+            Date.parse(find.date) <= Date.now() &&
+            ["gps", "demo"].includes(find.source),
+        )
+        .slice(-100)
+        .map((find) => ({
+          ...find,
+          city: find.city.slice(0, 120),
+          country: find.country.slice(0, 80),
+          nickname: find.nickname.slice(0, 40),
+          message: find.message.slice(0, 400),
+          local: true,
+        }));
+    }
+  } catch {
+    /* Unavailable or damaged storage: keep the prototype in memory. */
+  }
+  const get = (id) => {
+    const base = DEMO_STONES.find((stone) => stone.id === id);
+    return base
+      ? {
+          ...base,
+          finds: [...base.finds, ...(additions[id] || [])].sort(
+            (a, b) => Date.parse(a.date) - Date.parse(b.date),
+          ),
+        }
+      : null;
+  };
+  return {
+    get,
+    list: () => DEMO_STONES.map((stone) => get(stone.id)),
+    addFind(id, find) {
+      if (!get(id) || !validCoordinates(find.lat, find.lon))
+        throw new Error("Invalid find");
+      additions[id] = [
+        ...(additions[id] || []),
+        { ...find, local: true },
+      ].slice(-100);
+      try {
+        localStorage.setItem(key, JSON.stringify(additions));
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  };
+})();
+let selectedId = null;
+let flow = null;
+let returnFocus = null;
+let toastTimer;
+function toast(message) {
+  const el = $("#toast");
+  el.textContent = message;
+  el.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.hidden = true;
+  }, 4500);
+}
+function renderOverview() {
+  const stones = stoneRepository.list();
+  $("#stone-grid").innerHTML = stones
+    .map((stone) => {
+      const last = stone.finds.at(-1);
+      return `<a class="stone-card" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${stone.finds.length} finds, last seen in ${escapeHTML(last.city)}"><div class="stone-image theme-${stone.theme}"><span class="stone-id">${stone.id} · EXPLORER</span><img src="${assetBase}${stone.image}" alt="Painted stone: ${stone.name}" loading="lazy"></div><div class="stone-content"><h3>${stone.name}</h3><p class="stone-tagline">${stone.tagline}</p><div class="stone-metrics"><span><b>${daysTravelling(stone)}</b> days out</span><span><b>${stone.finds.length}</b> finds</span></div><div class="stone-location"><strong>⌁ ${escapeHTML(last.city)}, ${escapeHTML(last.country)}</strong><small>Last seen ${formatDate(last.date)}</small></div><div class="card-bottom">Explore the story <span class="card-arrow" aria-hidden="true">↗</span></div></div></a>`;
+    })
+    .join("");
+  $("#total-finds").textContent = stones.reduce(
+    (sum, stone) => sum + stone.finds.length,
+    0,
+  );
+  $("#total-countries").textContent = new Set(
+    stones.flatMap((stone) => stone.finds.map((find) => find.country)),
+  ).size;
+  renderMap($("#world-map"), stones);
+  $("#map-legend").innerHTML = stones
+    .map(
+      (stone) =>
+        `<button data-stone="${stone.id}" style="--stone-color:${stone.color}"><span class="color-dot"></span>${stone.name} <span aria-hidden="true">↗</span></button>`,
+    )
+    .join("");
+}
+const project = (find) => [(find.lon + 180) * 3, (90 - find.lat) * 3];
+function renderMap(container, stones, journey = false) {
+  const points = journey
+    ? stones[0].finds.map(project)
+    : stones.map((stone) => project(stone.finds.at(-1)));
+  let box = [0, 30, 1080, 450];
+  if (journey) {
+    const xs = points.map((point) => point[0]),
+      ys = points.map((point) => point[1]);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2,
+      cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const width = Math.max(
+      120,
+      Math.max(...xs) - Math.min(...xs) + 65,
+      (Math.max(...ys) - Math.min(...ys) + 50) * 2.1,
+    );
+    const height = width / 2.1;
+    box = [
+      Math.max(0, Math.min(1080 - width, cx - width / 2)),
+      Math.max(0, cy - height / 2),
+      width,
+      height,
+    ];
+  }
+  const scale = box[2] / 1080,
+    r = journey ? Math.max(2.3, scale * 9) : 10;
+  const route = journey
+    ? `<polyline points="${points.map((point) => point.join(",")).join(" ")}" fill="none" stroke="${stones[0].color}" stroke-width="${Math.max(0.7, scale * 2)}" stroke-dasharray="${scale * 6} ${scale * 5}" stroke-linecap="round"/>`
+    : "";
+  const markers = points
+    .map((point, i) => {
+      const stone = journey ? stones[0] : stones[i],
+        find = journey ? stone.finds[i] : stone.finds.at(-1);
+      const title = escapeHTML(
+        `${journey ? `${i + 1}. ` : stone.name + ": "}${find.city}, ${find.country} · ${formatDate(find.date)}`,
+      );
+      const labelY = stone.id === "B2" ? point[1] - 42 : point[1] + 19;
+      const marker = `<title>${title}</title><circle cx="${point[0]}" cy="${point[1]}" r="${r * 1.8}" fill="${stone.color}" opacity=".18"/><circle cx="${point[0]}" cy="${point[1]}" r="${r}" fill="${stone.color}" stroke="#fffefa" stroke-width="${Math.max(0.7, scale * 2.5)}"/>${journey ? `<text x="${point[0]}" y="${point[1] + r * 0.34}" text-anchor="middle" font-family="sans-serif" font-size="${r * 1.05}" fill="#fff" font-weight="700">${i + 1}</text>` : `<rect x="${point[0] - 46}" y="${labelY}" width="92" height="23" rx="11.5" fill="#fffefa" fill-opacity=".95"/><text x="${point[0]}" y="${labelY + 15}" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#414738">${escapeHTML(find.city)}</text>`}`;
+      return journey
+        ? `<g role="img" aria-label="${title}">${marker}</g>`
+        : `<a class="map-marker" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="${title}">${marker}</a>`;
+    })
+    .join("");
+  container.innerHTML = `<svg viewBox="${box.join(" ")}" role="${journey ? "img" : "group"}" aria-label="${journey ? `Journey map of ${stones[0].name}, with ${points.length} numbered finds matching the timeline` : "World map showing the last known locations of all five stones"}"><rect width="1080" height="540" fill="#e9ece3"/><image href="${assetBase}world.svg" width="1080" height="540"/>${route}${markers}</svg><div class="map-controls" aria-label="Map controls"><button type="button" data-zoom="in" aria-label="Zoom in">+</button><button type="button" data-zoom="out" aria-label="Zoom out">−</button><button type="button" data-zoom="reset" aria-label="Reset map">⤢</button></div><span class="map-caption">${journey ? "↗ Each numbered stop is a chapter below" : "✳ Little adventures are happening everywhere"}</span><a class="map-attribution" href="https://www.naturalearthdata.com/about/terms-of-use/" target="_blank" rel="noopener">Map data: Natural Earth</a>`;
+  let current = [...box];
+  container.querySelectorAll("[data-zoom]").forEach((button) =>
+    button.addEventListener("click", () => {
+      if (button.dataset.zoom === "reset") current = [...box];
+      else {
+        const factor = button.dataset.zoom === "in" ? 0.75 : 1.333333;
+        const width = Math.max(box[2] / 8, Math.min(1080, current[2] * factor));
+        const height = (width * box[3]) / box[2];
+        current = [
+          current[0] + (current[2] - width) / 2,
+          current[1] + (current[3] - height) / 2,
+          width,
+          height,
+        ];
+      }
+      container.querySelector("svg").setAttribute("viewBox", current.join(" "));
+    }),
+  );
+}
+function timelineHTML(stone) {
+  return stone.finds
+    .map(
+      (find, index) =>
+        `<li><span class="timeline-dot" aria-hidden="true"></span><div class="timeline-meta"><h4>${index + 1}. ${escapeHTML(find.city)}, ${escapeHTML(find.country)}</h4><time datetime="${escapeHTML(find.date)}">${formatDate(find.date)}</time></div><p class="finder">${index === 0 ? "Journey started with" : "Found by"} ${escapeHTML(find.nickname || "A kind stranger")}${find.local ? `<span class="local-badge">${find.source === "demo" ? "Your demo find" : "Your local find"}</span>` : ""}</p>${find.accuracy != null ? `<p class="finder">GPS accuracy: approximately ${Math.round(find.accuracy)} m</p>` : ""}${find.message ? `<blockquote>“${escapeHTML(find.message)}”</blockquote>` : ""}</li>`,
+    )
+    .join("");
+}
+function renderDetail() {
+  const stone = stoneRepository.get(selectedId);
+  if (!stone) return;
+  const last = stone.finds.at(-1);
+  $("#stone-detail").innerHTML =
+    `<div class="detail-topbar"><span class="eyebrow"><span class="color-dot" style="--stone-color:${stone.color}"></span> A LITTLE STONE. AN ONGOING STORY.</span><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div><div class="detail-body"><div class="detail-hero"><div class="detail-image theme-${stone.theme}"><span class="stone-id">${stone.id} · EXPLORER</span><img src="${assetBase}${stone.image}" alt="${stone.name}, a hand-painted ${stone.theme} stone"></div><div><span class="eyebrow">ON THE MOVE SINCE ${formatDate(stone.started).toUpperCase()}</span><h2 id="detail-title">${stone.name}</h2><p class="tagline">${stone.tagline}</p><p class="detail-story">${stone.story}</p><div class="detail-stats"><div><strong>${daysTravelling(stone)}</strong><span>days travelling</span></div><div><strong>${stone.finds.length}</strong><span>confirmed finds</span></div><div><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong><span>countries visited</span></div></div><div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone <span aria-hidden="true">↗</span></button>' : ""}<button class="button secondary" id="share-stone">Share this story <span aria-hidden="true">↗</span></button></div>${supportsPreciseLocation() ? "" : '<p class="desktop-note">Found this stone? Open this link on your phone or tablet to add your chapter.</p>'}<div id="share-fallback" class="share-fallback" hidden></div></div></div><div id="find-container"></div><section class="detail-section" aria-labelledby="journey-title"><h3 id="journey-title">A small stone, a world of adventures.</h3><p class="section-subtitle">Last seen in ${escapeHTML(last.city)}, ${escapeHTML(last.country)} · ${formatDate(last.date)}</p><div id="journey-map" class="map-panel journey-map"></div></section><section class="detail-section" aria-labelledby="timeline-title"><h3 id="timeline-title">Every find, a new chapter.</h3><p class="section-subtitle">The story so far, from the very first hello to the latest little adventure.</p><ol class="timeline">${timelineHTML(stone)}</ol></section><p class="detail-footnote">Fictional demo journey. Opening or sharing this story never adds a find. Your additions stay in this browser; they are not shared with other people.</p></div>`;
+  renderMap($("#journey-map"), [stone], true);
+  $("#close-detail").addEventListener("click", closeDetail);
+  $("#share-stone").addEventListener("click", shareStone);
+  $("#start-find")?.addEventListener("click", () => {
+    if (!supportsPreciseLocation()) return;
+    flow = {
+      id: stone.id,
+      step: 1,
+      place: null,
+      nickname: "",
+      message: "",
+      code: "",
+      busy: false,
+    };
+    renderFlow();
+    $("#find-container").scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#find-code").focus({ preventScroll: true });
+  });
+}
+function openStone(id, updateURL = true) {
+  if (!stoneRepository.get(id)) return;
+  const dialog = $("#stone-dialog");
+  if (!dialog.open) returnFocus = document.activeElement;
+  selectedId = id;
+  flow = null;
+  renderDetail();
+  if (updateURL && new URL(location.href).searchParams.get("stone") !== id) {
+    const url = new URL(location.href);
+    url.searchParams.set("stone", id);
+    history.pushState({ livingstonesDetail: true }, "", url);
+  }
+  if (!dialog.open) dialog.showModal();
+  dialog.scrollTop = 0;
+  $("#close-detail").focus({ preventScroll: true });
+}
+function closeDetail() {
+  if (history.state?.livingstonesDetail) history.back();
+  else {
+    const url = new URL(location.href);
+    url.searchParams.delete("stone");
+    history.replaceState(null, "", url);
+    syncURL();
+  }
+}
+function syncURL() {
+  const id = new URL(location.href).searchParams.get("stone");
+  if (stoneRepository.get(id)) openStone(id, false);
+  else {
+    selectedId = null;
+    flow = null;
+    $("#stone-dialog").close();
+    const focusTarget = returnFocus?.isConnected
+      ? returnFocus
+      : document.querySelector(
+          `.stone-card[data-stone="${returnFocus?.dataset?.stone || ""}"]`,
+        );
+    focusTarget?.focus({ preventScroll: true });
+    if (id)
+      toast("That stone is not in this demo. Meet one of our five explorers.");
+  }
+}
+async function shareStone() {
+  const url = new URL(location.href);
+  url.searchParams.set("stone", selectedId);
+  if (navigator.share && supportsPreciseLocation()) {
+    try {
+      await navigator.share({
+        title: `${stoneRepository.get(selectedId).name} · Living Stones`,
+        text: "A little stone with a big story.",
+        url: url.href,
+      });
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url.href);
+    toast("Story link copied. A little adventure, ready to share.");
+  } catch {
+    const target = $("#share-fallback");
+    target.hidden = false;
+    target.innerHTML = `<label class="field">Copy this story link<input readonly value="${escapeHTML(url.href)}" aria-label="Story link"></label>`;
+    target.querySelector("input").select();
+  }
+}
+function renderFlow() {
+  const target = $("#find-container");
+  if (!flow) {
+    target.replaceChildren();
+    return;
+  }
+  const stone = stoneRepository.get(flow.id);
+  if (flow.step === 4) {
+    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">You’re part of the story.</h3><p>Your ${flow.place.source === "demo" ? "demo " : ""}find in ${escapeHTML(flow.place.city)} is now a new chapter in ${stone.name}’s journey.<br>${flow.persisted ? "Saved in this browser." : "Saved for this visit only; browser storage is unavailable."} Thanks for passing a little kindness on.</p><button class="button primary" id="finish-find">See your chapter <span aria-hidden="true">↓</span></button></section>`;
+    $("#finish-find").addEventListener("click", () => {
+      flow = null;
+      renderFlow();
+      const chapter = $(".timeline li:last-child");
+      chapter.scrollIntoView({ behavior: "smooth", block: "center" });
+      chapter.setAttribute("tabindex", "-1");
+      chapter.focus({ preventScroll: true });
+    });
+    return;
+  }
+  const steps = `<div class="find-steps" aria-label="Find progress">${["The Find Code", "Your location", "Your moment"].map((title, i) => `<span class="${flow.step === i + 1 ? "active" : flow.step > i + 1 ? "done" : ""}" ${flow.step === i + 1 ? 'aria-current="step"' : ""}>${i + 1}. ${title}</span>`).join("")}</div>`;
+  let content = "";
+  if (flow.step === 1)
+    content = `<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">Look for the Find Code painted on the back. Trying the prototype? Use <strong>${stone.code}</strong>.</p><div class="form-actions"><button class="button primary" type="submit">Continue <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+  if (flow.step === 2)
+    content = `<p class="location-consent">Use your device location, or choose a demo city to try the experience. GPS needs your permission. Coordinates are sent to Photon to look up the area name.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : "No location selected yet."}</p><p class="location-separator">OR TRY A FICTIONAL LOCATION</p><label class="field" for="demo-city">Demo city<select id="demo-city"><option value="">Choose a city…</option>${DEMO_PLACES.map((place, index) => `<option value="${index}" ${flow.place?.source === "demo" && flow.place.city === place.city ? "selected" : ""}>${place.city}, ${place.country}</option>`).join("")}</select></label><p class="field-hint">Demo locations are clearly marked in the timeline.</p><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
+  if (flow.step === 3)
+    content = `<div class="review-location">⌖ ${escapeHTML(flow.place.city)}, ${escapeHTML(flow.place.country)}${flow.place.source === "demo" ? " · Demo location" : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" maxlength="400" placeholder="Where did you find it? How did it make you feel?">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">This is a prototype. Your find is saved only in this browser.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+  target.innerHTML = `<section class="find-panel" aria-labelledby="find-title"><h3 id="find-title" tabindex="-1">A new chapter starts with you.</h3><p>Only submit a find when you have the stone. Browsing its story never records a find.</p>${steps}<form id="find-form">${content}<p id="find-error" class="error" role="alert"></p></form></section>`;
+  $("#cancel-find").addEventListener("click", () => {
+    flow = null;
+    renderFlow();
+    $("#start-find").focus();
+  });
+  $("#flow-back")?.addEventListener("click", () => {
+    saveDraft();
+    flow.step--;
+    flow.busy = false;
+    renderFlow();
+    $("#find-title").focus({ preventScroll: true });
+  });
+  $("#find-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!flow || flow.busy || !supportsPreciseLocation()) return;
+    if (flow.step === 1) {
+      flow.code = $("#find-code").value.trim().toUpperCase();
+      if (flow.code !== stone.code) {
+        $("#find-error").textContent =
+          "That code doesn’t match this stone. Check the back, or use the demo code above.";
+        $("#find-code").setAttribute("aria-invalid", "true");
+        $("#find-code").focus();
+        return;
+      }
+      flow.step = 2;
+      renderFlow();
+    } else if (flow.step === 2) {
+      if (!flow.place) return;
+      flow.step = 3;
+      renderFlow();
+    } else if (flow.step === 3) {
+      saveDraft();
+      flow.busy = true;
+      flow.persisted = stoneRepository.addFind(flow.id, {
+        ...flow.place,
+        date: new Date().toISOString(),
+        nickname: flow.nickname.trim() || "A kind stranger",
+        message: flow.message.trim(),
+      });
+      flow.step = 4;
+      renderOverview();
+      renderDetail();
+      renderFlow();
+      $("#success-title").focus({ preventScroll: true });
+      $("#find-container").scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      return;
+    }
+    $("#find-title").focus({ preventScroll: true });
+  });
+  $("#demo-city")?.addEventListener("change", (event) => {
+    const index = event.target.value;
+    flow.place =
+      index === "" ? null : { ...DEMO_PLACES[Number(index)], source: "demo" };
+    $("#location-status").textContent = flow.place
+      ? placeLabel(flow.place)
+      : "No location selected yet.";
+    $("#location-status").classList.toggle("ready", Boolean(flow.place));
+    $("#location-next").disabled = !flow.place;
+  });
+  $("#use-gps")?.addEventListener("click", requestLocation);
+}
+function saveDraft() {
+  if (flow?.step === 3) {
+    flow.nickname = $("#nickname").value.slice(0, 40);
+    flow.message = $("#find-message").value.slice(0, 400);
+  }
+}
+function placeLabel(place) {
+  return `${place.source === "demo" ? "Demo location" : "Device location"}: ${place.city}, ${place.country}${place.accuracy != null ? ` · accuracy ~${Math.round(place.accuracy)} m` : ""}`;
+}
+const placeCache = new Map();
 async function lookupPlace(coords) {
-  const status = document.querySelector('#place-status');
-  status.textContent = 'Dohľadávam názov oblasti…';
+  const key = `${coords.latitude.toFixed(5)},${coords.longitude.toFixed(5)}`;
+  if (placeCache.has(key)) return placeCache.get(key);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const key = `${coords.latitude.toFixed(5)},${coords.longitude.toFixed(5)}`;
-    let properties = placeCache.get(key);
-    if (!properties) {
-      const response = await fetch(`https://photon.komoot.io/reverse?lat=${coords.latitude}&lon=${coords.longitude}&radius=1&limit=1`, {signal:controller.signal, credentials:'omit', referrerPolicy:'no-referrer'});
-      if (!response.ok) throw new Error('service');
-      const data = await response.json();
-      properties = data?.features?.[0]?.properties;
-      if (!properties) throw new Error('empty');
-      placeCache.set(key, properties);
-    }
-    const name = formatPlace(properties, coords.accuracy);
-    if (!name) throw new Error('empty');
-    placeName = name;
-    updateSummary();
-    status.textContent = 'Názov oblasti podľa mapových údajov (odhad). Presnosť závisí od polohy zariadenia; nejde o potvrdenú adresu.';
+    const response = await fetch(
+      `https://photon.komoot.io/reverse?lat=${coords.latitude}&lon=${coords.longitude}&radius=1&limit=1`,
+      {
+        signal: controller.signal,
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+      },
+    );
+    if (!response.ok) throw new Error("lookup");
+    const data = await response.json();
+    const properties = data?.features?.[0]?.properties;
+    if (!properties) throw new Error("empty");
+    const result = {
+      city:
+        properties.city ||
+        properties.town ||
+        properties.village ||
+        properties.county ||
+        `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`,
+      country: properties.country || "GPS location",
+      area: formatPlace(properties, coords.accuracy),
+    };
+    placeCache.set(key, result);
+    return result;
   } catch {
-    status.textContent = 'Názov oblasti sa nepodarilo dohľadať. Súradnice a mapa zostávajú dostupné.';
-  } finally { clearTimeout(timeout); }
+    return {
+      city: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`,
+      country: "GPS location",
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
-function validCoordinates(latitude, longitude) {
-  return Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
-}
-function showMap(latitude, longitude, accuracy) {
-  const frame = document.querySelector('#location-map');
-  const status = document.querySelector('#map-status');
-  const link = document.querySelector('#map-link');
-  if (!validCoordinates(latitude, longitude)) {
-    frame.hidden = true; frame.src = 'about:blank'; link.hidden = true;
-    status.textContent = supportsPreciseLocation() ? 'Súradnice podľa IP nie sú dostupné. Skús tlačidlo Urči presnú polohu.' : 'Súradnice podľa IP nie sú dostupné. Skús znova zistiť IP.';
+function requestLocation() {
+  if (!flow || flow.busy || !supportsPreciseLocation()) return;
+  const activeFlow = flow,
+    button = $("#use-gps"),
+    status = $("#location-status");
+  const current = () =>
+    flow === activeFlow && flow.step === 2 && $("#use-gps") === button;
+  if (!navigator.geolocation) {
+    status.textContent =
+      "GPS is unavailable in this browser. Choose a demo city to continue.";
     return;
   }
-  const precise = accuracy !== undefined;
-  const span = precise ? Math.max(0.002, Math.min(90, accuracy / 111000 * 2)) : 0.12;
-  const lonSpan = Math.min(180, span / Math.max(0.01, Math.cos(latitude * Math.PI / 180)));
-  const bbox = [Math.max(-180, longitude-lonSpan), Math.max(-90, latitude-span), Math.min(180, longitude+lonSpan), Math.min(90, latitude+span)];
-  frame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox.join(',')}&layer=mapnik&marker=${latitude},${longitude}`;
-  frame.hidden = false;
-  link.href = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=${precise ? 16 : 11}/${latitude}/${longitude}`;
-  link.hidden = false;
-  status.textContent = precise ? `Poloha zo zariadenia · hlásená presnosť približne ${Math.round(accuracy)} m.` : 'Približná poloha podľa IP · presnosť nie je známa, bod nemusí označovať tvoju ulicu ani mestskú časť.';
-}
-function updateSummary() {
-  const mobile = supportsPreciseLocation();
-  document.querySelector('#location').hidden = !mobile;
-  document.querySelector('#location-help').hidden = !mobile;
-  document.querySelector('#desktop-location-note').hidden = mobile;
-  document.querySelector('#map-heading').textContent = preciseLocation ? `Tvoja poloha na mape: ${placeName || preciseLocation}` : 'Tvoja poloha na mape';
-  const device = identifyDevice(navigator);
-  const type = ['Mobil', 'Tablet'].includes(device.type) ? 'Mobile' : device.type === 'Počítač / notebook' ? 'Desktop' : device.type;
-  const row = document.createElement('tr');
-  const labels = ['Date', 'User ID', 'Device', 'Poloha', 'Pásmo', 'OS version'];
-  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const values = [summaryDate.toLocaleString('sk-SK'), summaryId, type, placeName || preciseLocation || summaryLocation, zone, device.os];
-  const shortDate = `${summaryDate.getDate()}.${summaryDate.getMonth()+1}. ${summaryDate.toLocaleTimeString('sk-SK', {hour:'2-digit', minute:'2-digit'})}`;
-  const compact = [shortDate, summaryId === missing ? '—' : summaryId.slice(0, 6), type, placeName || preciseLocation || summaryLocation.split(',')[0], zone?.split('/').pop()?.replaceAll('_', ' '), device.os.replace('Windows', 'Win').replace('Android', 'Andr.')];
-  values.forEach((value, index) => {
-    const cell = document.createElement('td');
-    const button = document.createElement('button');
-    button.type = 'button'; button.className = 'summary-value';
-    button.title = value || missing;
-    button.ariaLabel = `${labels[index]}: ${value || missing}. Zobraziť celú hodnotu.`;
-    const full = document.createElement('span'); full.className = 'summary-full'; full.textContent = value || missing;
-    const short = document.createElement('span'); short.className = 'summary-compact'; short.textContent = compact[index] || missing;
-    button.append(full, short);
-    button.addEventListener('click', () => {
-      const detail = document.querySelector('#summary-detail');
-      detail.textContent = `${labels[index]}: ${value || missing}${index === 3 && placeName ? ` · ${preciseLocation}` : ''}`;
-      detail.hidden = false;
-    });
-    cell.append(button); row.append(cell);
-  });
-  document.querySelector('#device-summary').replaceChildren(row);
-}
-function graphics() {
-  let gl;
-  try {
-    const canvas = document.createElement('canvas');
-    gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    if (!gl) return [['Stav', 'WebGL je nedostupné alebo blokované']];
-    const debug = gl.getExtension('WEBGL_debug_renderer_info');
-    return [['Grafický renderer (hlásený)', debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)], ['Výrobca grafiky (hlásený)', debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR)], ['Verzia WebGL', gl.getParameter(gl.VERSION)], ['Verzia shaderov', gl.getParameter(gl.SHADING_LANGUAGE_VERSION)], ['Max. rozmer textúry', unit(gl.getParameter(gl.MAX_TEXTURE_SIZE), 'px')]];
-  } catch { return [['Stav', missing]]; }
-  finally { gl?.getExtension('WEBGL_lose_context')?.loseContext(); }
-}
-async function advancedDevice(list) {
-  try {
-    const data = await navigator.userAgentData.getHighEntropyValues(['architecture', 'bitness', 'model', 'platformVersion', 'fullVersionList', 'wow64']);
-    rows(list, [['Platforma', data.platform], ['Verzia platformy (Client Hints, nemusí byť marketingová verzia OS)', data.platformVersion], ['Model zariadenia', data.model], ['Architektúra', data.architecture], ['Architektúra – počet bitov', data.bitness], ['32-bitový proces na 64-bit Windows', yes(data.wow64)], ['Úplné verzie prehliadača', data.fullVersionList?.map(b => `${b.brand} ${b.version}`).join(', ')]]);
-  } catch { rows(list, [['Stav', 'Prehliadač rozšírené údaje neposkytuje. Základný odhad je vyššie.']]); }
-}
-let revision = 0;
-async function refresh() {
-  summaryDate = new Date();
-  updateSummary();
-  const current = ++revision;
-  document.querySelector('#cards').replaceChildren();
-  const n = navigator, s = screen, c = n.connection || n.mozConnection || n.webkitConnection;
-  const date = summaryDate;
-  const identity = identifyDevice(n);
-  card('01 / Prehliadač', [
-    ['Prehliadač a verzia (odhad)', identity.browser],
-    ['User agent', n.userAgent], ['Platforma (orientačne)', n.userAgentData?.platform || n.platform],
-    ['Značky prehliadača', n.userAgentData?.brands?.map(b => `${b.brand} ${b.version}`).join(', ')],
-    ['Mobil podľa prehliadača', yes(n.userAgentData?.mobile)], ['Výrobca prehliadača', n.vendor],
-    ['Cookies povolené', yes(n.cookieEnabled)], ['Do Not Track', n.doNotTrack === '1' ? 'Zapnuté' : 'Vypnuté / neoznámené'],
-    ['Global Privacy Control', yes(n.globalPrivacyControl)], ['Automatizované ovládanie (signál)', yes(n.webdriver)]
-  ]);
-  card('02 / Zariadenie a obrazovka', [
-    ['Typ zariadenia (odhad)', identity.type], ['Operačný systém (odhad)', identity.os],
-    ['Logické procesory (hlásené)', n.hardwareConcurrency], ['RAM (hrubý odhad)', unit(n.deviceMemory, 'GB')],
-    ['Dotykové body', n.maxTouchPoints], ['Rozlíšenie (CSS pixely)', `${s.width} × ${s.height}`],
-    ['Dostupná plocha', `${s.availWidth} × ${s.availHeight}`], ['Okno stránky', `${innerWidth} × ${innerHeight}`],
-    ['Pomer pixelov', devicePixelRatio], ['Farebná hĺbka', unit(s.colorDepth, 'bitov')],
-    ['Orientácia', s.orientation?.type], ['Farebná téma systému', matchMedia('(prefers-color-scheme: dark)').matches ? 'Tmavá' : 'Svetlá'],
-    ['Obmedzenie animácií', yes(matchMedia('(prefers-reduced-motion: reduce)').matches)],
-    ['Jemný ukazovateľ (myš / trackpad)', yes(matchMedia('(pointer: fine)').matches)]
-  ]);
-  card('03 / Jazyk a čas', [
-    ['Hlavný jazyk', n.language], ['Preferované jazyky', n.languages?.join(', ')],
-    ['Časové pásmo', Intl.DateTimeFormat().resolvedOptions().timeZone],
-    ['Lokálny čas zariadenia', date.toLocaleString('sk-SK')], ['Čas UTC', date.toISOString()],
-    ['Posun voči UTC', unit(-date.getTimezoneOffset(), 'minút')]
-  ]);
-  card('04 / Sieť a návšteva', [
-    ['Online podľa prehliadača', yes(n.onLine)], ['Typ pripojenia', c?.type],
-    ['Efektívny typ siete', c?.effectiveType], ['Rýchlosť (odhad)', unit(c?.downlink, 'Mb/s')],
-    ['Odozva (odhad)', unit(c?.rtt, 'ms')], ['Šetrenie dát', yes(c?.saveData)],
-    ['Zabezpečený kontext', yes(isSecureContext)], ['Adresa tejto stránky', location.origin + location.pathname],
-    ['Odkazujúca stránka', document.referrer || 'Priamy vstup alebo skryté prehliadačom'],
-    ['Viditeľnosť karty', document.visibilityState]
-  ]);
-  const batteryList = card('05 / Batéria', [['Stav', n.getBattery ? 'Načítavam…' : missing]]);
-  const permissionsList = card('06 / Povolenia pre tento web', [['Stav', 'Načítavam…']]);
-  card('07 / Grafika', graphics());
-  const advancedList = card('08 / Rozšírené údaje zariadenia', [['Stav', 'Načítavam…']]);
-  advancedDevice(advancedList);
-  card('09 / Podporované funkcie', [
-    ['Geolokácia', yes('geolocation' in n)], ['Prístup ku kamere / mikrofónu (API, nie prítomnosť hardvéru)', yes(Boolean(n.mediaDevices?.getUserMedia))],
-    ['WebRTC', yes('RTCPeerConnection' in globalThis)], ['WebAssembly', yes('WebAssembly' in globalThis)],
-    ['WebGPU (API)', yes('gpu' in n)], ['Bluetooth (API)', yes('bluetooth' in n)], ['USB (API)', yes('usb' in n)],
-    ['Gamepad (API)', yes('getGamepads' in n)], ['Vibrácie (API)', yes('vibrate' in n)],
-    ['Service Worker', yes('serviceWorker' in n)], ['Zdieľanie zo stránky', yes('share' in n)],
-    ['PDF priamo v prehliadači', yes(n.pdfViewerEnabled)], ['Celá obrazovka', yes(document.fullscreenEnabled)],
-    ['HDR podľa prehliadača', yes(matchMedia('(dynamic-range: high)').matches)],
-    ['Široký farebný gamut P3', yes(matchMedia('(color-gamut: p3)').matches)],
-    ['Ukazovateľ podporuje hover', yes(matchMedia('(hover: hover)').matches)]
-  ]);
-  card('10 / Čo sa týmto zistiť nedá', [
-    ['Identita človeka', 'Meno, e-mail ani telefón nie sú automaticky dostupné.'],
-    ['Presný model a vek zariadenia', 'Iba ak ich prehliadač sprístupní; inak sa spoľahlivo určiť nedajú.'],
-    ['MAC, IMEI a sériové číslo', 'Bežná webová stránka k nim nemá prístup.'],
-    ['VPN / proxy', 'Z týchto údajov sa nedajú spoľahlivo potvrdiť.'],
-    ['Kamera, mikrofón a súbory', 'Obsah sa automaticky nečíta. Vyžaduje povolenie alebo výber používateľa.'],
-    ['História a heslá', 'Prehliadač ich tejto stránke nesprístupňuje.']
-  ]);
-  const states = { granted: 'Povolené', denied: 'Zamietnuté', prompt: 'Vyžaduje súhlas' };
-  const permissions = await Promise.all([['Poloha', 'geolocation'], ['Kamera', 'camera'], ['Mikrofón', 'microphone'], ['Notifikácie', 'notifications']].map(async ([label, name]) => {
-    try { const result = await n.permissions.query({ name }); return [label, states[result.state] || result.state]; }
-    catch { return [label, missing]; }
-  }));
-  if (current !== revision) return;
-  rows(permissionsList, permissions);
-  if (n.getBattery) {
-    try {
-      const b = await n.getBattery();
-      if (current !== revision) return;
-      rows(batteryList, [['Nabitie', `${Math.round(b.level * 100)} %`], ['Nabíjanie', yes(b.charging)], ['Do nabitia (odhad)', Number.isFinite(b.chargingTime) ? unit(b.chargingTime, 's') : missing], ['Do vybitia (odhad)', Number.isFinite(b.dischargingTime) ? unit(b.dischargingTime, 's') : missing]]);
-    } catch { rows(batteryList, [['Stav', missing]]); }
-  }
-}
-const ipServices = [
-  {
-    name: 'ipwho.is', url: 'https://ipwho.is/',
-    normalize: data => {
-      if (data.success !== true) throw new Error('service');
-      return { ip: data.ip, version: data.type, country_name: data.country,
-        region: data.region, city: data.city, postal: data.postal,
-        org: data.connection?.org || data.connection?.isp,
-        asn: data.connection?.asn == null ? undefined : `AS${data.connection.asn}`,
-        timezone: data.timezone?.id, latitude: data.latitude, longitude: data.longitude };
-    }
-  },
-  { name: 'ipapi.co', url: 'https://ipapi.co/json/', normalize: data => {
-    if (data.error) throw new Error('service');
-    return data;
-  } }
-];
-async function lookupIp() {
-  const button = document.querySelector('#ip'), output = document.querySelector('#ip-result');
-  if (button.disabled) return;
+  activeFlow.busy = true;
   button.disabled = true;
-  summaryLocation = 'Načítavam…'; updateSummary();
-  try {
-    for (const [index, service] of ipServices.entries()) {
-      rows(output, [['Stav', index === 0 ? 'Načítavam…' : 'Skúšam záložnú službu…']]);
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      try {
-        const response = await fetch(service.url, { signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-        if (!response.ok) throw new Error('service');
-        const data = service.normalize(await response.json());
-        if (typeof data.ip !== 'string' || !data.ip.trim() ||
-            ![data.country_name, data.region, data.city].some(value => typeof value === 'string' && value.trim())) {
-          throw new Error('incomplete');
-        }
-        summaryLocation = [data.city, data.region, data.country_name].filter((value, index, all) => typeof value === 'string' && value.trim() && all.indexOf(value) === index).join(', ');
-        if (!preciseLocation) showMap(data.latitude, data.longitude);
-        updateSummary();
-        rows(output, [['Zdroj údajov', service.name], ['Verejná IP', data.ip], ['Verzia IP', data.version], ['Krajina (odhad)', data.country_name], ['Región (odhad)', data.region], ['Mesto (odhad)', data.city], ['PSČ (odhad)', data.postal], ['Poskytovateľ / organizácia', data.org], ['Autonómny systém', data.asn], ['Časové pásmo podľa IP', data.timezone], ['Zemepisná šírka (odhad)', data.latitude], ['Zemepisná dĺžka (odhad)', data.longitude]]);
-        return;
-      } catch {
-        // A failed or incomplete response falls through to the next provider.
-      } finally { clearTimeout(timeout); }
+  $("#location-next").disabled = true;
+  $("#demo-city").disabled = true;
+  status.textContent = "Waiting for permission and your location…";
+  const unlock = () => {
+    activeFlow.busy = false;
+    if (current()) {
+      button.disabled = false;
+      $("#location-next").disabled = !flow.place;
+      $("#demo-city").disabled = false;
     }
-    summaryLocation = missing; updateSummary();
-    if (!preciseLocation) showMap();
-    rows(output, [['Stav', 'IP a približná poloha sú momentálne nedostupné. Služby môžu byť blokované, bez pripojenia alebo po prekročení limitu. Skús znova zistiť IP neskôr.']]);
-  } finally { button.disabled = false; }
-}
-document.querySelector('#ip').addEventListener('click', lookupIp);
-document.querySelector('#location').addEventListener('click', event => {
-  const button = event.currentTarget, output = document.querySelector('#location-result');
-  if (!supportsPreciseLocation() || button.disabled) return;
-  if (!navigator.geolocation) { rows(output, [['Stav', 'Tento prehliadač polohu neposkytuje.']]); return; }
-  button.disabled = true; rows(output, [['Stav', 'Čakám na povolenie a polohu…']]);
-  const fail = error => {
-    rows(output, [['Stav', ({1: 'Povolenie bolo zamietnuté. Zmeniť ho môžeš v nastaveniach webu v prehliadači.', 2: 'Polohu sa nepodarilo zistiť.', 3: 'Čas na získanie polohy vypršal. Skús to znovu.'})[error.code] || 'Poloha nie je dostupná.']]);
-    button.disabled = false;
+  };
+  const fail = (error) => {
+    if (!current()) return;
+    status.textContent =
+      {
+        1: "Location permission was denied. You can enable it in browser settings, or choose a demo city.",
+        2: "Your location is unavailable. Try again or choose a demo city.",
+        3: "Location took too long. Try again or choose a demo city.",
+      }[error.code] ||
+      "Could not get your location. Choose a demo city to continue.";
+    unlock();
   };
   try {
-    navigator.geolocation.getCurrentPosition(async position => {
-      const c = position.coords;
-      if (!validCoordinates(c.latitude, c.longitude) || !Number.isFinite(c.accuracy) || c.accuracy < 0) { fail({code:2}); return; }
-      placeName = '';
-      document.querySelector('#summary-detail').hidden = true;
-      preciseLocation = `${c.latitude.toFixed(5)}, ${c.longitude.toFixed(5)} (presnosť ~${Math.round(c.accuracy)} m)`;
-      showMap(c.latitude, c.longitude, c.accuracy);
-      updateSummary();
-      rows(output, [['Zdroj', 'Poloha zariadenia so súhlasom'], ['Zemepisná šírka', c.latitude], ['Zemepisná dĺžka', c.longitude], ['Presnosť', unit(Math.round(c.accuracy), 'm')], ['Čas merania', new Date(position.timestamp).toLocaleString('sk-SK')]]);
-      await lookupPlace(c);
-      button.disabled = false;
-    }, fail, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
-  } catch { fail({}); }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        if (!current()) return;
+        const coords = position.coords;
+        if (
+          !validCoordinates(coords.latitude, coords.longitude) ||
+          !Number.isFinite(coords.accuracy) ||
+          coords.accuracy < 0
+        ) {
+          fail({ code: 2 });
+          return;
+        }
+        status.textContent = "Location found. Looking up the area name…";
+        const place = await lookupPlace(coords);
+        if (!current()) return;
+        flow.place = {
+          ...place,
+          lat: coords.latitude,
+          lon: coords.longitude,
+          accuracy: coords.accuracy,
+          source: "gps",
+        };
+        $("#demo-city").value = "";
+        status.textContent = placeLabel(flow.place);
+        status.classList.add("ready");
+        unlock();
+      },
+      fail,
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  } catch {
+    fail({});
+  }
+}
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-stone]");
+  if (
+    !link ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    event.button !== 0
+  )
+    return;
+  event.preventDefault();
+  openStone(link.dataset.stone);
 });
-refresh();
-lookupIp();
+$("#stone-dialog").addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeDetail();
+});
+$("#stone-dialog").addEventListener("click", (event) => {
+  if (event.target !== $("#stone-dialog")) return;
+  const rect = event.target.getBoundingClientRect();
+  if (
+    event.clientX < rect.left ||
+    event.clientX > rect.right ||
+    event.clientY < rect.top ||
+    event.clientY > rect.bottom
+  )
+    closeDetail();
+});
+window.addEventListener("popstate", syncURL);
+renderOverview();
+syncURL();
