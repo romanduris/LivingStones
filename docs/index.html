@@ -11,10 +11,10 @@
     <title>Living Stones — A little kindness on the move</title>
     <link rel="icon" href="assets/stone-1.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=14" />
+    <link rel="stylesheet" href="style.css?v=15" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
-    <script src="data.js?v=13" defer></script>
-    <script src="app.js?v=14" defer></script>
+    <script src="data.js?v=15" defer></script>
+    <script src="app.js?v=15" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -31,19 +31,14 @@
       <section id="world" class="map-section" aria-labelledby="world-title">
         <div class="section-heading">
           <div class="intro-copy">
-            <h1 id="world-title">A little kindness on the move.</h1>
+            <h1 id="world-title">A little stone. A story waiting for you.</h1>
             <p>
-              A painted stone comes to life through the people it meets. A
-              chance encounter, a shared smile, a note from a stranger — every
-              confirmed find adds a chapter to its story. Together, a small
-              stone and the people who carry it create a journey full of real
-              connections.
+              I’m a little painted stone, waiting for someone like you. Every
+              person I meet brings me a little more to life.
             </p>
             <p>
-              Take one with you and enjoy its company. Bring it on a day out, to
-              another town or even another country, then leave it somewhere safe
-              for someone else to find. The more it travels, the more it has to
-              tell.
+              Take me to another town or even another country. Enjoy my company,
+              then leave me somewhere safe for my next friend.
             </p>
           </div>
           <span class="pill"
@@ -84,7 +79,15 @@
           <h2 id="explore-title">Five stones. Five little adventures.</h2>
           <span class="section-label">FICTIONAL DEMO JOURNEYS</span>
         </div>
-        <div class="stone-table-frame">
+        <p id="stone-table-help" class="table-scroll-hint">
+          Swipe to explore our stories <span aria-hidden="true">↔</span>
+        </p>
+        <div
+          class="stone-table-frame"
+          role="region"
+          aria-label="Stone journeys table"
+          tabindex="0"
+        >
           <table class="stone-table">
             <caption class="sr-only">
               Stones, their origins, time travelling, finds and latest locations
@@ -104,8 +107,7 @@
           </table>
         </div>
         <p class="demo-note">
-          The stones and their stories are fictional. New finds are previews for
-          this visit only.
+          Fictional journeys. New finds last for this visit only.
         </p>
       </section>
       <section
@@ -113,29 +115,27 @@
         class="about-section"
         aria-labelledby="how-title"
       >
-        <h2 id="how-title">Find it. Add a moment. Pass it on.</h2>
+        <h2 id="how-title">Find me. Take me along. Pass me on.</h2>
         <div class="steps">
           <article>
             <span>01</span>
-            <h3>Find a stone</h3>
-            <p>
-              Scan its QR code to open its story. Looking never records a find.
-            </p>
+            <h3>Say hello</h3>
+            <p>Scan my QR code to meet me. Looking never records a find.</p>
           </article>
           <article>
             <span>02</span>
-            <h3>Add your chapter</h3>
+            <h3>Tell me we met</h3>
             <p>
-              On your phone, enter its Find Code. Allow location access and
-              leave an optional note.
+              On your phone, use my Find Code and share where we met. A little
+              note makes my day.
             </p>
           </article>
           <article>
             <span>03</span>
-            <h3>Keep it moving</h3>
+            <h3>Show me somewhere new</h3>
             <p>
-              Take me with you, enjoy my company, then leave me somewhere new —
-              ideally in another town — where someone else can find me.
+              Take me to another town or country. Then leave me safely where my
+              next friend can find me.
             </p>
           </article>
         </div>

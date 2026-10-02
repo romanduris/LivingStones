@@ -73,7 +73,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator(".hero").count(), 0);
     assert.match(
       await page.locator("#how-it-works").innerText(),
-      /ideally in another town/,
+      /another town or country/,
     );
     const zoom = await page.evaluate(() =>
       mapInstances.get("world-map").map.getZoom(),
@@ -362,7 +362,9 @@ process.on("exit", () => server?.kill());
       await page.goto(base);
       assert.equal(
         await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
+          () =>
+            document.documentElement.scrollWidth <=
+            document.documentElement.clientWidth,
         ),
         true,
         `No page overflow at ${width}`,
@@ -372,6 +374,37 @@ process.on("exit", () => server?.kill());
         5,
       );
       assert.equal(await page.locator("#start-find").count(), 0);
+      assert.equal(
+        await page
+          .locator(".stone-row")
+          .first()
+          .evaluate((row) => getComputedStyle(row).display),
+        "table-row",
+      );
+      assert.equal(await page.locator(".stone-table thead").isVisible(), true);
+      if (width <= 900) {
+        const position = await page.evaluate(() => {
+          const frame = document.querySelector(".stone-table-frame"),
+            cell = document.querySelector(".overview-stone");
+          const before = cell.getBoundingClientRect().left;
+          frame.scrollLeft = 250;
+          return {
+            before,
+            after: cell.getBoundingClientRect().left,
+            offset: frame.scrollLeft,
+            scrolls: frame.scrollWidth > frame.clientWidth,
+          };
+        });
+        assert.equal(position.scrolls, true);
+        assert.equal(position.offset, 250);
+        assert.ok(
+          Math.abs(position.before - position.after) < 1,
+          "Stone identity stays visible while scrolling",
+        );
+        await page.evaluate(
+          () => (document.querySelector(".stone-table-frame").scrollLeft = 0),
+        );
+      }
       await page.locator(".stone-row").last().scrollIntoViewIfNeeded();
       await page.waitForFunction(() =>
         [...document.querySelectorAll(".stone-thumbnail img")].every(

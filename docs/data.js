@@ -5,14 +5,14 @@ const DEMO_STONES = [
   {
     id: "A1",
     name: "Sunny Side",
-    tagline: "A little sunshine for your pocket.",
+    tagline: "Let me brighten your day.",
     color: "#c5a34d",
     theme: "sun",
     image: "stone-1.svg",
     code: "SUN24",
     started: "2025-04-12",
     story:
-      "Painted by Nina at her kitchen table in Petržalka. This little sun was born beside the Danube, in Sad Janka Kráľa, with a simple wish: brighten a stranger’s ordinary day.",
+      "Nina painted my smile in Petržalka and left me in Sad Janka Kráľa. I’ve been collecting happy moments ever since. Could you take me somewhere sunny?",
     finds: [
       {
         date: "2025-04-12",
@@ -74,14 +74,14 @@ const DEMO_STONES = [
   {
     id: "B2",
     name: "Little Luna",
-    tagline: "A quiet companion for daydreamers.",
+    tagline: "Show me your quiet places.",
     color: "#9290be",
     theme: "moon",
     image: "stone-2.svg",
     code: "MOON7",
     started: "2025-07-20",
     story:
-      "Born in Rača, where Tereza painted a crescent moon after an evening walk. Little Luna is for anyone who needs a quiet pause. Its first chapter began near the vineyards above Bratislava.",
+      "Tereza gave me my moon in Rača, near the vineyards. I love quiet walks and new friends. Will you show me your favourite corner of the world?",
     finds: [
       {
         date: "2025-07-20",
@@ -143,14 +143,14 @@ const DEMO_STONES = [
   {
     id: "C3",
     name: "Slow Bloom",
-    tagline: "A reminder to take the scenic route.",
+    tagline: "Let’s take the scenic route.",
     color: "#739279",
     theme: "leaf",
     image: "stone-3.svg",
     code: "GROW3",
     started: "2026-02-14",
     story:
-      "Ana painted a small green sprout on a smooth river stone in Karlova Ves. Born near Bratislava’s botanical garden, Slow Bloom carries a reminder that good things take their time.",
+      "Ana painted my sprout near Bratislava’s botanical garden. I’m growing a story, one kind stranger at a time. Take the scenic route with me?",
     finds: [
       {
         date: "2026-02-14",
@@ -211,14 +211,14 @@ const DEMO_STONES = [
   {
     id: "D4",
     name: "Wildheart",
-    tagline: "Small stone. Plenty of heart.",
+    tagline: "I have a little hug for you.",
     color: "#cc816b",
     theme: "heart",
     image: "stone-4.svg",
     code: "LOVE4",
     started: "2025-05-01",
     story:
-      "Made by Ema in Devín and released where the Morava meets the Danube. Wildheart has no grand plan: just a red heart, a pocket-sized hug, and a curiosity about the people on both sides of the river.",
+      "Ema gave me a heart in Devín, where two rivers meet. I’m a pocket-sized hug, looking for my next friend. Could I come on your next adventure?",
     finds: [
       {
         date: "2025-05-01",
@@ -280,14 +280,14 @@ const DEMO_STONES = [
   {
     id: "E5",
     name: "Ocean Echo",
-    tagline: "Following the river, one hello at a time.",
+    tagline: "Take me to a new horizon.",
     color: "#6e98b1",
     theme: "wave",
     image: "stone-5.svg",
     code: "WAVE5",
     started: "2025-09-06",
     story:
-      "Hana painted a blue wave after a cycling trip to Čunovo. Ocean Echo was born on the Danube bank, far from the sea. It follows the river’s spirit: keep moving, take your time, and make room for new stories.",
+      "Hana painted my wave after a bike ride to Čunovo. I was born by the Danube, but I dream of the sea. Will you take me a little farther?",
     finds: [
       {
         date: "2025-09-06",

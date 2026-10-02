@@ -1130,6 +1130,7 @@ body:has(dialog[open]) {
   margin-top: 9px;
 }
 .stone-table-frame {
+  position: relative;
   border: 1px solid var(--line);
   border-radius: 5px;
   overflow: hidden;
@@ -1281,77 +1282,71 @@ body:has(dialog[open]) {
     width: 21%;
   }
 }
+
+.table-scroll-hint {
+  display: none;
+}
 @media (max-width: 900px) {
-  .stone-table thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-  .stone-table tbody {
-    display: block;
-  }
-  .stone-row {
-    display: grid;
-    grid-template-columns: 1.55fr 1fr 0.8fr 0.7fr 16px;
-    gap: 10px 18px;
-    padding: 15px;
-    border-bottom: 1px solid var(--line);
-  }
-  .stone-row:last-child {
-    border-bottom: 0;
-  }
-  .stone-table td {
-    padding: 0;
-    border: 0;
-    min-width: 0;
-  }
-  .stone-table td[data-label]::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: #a0a4a6;
-    margin-bottom: 3px;
-  }
-  .overview-stone {
-    grid-column: 1;
-    grid-row: 1/4;
-  }
-  .overview-start {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .overview-age {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .overview-finds {
-    grid-column: 4;
-    grid-row: 1;
-  }
-  .overview-location {
-    grid-column: 2/5;
-    grid-row: 2;
-  }
-  .overview-latest {
-    grid-column: 2/5;
-    grid-row: 3;
-  }
-  .overview-arrow {
-    grid-column: 5;
-    grid-row: 1/4;
-    align-self: center;
-  }
-  .stone-table .latest-note {
-    -webkit-line-clamp: 1;
-  }
   .intro-copy {
     max-width: none;
+  }
+  .table-scroll-hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #8c819f;
+    margin-bottom: 9px;
+  }
+  .stone-table-frame {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #cfcad8 #f7f7f8;
+    -webkit-overflow-scrolling: touch;
+  }
+  .stone-table {
+    width: 1000px;
+    min-width: 1000px;
+  }
+  .stone-table th:nth-child(1) {
+    width: 184px;
+  }
+  .stone-table th:nth-child(2) {
+    width: 128px;
+  }
+  .stone-table th:nth-child(3) {
+    width: 110px;
+  }
+  .stone-table th:nth-child(4) {
+    width: 70px;
+  }
+  .stone-table th:nth-child(5) {
+    width: 225px;
+  }
+  .stone-table th:nth-child(6) {
+    width: 255px;
+  }
+  .stone-table th:nth-child(7) {
+    width: 28px;
+  }
+  .stone-table th:first-child,
+  .stone-table .overview-stone {
+    position: sticky;
+    left: 0;
+    box-shadow: 2px 0 5px #282b2610;
+  }
+  .stone-table th:first-child {
+    z-index: 2;
+    background: #fafafa;
+  }
+  .stone-table .overview-stone {
+    z-index: 1;
+    background: #fff;
+  }
+  .stone-row:hover .overview-stone,
+  .stone-row:focus-within .overview-stone {
+    background: #faf9fc;
   }
 }
 @media (max-width: 600px) {
@@ -1359,56 +1354,23 @@ body:has(dialog[open]) {
     max-width: none;
     font-size: 12px;
   }
-  .stone-row {
-    position: relative;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px 14px;
-    padding: 15px;
+  .stone-table th:nth-child(1) {
+    width: 156px;
   }
-  .overview-stone {
-    grid-column: 1/-1;
-    grid-row: 1;
-    padding-right: 20px !important;
-  }
-  .overview-start {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .overview-age {
-    grid-column: 2;
-    grid-row: 2;
-  }
-  .overview-finds {
-    grid-column: 3;
-    grid-row: 2;
-  }
-  .overview-location {
-    grid-column: 1/-1;
-    grid-row: 3;
-  }
-  .overview-latest {
-    grid-column: 1/-1;
-    grid-row: 4;
-  }
-  .overview-arrow {
-    position: absolute;
-    top: 25px;
-    right: 15px;
+  .stone-table th:nth-child(6) {
+    width: 283px;
   }
   .stone-thumbnail {
-    width: 46px;
-    height: 46px;
+    width: 34px;
+    height: 34px;
   }
   .stone-link {
-    gap: 12px;
+    gap: 8px;
+  }
+  .stone-table .stone-identity strong {
+    font-size: 11px;
   }
   .stone-table .stone-identity small {
-    font-size: 10px;
-  }
-  .stone-table .overview-location small {
-    margin-top: 1px;
-  }
-  .stone-table .latest-note {
-    -webkit-line-clamp: 2;
+    font-size: 9px;
   }
 }

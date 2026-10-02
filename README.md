@@ -1,6 +1,6 @@
 # Living Stones
 
-An English visual MVP for painted stones that pass between people. An introduction explains how painted stones come to life through shared encounters and invites finders to carry them to another town or country. Maps lead both the home page and each stone detail. A compact overview table shows miniature stone images, origins, age, find counts, last addresses and latest notes; rows adapt to smaller screens. Five fictional stones have 25 finds around Bratislava, all within 100 km of the city, including nearby Austria and Hungary.
+An English visual MVP for painted stones that pass between people. An introduction explains how painted stones come to life through shared encounters and invites finders to carry them to another town or country. Maps lead both the home page and each stone detail. A compact overview table shows miniature stone images, origins, age, find counts, last addresses and latest notes; on smaller screens it remains a table, with horizontal scrolling and a pinned stone identity column. Five fictional stones have 25 finds around Bratislava, all within 100 km of the city, including nearby Austria and Hungary.
 
 Live site: https://romanduris.github.io/LivingStones/
 
