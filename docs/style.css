@@ -421,8 +421,8 @@ footer {
   color: var(--muted);
 }
 .leaflet-tile-pane {
-  filter: grayscale(1) invert(1) brightness(0.85) contrast(0.85) sepia(0.24)
-    hue-rotate(215deg) saturate(0.8);
+  filter: grayscale(1) invert(1) brightness(0.85) contrast(0.85) sepia(0.6)
+    hue-rotate(215deg) saturate(1.2);
 }
 /* Map-first stone detail. */
 dialog {
