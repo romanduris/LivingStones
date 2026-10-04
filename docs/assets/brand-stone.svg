@@ -1,18 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
     <radialGradient id="pebble" cx=".3" cy=".2" r=".95">
-      <stop stop-color="#f3f3f3"/>
-      <stop offset=".55" stop-color="#c8c8c8"/>
-      <stop offset="1" stop-color="#858585"/>
+      <stop stop-color="#f0e6ff"/>
+      <stop offset=".55" stop-color="#bba0ed"/>
+      <stop offset="1" stop-color="#7550b4"/>
     </radialGradient>
   </defs>
   <!-- An uneven, almost full-bleed silhouette stays stone-like at 16 px. -->
-  <path d="M5 25 12 12Q15 7 24 4L36 2Q44 2 49 7L57 17Q60 20 61 29L60 40Q59 47 52 52L41 60Q36 63 28 61L17 58Q12 57 8 50L3 40Q1 34 5 25Z" fill="url(#pebble)" stroke="#767676" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="M5 25 12 12Q15 7 24 4L36 2Q44 2 49 7L57 17Q60 20 61 29L60 40Q59 47 52 52L41 60Q36 63 28 61L17 58Q12 57 8 50L3 40Q1 34 5 25Z" fill="url(#pebble)" stroke="#69419e" stroke-width="1.2" stroke-linejoin="round"/>
   <path d="m10 24 5-10q5-6 13-7" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".55"/>
-  <!-- Slightly wonky chalk lines, like a sun drawn by a child. -->
-  <g stroke="#424242" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Slightly wonky painted lines, like a sun drawn by a child. -->
+  <g stroke="#674131" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
     <path d="M31 17 30 11m12 11 5-5m-1 15 8-1m-11 11 5 6m-17-3-1 8m-8-13-6 6m2-16-8-1m12-7-5-6"/>
-    <path d="M32 21q9-1 12 8 3 8-5 13-8 5-15-2-6-6-1-13 3-5 9-6Z" fill="#e7e7e7"/>
+    <path d="M32 21q9-1 12 8 3 8-5 13-8 5-15-2-6-6-1-13 3-5 9-6Z" fill="#ffda69"/>
     <path d="m27 30 .2 1m10-1-.3 1m-10 5q5 6 10-1" stroke-width="2.2"/>
   </g>
+  <path d="m46 32 8-1m-36-1-8-1" stroke="#168b88" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="25.5" cy="34" r="1.7" fill="#e66a70"/>
+  <circle cx="38.5" cy="34" r="1.7" fill="#e66a70"/>
 </svg>
