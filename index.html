@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#202930" />
     <meta
       name="description"
       content="Follow five painted stones around Bratislava. Explore their journeys, meet their finders, and add your own little moment."
@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="docs/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="docs/style.css?v=17" />
+    <link rel="stylesheet" href="docs/style.css?v=18" />
     <script src="docs/vendor/leaflet/leaflet.js" defer></script>
-    <script src="docs/data.js?v=15" defer></script>
-    <script src="docs/app.js?v=15" defer></script>
+    <script src="docs/data.js?v=18" defer></script>
+    <script src="docs/app.js?v=18" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -62,9 +62,27 @@
               then leave me somewhere safe for my next friend.
             </p>
           </div>
-          <span class="pill"
-            ><span class="live-dot"></span> Demo · Bratislava &amp; nearby</span
-          >
+        </div>
+        <div class="map-overview">
+          <dl class="journey-totals" aria-label="Journey statistics">
+            <div>
+              <dt>Stones</dt>
+              <dd id="total-stones">5</dd>
+            </div>
+            <div>
+              <dt>On the move</dt>
+              <dd id="total-active">5</dd>
+            </div>
+            <div>
+              <dt>Finds</dt>
+              <dd id="total-finds" aria-live="polite">25</dd>
+            </div>
+            <div>
+              <dt>Countries</dt>
+              <dd id="total-countries">3</dd>
+            </div>
+          </dl>
+          <span class="map-hint">Tap a stone. Meet a little friend.</span>
         </div>
         <div class="map-frame">
           <div
@@ -80,14 +98,6 @@
           >
             Show all stones ⤢
           </button>
-        </div>
-        <div class="map-bottom">
-          <p>
-            <span class="live-dot"></span> Last known locations ·
-            <strong id="total-finds">25</strong> finds ·
-            <strong id="total-countries">3</strong> countries
-          </p>
-          <span>Tap a stone to see its story.</span>
         </div>
         <p id="world-map-status" class="map-status" role="status" hidden></p>
       </section>

@@ -4,6 +4,7 @@
 const DEMO_STONES = [
   {
     id: "A1",
+    demo: true,
     name: "Sunny Side",
     tagline: "Let me brighten your day.",
     color: "#c5a34d",
@@ -73,6 +74,7 @@ const DEMO_STONES = [
   },
   {
     id: "B2",
+    demo: true,
     name: "Little Luna",
     tagline: "Show me your quiet places.",
     color: "#9290be",
@@ -142,6 +144,7 @@ const DEMO_STONES = [
   },
   {
     id: "C3",
+    demo: true,
     name: "Slow Bloom",
     tagline: "Let’s take the scenic route.",
     color: "#739279",
@@ -210,6 +213,7 @@ const DEMO_STONES = [
   },
   {
     id: "D4",
+    demo: true,
     name: "Wildheart",
     tagline: "I have a little hug for you.",
     color: "#cc816b",
@@ -279,6 +283,7 @@ const DEMO_STONES = [
   },
   {
     id: "E5",
+    demo: true,
     name: "Ocean Echo",
     tagline: "Take me to a new horizon.",
     color: "#6e98b1",

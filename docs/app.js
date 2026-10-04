@@ -142,9 +142,13 @@ function renderOverview() {
       const last = stone.finds.at(-1),
         birth = stone.finds[0];
       const countries = new Set(stone.finds.map((find) => find.country)).size;
-      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${stone.finds.length} finds, last seen in ${escapeHTML(last.city)}"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span><span class="stone-identity"><strong>${stone.name}</strong><small>${stone.id} · ${stone.tagline}</small></span></a></td><td class="overview-start" data-label="Journey started"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.city)}, ${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Time travelling"><strong>${daysTravelling(stone)} days</strong><small>On the move</small></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small>${countries} ${countries === 1 ? "country" : "countries"}</small></td><td class="overview-location" data-label="Last found at"><strong>${escapeHTML(last.city)}, ${escapeHTML(last.country)}</strong><small>${escapeHTML(last.address || "Address unavailable")}</small></td><td class="overview-latest" data-label="Latest chapter"><time datetime="${escapeHTML(last.date)}">${formatDate(last.date)}${last.local ? " · Preview" : ""}</time><small class="latest-note" title="${escapeHTML(last.message)}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
+      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${stone.finds.length} finds, last seen in ${escapeHTML(last.city)}"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span><span class="stone-identity"><strong>${stone.name}</strong><small class="stone-meta">${stone.id}${stone.demo ? ' <span class="demo-badge">Demo</span>' : ""}</small><small>${stone.tagline}</small></span></a></td><td class="overview-start" data-label="Journey started"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.city)}, ${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Time travelling"><strong>${daysTravelling(stone)} days</strong><small>On the move</small></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small>${countries} ${countries === 1 ? "country" : "countries"}</small></td><td class="overview-location" data-label="Last found at"><strong>${escapeHTML(last.city)}, ${escapeHTML(last.country)}</strong><small>${escapeHTML(last.address || "Address unavailable")}</small></td><td class="overview-latest" data-label="Latest chapter"><time datetime="${escapeHTML(last.date)}">${formatDate(last.date)}${last.local ? " · Preview" : ""}</time><small class="latest-note" title="${escapeHTML(last.message)}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
     })
     .join("");
+  $("#total-stones").textContent = stones.length;
+  $("#total-active").textContent = stones.filter(
+    (stone) => stone.finds.length > 0,
+  ).length;
   $("#total-finds").textContent = stones.reduce(
     (sum, stone) => sum + stone.finds.length,
     0,
@@ -206,7 +210,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
         });
   if (journey && !previewPlace)
     L.polyline(coordinates, {
-      color: "#65528e",
+      color: "#b49aff",
       weight: 3,
       opacity: 0.9,
       dashArray: "5 7",
@@ -214,7 +218,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
   if (!journey && !previewPlace)
     L.circle([48.1486, 17.1077], {
       radius: 100000,
-      color: "#7b8288",
+      color: "#94a3af",
       weight: 1,
       opacity: 0.25,
       fill: false,
@@ -226,7 +230,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
     const stone = journey || previewPlace ? stones[0] : stones[index];
     const latest = journey && index === points.length - 1;
     const local = find.local || Boolean(previewPlace);
-    const color = local ? "#65528e" : stone.color;
+    const color = local ? "#b49aff" : stone.color;
     const label = previewPlace
       ? "Your find location"
       : journey
@@ -271,7 +275,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
   if (precise?.source === "gps" && Number.isFinite(precise.accuracy))
     L.circle([precise.lat, precise.lon], {
       radius: precise.accuracy,
-      color: "#65528e",
+      color: "#b49aff",
       fillOpacity: 0.08,
       weight: 1,
       interactive: false,
