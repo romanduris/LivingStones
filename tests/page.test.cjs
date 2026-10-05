@@ -174,9 +174,48 @@ test("alive stones use an inclusive 90-day window and statistics follow added st
 
 test("find recency follows displayed calendar dates across midnight and uses readable singular labels", () => {
   const now = Date.parse("2026-10-05T00:10:00Z");
-  assert.equal(context.findRecency("2026-10-05T00:01:00Z", now).label, "(today)");
-  assert.equal(context.findRecency("2026-10-04T23:55:00Z", now).label, "(1 day ago)");
+  assert.equal(
+    context.findRecency("2026-10-05T00:01:00Z", now).label,
+    "(today)",
+  );
+  assert.equal(
+    context.findRecency("2026-10-04T23:55:00Z", now).label,
+    "(1 day ago)",
+  );
   assert.equal(context.findRecency("2026-09-29", now).label, "(6 days ago)");
   assert.equal(context.findRecency("2026-09-29", now).compact, "(6d ago)");
   assert.equal(context.findRecency("2026-10-06", now).label, "(today)");
+});
+
+test("story feed merges standalone notes once, orders newest first and never reorders route points", () => {
+  const stone = {
+    id: "A1",
+    finds: [
+      { id: "birth", date: "2025-04-12", message: "Born" },
+      { id: "find", date: "2026-10-04T12:00:00Z", message: "We met" },
+    ],
+    comments: [
+      {
+        id: "attached",
+        findId: "find",
+        date: "2026-10-04T12:00:00Z",
+        message: "We met",
+      },
+      {
+        id: "note",
+        findId: null,
+        date: "2026-10-05T12:00:00Z",
+        message: "Hello",
+      },
+    ],
+  };
+  const original = JSON.stringify(stone);
+  const entries = context.storyEntries(stone);
+  assert.deepEqual(
+    Array.from(entries, (e) => e.id),
+    ["note", "find", "birth"],
+  );
+  assert.equal(entries[0].type, "note");
+  assert.equal(entries[1].type, "find");
+  assert.equal(JSON.stringify(stone), original);
 });

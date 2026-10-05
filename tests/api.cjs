@@ -114,6 +114,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       403,
     );
     const initial = (await call("/stones/A1")).body.stone;
+    assert.equal(initial.creator, "Nina");
     const note = {
       code: "SUN24",
       nickname: "<b>Friend</b>",

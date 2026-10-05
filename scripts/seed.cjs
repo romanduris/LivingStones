@@ -28,6 +28,7 @@ for (const s of sandbox.stones) {
       tagline: s.tagline,
       story: s.story,
       born: s.started,
+      creator: s.finds[0].nickname,
       image: s.image,
       theme: s.theme,
       color: s.color,

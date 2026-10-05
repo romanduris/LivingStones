@@ -8,7 +8,7 @@ The frontend is published from `docs/` using GitHub Pages. The root `index.html`
 
 Cloudflare Worker **livingstones-api** serves the API at https://livingstones-api.livingstones-romanduris.workers.dev. Its `DB` binding points only to D1 **livingstones-db**. The frontend reads stones, finds and messages through the API; it does not use hardcoded stone journeys or browser storage as its data source. Cloudflare management credentials never enter the frontend.
 
-Five fictional stones are marked **Demo**. Stones with `is_demo = 0` show **Real**; their Find Codes are never returned by the API. The seed contains 25 finds and 25 finder notes around Bratislava, Austria and Hungary. `fixtures/demo-data.js` is input for seeding and tests, not a browser script. Existing SVG images can later be replaced with asset paths or full photo URLs.
+Five fictional stones are marked **Demo**. Stones with `is_demo = 0` show **Real**; their Find Codes are never returned by the API. Creators are stored independently of finders in `stones.creator`. The seed contains 25 finds and 25 finder notes around Bratislava, Austria and Hungary. `fixtures/demo-data.js` is input for seeding and tests, not a browser script. Existing SVG images can later be replaced with asset paths or full photo URLs.
 
 Opening a stone or its shared `?stone=A1` link only reads data. Desktop visitors see its story. Phones and tablets can record a find using a Find Code, GPS and an optional nickname/note. After permission, a preview map displays the location and GPS accuracy; Photon provides a street/area name when available. Demo stones also allow explicitly labelled fictional locations. Real stones require GPS. Only a successful database write updates the history, maps and totals.
 
@@ -20,7 +20,7 @@ Requests have stable idempotency keys so retries after lost responses cannot cre
 
 The sticky charcoal navigation, Baloo 2 headings and Nunito Sans text use local WOFF2 fonts with their licenses in `docs/assets/fonts/`. Purple, coral, teal and yellow accents match the painted pebble brand. Leaflet is locally vendored. OpenStreetMap tiles receive a subdued charcoal/purple filter, with lavender marker outlines and journey routes. Attribution remains visible. If tiles fail, location markers and controls still work.
 
-The overview remains a table at phone sizes: Stone is left aligned, Age/Finds centered, Last Found right aligned. Less important columns disappear progressively and birth details move underneath the stone name. Maps remain first in the overview and in the stone dialog. URL/history/sharing support stays in the main page.
+The overview remains a table at phone sizes: The first visible data column is left aligned, the last is right aligned, and the middle columns are centered. Last Found includes a compact elapsed-day label. Less important columns disappear progressively and birth details move underneath the stone name. The overview starts with the map. Stone details begin with a personal introduction, creator and birthplace, followed by the route map, journey statistics and actions. The story feed combines finds and standalone notes, newest first, with date, city, flag and finder in its header, then the address and message. Standalone notes do not claim a location. URL/history/sharing support stays in the main page.
 
 ## Development and tests
 

@@ -604,64 +604,6 @@ body:has(dialog[open]) {
   border: 1px solid var(--line);
   border-radius: 5px;
 }
-.find-history {
-  border-collapse: collapse;
-  width: 100%;
-  text-align: left;
-  font-size: 13px;
-}
-.find-history th {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.4px;
-  color: var(--muted);
-  text-transform: uppercase;
-  padding: 11px 12px;
-  background: #303944;
-  border-bottom: 1px solid var(--line);
-}
-.find-history td {
-  padding: 13px 12px;
-  vertical-align: top;
-  border-bottom: 1px solid var(--line);
-  line-height: 1.65;
-}
-.find-history tr:last-child td {
-  border-bottom: 0;
-}
-.find-history .find-number {
-  width: 35px;
-  color: var(--muted);
-}
-.find-history .find-date {
-  white-space: nowrap;
-  color: var(--muted);
-}
-.find-history .find-place {
-  min-width: 185px;
-}
-.find-history .find-place strong {
-  font-weight: 500;
-  display: block;
-}
-.find-history .find-place small {
-  display: block;
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 4px;
-  max-width: 265px;
-}
-.find-history .find-finder {
-  min-width: 90px;
-  color: var(--muted);
-}
-.find-history .find-message {
-  width: 35%;
-  color: var(--muted);
-}
-.find-history .new-find {
-  background: #303944;
-}
 .local-badge {
   font-size: 11px;
   display: inline-block;
@@ -997,72 +939,6 @@ body:has(dialog[open]) {
   }
   .detail-section h3 {
     font-size: 15px;
-  }
-  .find-history thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-  .find-history tbody {
-    display: block;
-  }
-  .find-history tr {
-    display: grid;
-    grid-template-columns: 27px 1fr 1fr;
-    padding: 12px 13px;
-    border-bottom: 1px solid var(--line);
-  }
-  .find-history tr:last-child {
-    border-bottom: 0;
-  }
-  .find-history td {
-    padding: 0;
-    border: 0;
-    min-width: 0 !important;
-    width: auto !important;
-    font-size: 13px;
-  }
-  .find-history .find-number {
-    grid-column: 1;
-    grid-row: 1;
-    align-self: start;
-  }
-  .find-history .find-date {
-    grid-column: 2;
-    grid-row: 1;
-    font-size: 11px;
-  }
-  .find-history .find-finder {
-    grid-column: 3;
-    grid-row: 1;
-    text-align: right;
-    font-size: 11px;
-  }
-  .find-history .find-place {
-    grid-column: 2/4;
-    grid-row: 2;
-    margin-top: 7px;
-  }
-  .find-history .find-place small {
-    max-width: none;
-    line-height: 1.8;
-  }
-  .find-history .find-message {
-    grid-column: 2/4;
-    grid-row: 3;
-    margin-top: 8px;
-    font-size: 13px;
-  }
-  .find-history .local-badge {
-    font-size: 10px;
-    margin-top: 2px;
-  }
-  .find-history .accuracy-note {
-    font-size: 11px;
   }
   .find-panel {
     padding: 15px;
@@ -1656,21 +1532,6 @@ body:has(dialog[open]) {
 .data-status .button {
   margin-left: 8px;
 }
-.stone-note {
-  border-bottom: 1px solid #3b4651;
-  padding: 14px 0;
-}
-.stone-note time {
-  font-size: 12px;
-  color: #b0bac5;
-  margin-left: 12px;
-}
-.stone-note p {
-  margin: 6px 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 /* The final data column aligns right as less essential columns disappear. */
 .stone-table .overview-arrow {
   text-align: right;
@@ -1703,5 +1564,150 @@ body:has(dialog[open]) {
   }
   .ago-compact {
     display: inline;
+  }
+}
+
+/* A stone introduces itself before its route and its newest memories. */
+.detail-summary {
+  padding-top: 0;
+}
+.detail-intro {
+  margin-bottom: 20px;
+}
+.detail-copy .origin-note {
+  margin-top: 9px;
+}
+.birth-place {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  vertical-align: baseline;
+}
+.life-summary {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.origin-note strong,
+.life-summary strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+.stone-backstory {
+  margin-top: 12px;
+}
+.detail-stats {
+  flex-wrap: wrap;
+}
+.detail-actions,
+.desktop-note {
+  margin-left: 0;
+}
+.story-feed {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.story-entry {
+  padding: 17px 18px;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.story-entry:last-child {
+  border-bottom: 0;
+}
+.story-entry.new-find {
+  background: #303944;
+  box-shadow: inset 3px 0 var(--purple);
+}
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-width: 0;
+}
+.entry-meta time {
+  color: var(--muted);
+  font-size: 12px;
+}
+.entry-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.entry-location strong,
+.entry-finder {
+  font-weight: 600;
+  color: var(--ink);
+}
+.entry-finder {
+  text-align: right;
+  max-width: 30%;
+  flex-shrink: 0;
+}
+.entry-address {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.entry-message {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--ink);
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+.entry-message.no-message {
+  color: var(--muted);
+  font-size: 13px;
+}
+.entry-kind {
+  font-size: 11px;
+  color: var(--purple);
+}
+@media (max-width: 700px) {
+  .detail-summary {
+    display: block;
+  }
+  .detail-summary::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  .detail-image {
+    float: left;
+    margin: 0 13px 7px 0;
+  }
+  .detail-intro .detail-story {
+    font-size: 14px;
+  }
+  .detail-intro .origin-note,
+  .life-summary {
+    font-size: 12px;
+  }
+  .story-entry {
+    padding: 14px 12px;
+  }
+  .entry-header {
+    gap: 10px;
+    font-size: 12px;
+  }
+  .entry-meta {
+    gap: 3px 8px;
+  }
+  .entry-meta time {
+    font-size: 11px;
   }
 }

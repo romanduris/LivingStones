@@ -29,7 +29,7 @@ async function listStones(db, id) {
   const where = id ? " WHERE id = ?" : "";
   const statements = [
     db.prepare(
-      "SELECT id,name,tagline,story,born,image,theme,color,is_demo,demo_code FROM stones" +
+      "SELECT id,name,tagline,story,born,image,theme,color,is_demo,demo_code,creator FROM stones" +
         where +
         (id ? "" : " ORDER BY id"),
     ),
@@ -51,6 +51,7 @@ async function listStones(db, id) {
     tagline: s.tagline,
     story: s.story,
     started: s.born,
+    creator: s.creator,
     image: s.image,
     theme: s.theme,
     color: s.color,

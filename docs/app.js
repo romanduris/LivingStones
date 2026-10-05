@@ -105,12 +105,33 @@ function journeyStatistics(stones, now = Date.now()) {
 }
 // Calendar days in UTC match the dates shown in the journey table.
 function findRecency(value, now = Date.now()) {
-  const days = Math.max(0, Math.floor(now / 86400000) - Math.floor(Date.parse(value) / 86400000));
+  const days = Math.max(
+    0,
+    Math.floor(now / 86400000) - Math.floor(Date.parse(value) / 86400000),
+  );
   return {
     days,
-    label: days === 0 ? "(today)" : `(${days} ${days === 1 ? "day" : "days"} ago)`,
+    label:
+      days === 0 ? "(today)" : `(${days} ${days === 1 ? "day" : "days"} ago)`,
     compact: days === 0 ? "(today)" : `(${days}d ago)`,
   };
+}
+// Keep route points chronological; only the visible story feed is newest first.
+function storyEntries(stone) {
+  return [
+    ...stone.finds.map((find, index) => ({
+      ...find,
+      id: find.id || `${stone.id}-find-${index}`,
+      type: "find",
+    })),
+    ...(stone.comments || [])
+      .filter((comment) => !comment.findId)
+      .map((comment) => ({ ...comment, type: "note" })),
+  ].sort(
+    (a, b) =>
+      Date.parse(b.date) - Date.parse(a.date) ||
+      String(b.id).localeCompare(String(a.id)),
+  );
 }
 // This repository is the only data boundary. The API is the source of truth.
 const stoneRepository = (() => {
@@ -386,12 +407,43 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
     observer,
   });
 }
+function countryFlagHTML(country) {
+  const code = { Slovakia: "sk", Austria: "at", Hungary: "hu" }[country];
+  return code
+    ? `<img class="country-flag" src="${new URL(`flags/${code}.svg`, assetBase).href}" alt="${escapeHTML(country)}" width="15" height="10">`
+    : "";
+}
+function formatMoment(value) {
+  return (
+    formatDate(value) +
+    (value.includes("T")
+      ? " · " +
+        new Intl.DateTimeFormat("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date(value))
+      : "")
+  );
+}
 function historyHTML(stone) {
-  return stone.finds
-    .map(
-      (find, index) =>
-        `<tr class="${find.local ? "new-find" : ""}"><td class="find-number">${index + 1}</td><td class="find-date"><time datetime="${escapeHTML(find.date)}">${formatDate(find.date)}</time>${find.source !== "seed" ? `<br><span class="local-badge">${find.source === "demo" ? "Demo location" : "GPS find"}</span>` : ""}</td><td class="find-place"><strong>${escapeHTML(find.city)}, ${escapeHTML(find.country)}</strong><small>${escapeHTML(find.address || "Address unavailable — " + find.lat.toFixed(5) + ", " + find.lon.toFixed(5))}</small>${find.accuracy != null ? `<span class="accuracy-note">GPS accuracy ~${Math.round(find.accuracy)} m${find.accuracy > 150 ? " · approximate area" : ""}</span>` : ""}</td><td class="find-finder">${escapeHTML(find.nickname || "A kind stranger")}</td><td class="find-message">${find.message ? "“" + escapeHTML(find.message) + "”" : "—"}</td></tr>`,
-    )
+  return storyEntries(stone)
+    .map((entry) => {
+      const isFind = entry.type === "find";
+      const address = isFind
+        ? entry.address ||
+          `Address unavailable — ${entry.lat.toFixed(5)}, ${entry.lon.toFixed(5)}`
+        : "No location shared with this note.";
+      return `<article class="story-entry ${isFind ? "find-entry" : "note-entry"}${entry.local ? " new-find" : ""}" data-entry="${escapeHTML(entry.id)}">
+      <header class="entry-header">
+        <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? `<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : '<span class="entry-kind">A little note</span>'}</div>
+        <strong class="entry-finder">${escapeHTML(entry.nickname || "A kind stranger")}</strong>
+      </header>
+      <p class="entry-address">${escapeHTML(address)}</p>
+      ${isFind && entry.accuracy != null ? `<p class="accuracy-note">GPS accuracy ~${Math.round(entry.accuracy)} m${entry.accuracy > 150 ? " · approximate area" : ""}</p>` : ""}
+      ${entry.message ? `<p class="entry-message">“${escapeHTML(entry.message)}”</p>` : '<p class="entry-message no-message">A little hello, without a note this time.</p>'}
+      ${isFind && entry.source !== "seed" ? `<span class="local-badge">${entry.source === "demo" ? "Demo location" : "GPS find"}</span>` : ""}
+    </article>`;
+    })
     .join("");
 }
 function renderDetail() {
@@ -401,11 +453,43 @@ function renderDetail() {
   disposeMap("location-preview");
   const last = stone.finds.at(-1),
     birth = stone.finds[0];
-  $("#stone-detail").innerHTML =
-    `<div class="detail-topbar"><h2 id="detail-title"><span class="color-dot" style="--stone-color:${stone.color}"></span>${escapeHTML(stone.name)}<small>${stone.id}</small></h2><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div><div class="detail-body"><section aria-labelledby="journey-title"><h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3><div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div><div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span>${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : "Numbers follow the history below."}</span></div></section><div class="detail-summary"><div class="detail-image theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.name)}, a painted ${stone.theme} stone"></div><div class="detail-copy"><h3>${escapeHTML(stone.tagline)}</h3><p class="detail-story">${escapeHTML(stone.story)}</p><p class="origin-note">My first home: ${escapeHTML(birth.city)} · ${escapeHTML(birth.address)} · ${formatDate(stone.started)}</p><div class="detail-stats"><span><strong>${daysTravelling(stone)}</strong> days travelling</span><span><strong>${stone.finds.length}</strong> finds</span><span><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> countries</span></div><div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone ↗</button><button class="button secondary" id="start-comment">Leave a little note</button>' : ""}<button class="button secondary" id="share-stone">Share my story ↗</button></div>${supportsPreciseLocation() ? "" : '<p class="desktop-note">Found me? Open my link on your phone to tell me where we met.</p>'}<div id="share-fallback" class="share-fallback" hidden></div></div></div><div id="find-container"></div><section class="detail-section" aria-labelledby="history-title"><h3 id="history-title">The friends I’ve met.</h3><p class="section-subtitle">Every hello is part of my story.</p><div class="table-scroll"><table class="find-history"><caption class="sr-only">Find history, including dates, addresses, finders and messages</caption><thead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Location / address</th><th scope="col">Finder</th><th scope="col">Their note</th></tr></thead><tbody>${historyHTML(stone)}</tbody></table></div></section>${commentsHTML(stone)}<p class="detail-footnote">${stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story."} Looking never records a find.</p></div>`;
+  const days = daysTravelling(stone),
+    finds = stone.finds.length;
+  const creator = stone.creator
+    ? `${escapeHTML(stone.creator)} brought me to life`
+    : "My story began";
+  $("#stone-detail").innerHTML = `
+    <div class="detail-topbar"><h2 id="detail-title"><span class="color-dot" style="--stone-color:${stone.color}"></span>${escapeHTML(stone.name)}<small>${escapeHTML(stone.id)}</small></h2><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div>
+    <div class="detail-body">
+      <section class="detail-intro" aria-labelledby="intro-title">
+        <div class="detail-summary">
+          <div class="detail-image theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.name)}, a painted ${escapeHTML(stone.theme)} stone"></div>
+          <div class="detail-copy">
+            <h3 id="intro-title">Hi, I’m ${escapeHTML(stone.name)}.</h3>
+            <p class="detail-story">I’m a little painted stone. Every person I meet brings me a little more to life. Take me on a trip, then leave me somewhere safe for my next friend.</p>
+            <p class="origin-note">${creator} on <strong>${formatDate(stone.started)}</strong> in <span class="birth-place"><strong>${escapeHTML(birth.city)}, ${escapeHTML(birth.country)}</strong>${countryFlagHTML(birth.country)}</span>.</p>
+            <p class="life-summary">I’ve been alive for <strong>${days} ${days === 1 ? "day" : "days"}</strong>, with <strong>${finds} ${finds === 1 ? "little hello" : "little hellos"}</strong> along the way.</p>
+          </div>
+        </div>
+        <p class="detail-story stone-backstory">${escapeHTML(stone.story)}</p>
+      </section>
+      <section class="detail-journey" aria-labelledby="journey-title">
+        <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
+        <div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div>
+        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span>${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}</div>
+        <div class="detail-stats" aria-label="My journey statistics"><span><strong>${days}</strong> days travelling</span><span><strong>${finds}</strong> finds</span><span><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> countries</span></div>
+      </section>
+      <div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone ↗</button><button class="button secondary" id="start-comment">Leave a little note</button>' : ""}<button class="button secondary" id="share-stone">Share my story ↗</button><button class="button secondary" id="other-stones">Meet the other stones ↗</button></div>
+      ${supportsPreciseLocation() ? "" : '<p class="desktop-note">Found me? Open my link on your phone to tell me where we met.</p>'}
+      <div id="share-fallback" class="share-fallback" hidden></div>
+      <div id="find-container"></div>
+      <section class="detail-section" aria-labelledby="history-title"><h3 id="history-title">The friends I’ve met.</h3><p class="section-subtitle">Every hello is part of my story. The newest memories come first.</p><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
+      <p class="detail-footnote">${stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story."} Looking never records a find.</p>
+    </div>`;
   renderMap($("#journey-map"), [stone], true);
   $("#close-detail").addEventListener("click", closeDetail);
   $("#share-stone").addEventListener("click", shareStone);
+  $("#other-stones").addEventListener("click", showOtherStones);
   $("#start-comment")?.addEventListener("click", () => startComment(stone));
   $("#start-find")?.addEventListener("click", () => {
     if (!supportsPreciseLocation()) return;
@@ -423,6 +507,19 @@ function renderDetail() {
     $("#find-container").scrollIntoView({ behavior: "smooth", block: "start" });
     $("#find-code").focus({ preventScroll: true });
   });
+}
+function showOtherStones() {
+  const show = () => {
+    $("#explore").scrollIntoView({ behavior: "smooth", block: "start" });
+    $(".stone-link")?.focus({ preventScroll: true });
+  };
+  if (history.state?.livingstonesDetail) {
+    window.addEventListener("popstate", show, { once: true });
+    closeDetail();
+  } else {
+    closeDetail();
+    show();
+  }
 }
 function openStone(id, updateURL = true) {
   if (!stoneRepository.get(id)) return;
@@ -509,7 +606,7 @@ function renderFlow() {
     $("#finish-find").addEventListener("click", () => {
       flow = null;
       renderFlow();
-      const chapter = $(".find-history tbody tr:last-child");
+      const chapter = $(".find-entry.new-find") || $(".find-entry");
       chapter.scrollIntoView({ behavior: "smooth", block: "center" });
       chapter.setAttribute("tabindex", "-1");
       chapter.focus({ preventScroll: true });
@@ -708,10 +805,9 @@ function requestLocation() {
   const current = () =>
     flow === activeFlow && flow.step === 2 && $("#use-gps") === button;
   if (!navigator.geolocation) {
-    status.textContent =
-      stoneRepository.get(flow.id).demo
-        ? "GPS is unavailable in this browser. Choose a demo city to continue."
-        : "GPS is unavailable in this browser. Open my link in a browser with location support.";
+    status.textContent = stoneRepository.get(flow.id).demo
+      ? "GPS is unavailable in this browser. Choose a demo city to continue."
+      : "GPS is unavailable in this browser. Open my link in a browser with location support.";
     return;
   }
   activeFlow.busy = true;
@@ -737,7 +833,8 @@ function requestLocation() {
       }[error.code] ||
       "Could not get your location. Choose a demo city to continue.";
     if (!stoneRepository.get(flow.id).demo)
-      status.textContent = "We couldn’t get your location. Allow location in your browser settings and try again.";
+      status.textContent =
+        "We couldn’t get your location. Allow location in your browser settings and try again.";
     unlock();
   };
   try {
@@ -827,10 +924,6 @@ async function boot() {
 }
 boot();
 
-function commentsHTML(stone) {
-  const notes = (stone.comments || []).filter((c) => !c.findId);
-  return `<section class="detail-section" aria-labelledby="notes-title"><h3 id="notes-title">Little notes along the way.</h3><p class="section-subtitle">A note says hello. A confirmed find tells me where we met.</p><div id="stone-notes">${notes.length ? notes.map((c) => `<article class="stone-note"><strong>${escapeHTML(c.nickname)}</strong> <time datetime="${escapeHTML(c.date)}">${formatDate(c.date)}</time><p>${escapeHTML(c.message)}</p></article>`).join("") : '<p class="section-subtitle">Be the first to leave me a little note.</p>'}</div></section>`;
-}
 function startComment(stone) {
   if (!supportsPreciseLocation()) return;
   flow = null;
@@ -863,11 +956,17 @@ function startComment(stone) {
       .forEach((el) => (el.disabled = true));
     $("#comment-error").textContent = "Saving your little note…";
     try {
-      await stoneRepository.addComment(stone.id, payload, state.key);
+      const saved = await stoneRepository.addComment(
+        stone.id,
+        payload,
+        state.key,
+      );
       renderOverview();
       if (selectedId === stone.id && $("#stone-dialog").open) {
         renderDetail();
-        const note = $("#stone-notes article:last-child");
+        const note = $(
+          `.note-entry[data-entry="${CSS.escape(saved.recordId)}"]`,
+        );
         note.scrollIntoView({ behavior: "smooth", block: "center" });
         note.setAttribute("tabindex", "-1");
         note.focus({ preventScroll: true });

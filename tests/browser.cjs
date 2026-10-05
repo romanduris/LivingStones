@@ -26,6 +26,7 @@ process.on("exit", () => server?.kill());
   browser.newContext = async (options) => {
     const context = await newContext(options);
     const stones = JSON.parse(JSON.stringify(fixture.stones));
+    for (const stone of stones) stone.creator = stone.finds[0].nickname;
     for (const stone of stones)
       stone.comments = stone.finds.map((f, i) => ({
         id: `seed-${stone.id}-${i}`,
@@ -107,7 +108,7 @@ process.on("exit", () => server?.kill());
         };
       }
     };
-    const rows = ".find-history tbody tr";
+    const rows = ".story-feed .find-entry";
     const desktop = await browser.newContext({
       viewport: { width: 1440, height: 1050 },
     });
@@ -188,14 +189,37 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator(rows).count(), 5);
     assert.equal(await page.evaluate(() => window.gpsCalls), 0);
     assert.equal(
-      await page.evaluate(
-        () =>
-          document
-            .querySelector(".detail-body")
-            .firstElementChild.querySelector(".map-panel").id,
-      ),
-      "journey-map",
+      await page
+        .locator(".detail-body")
+        .evaluate((el) => el.firstElementChild.className),
+      "detail-intro",
     );
+    assert.match(
+      await page.locator(".detail-intro").innerText(),
+      /Hi, I’m Sunny Side/,
+    );
+    assert.match(
+      await page.locator(".origin-note").innerText(),
+      /Nina.*12 Apr 2025.*Bratislava/s,
+    );
+    assert.equal(await page.locator(".find-number").count(), 0);
+    assert.equal(await page.locator(".find-entry .country-flag").count(), 5);
+    assert.ok(
+      await page.evaluate(() => {
+        const top = (selector) =>
+          document.querySelector(selector).getBoundingClientRect().top;
+        return (
+          top(".detail-intro") < top("#journey-map") &&
+          top("#journey-map") < top(".detail-stats") &&
+          top(".detail-stats") < top(".detail-actions") &&
+          top(".detail-actions") < top(".story-feed")
+        );
+      }),
+    );
+    const dates = await page
+      .locator(".find-entry time")
+      .evaluateAll((elements) => elements.map((el) => Date.parse(el.dateTime)));
+    assert.ok(dates.every((date, i) => !i || dates[i - 1] >= date));
     assert.ok(
       await page.evaluate(
         () => mapInstances.get("journey-map").map.getSize().x > 400,
@@ -216,6 +240,9 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator("dialog[open]").count(), 0);
     await page.goto(base + "/docs/?stone=C3");
     assert.match(await page.locator("#detail-title").innerText(), /Slow Bloom/);
+    await page.locator("#other-stones").click();
+    await page.waitForURL(base + "/docs/");
+    assert.equal(await page.locator("dialog[open]").count(), 0);
     await page.goto(base + "/?stone=unknown");
     assert.equal(await page.locator("dialog[open]").count(), 0);
     const mobile = await browser.newContext({ ...devices["iPhone 13"] });
@@ -313,14 +340,14 @@ process.on("exit", () => server?.kill());
     await phone.locator("#success-title").waitFor();
     assert.equal(await phone.locator(rows).count(), 6);
     assert.match(
-      await phone.locator(rows).last().innerText(),
+      await phone.locator(rows).first().innerText(),
       /Bernolákov sad/,
     );
     assert.match(
-      await phone.locator(rows).last().innerText(),
+      await phone.locator(rows).first().innerText(),
       /<b>Tester<\/b>/,
     );
-    assert.equal(await phone.locator(".find-history script").count(), 0);
+    assert.equal(await phone.locator(".story-feed script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
     assert.equal(await phone.locator("#total-finds").innerText(), "26");
     assert.equal(await phone.locator("#hello-count").innerText(), "26");
@@ -381,9 +408,9 @@ process.on("exit", () => server?.kill());
     await phone.locator("#location-next").click();
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#success-title").waitFor();
-    assert.match(await phone.locator(rows).last().innerText(), /Ľanová 8/);
+    assert.match(await phone.locator(rows).first().innerText(), /Ľanová 8/);
     assert.match(
-      await phone.locator(rows).last().innerText(),
+      await phone.locator(rows).first().innerText(),
       /GPS accuracy ~25 m/,
     );
     const pin = await phone.evaluate(() => {
@@ -419,7 +446,7 @@ process.on("exit", () => server?.kill());
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#success-title").waitFor();
     assert.match(
-      await phone.locator(rows).last().innerText(),
+      await phone.locator(rows).first().innerText(),
       /Address unavailable — 0.00000, 0.00000/,
     );
     // Canceling a pending GPS request must not create or alter a find.
@@ -495,15 +522,23 @@ process.on("exit", () => server?.kill());
       .locator("#comment-message")
       .fill("A little hello that stays. <b>Safe text</b>");
     await phone.locator("#comment-form button[type=submit]").click();
-    await phone.locator("#stone-notes article").waitFor();
+    await phone.locator("#stone-notes .note-entry").waitFor();
     assert.equal(await phone.locator("#total-finds").innerText(), beforeNotes);
     await phone.reload();
     assert.match(
       await phone.locator("#stone-notes").innerText(),
       /A little hello that stays/,
     );
-    assert.equal(await phone.locator("#stone-notes b").count(), 0);
+    assert.equal(await phone.locator("#stone-notes .note-entry b").count(), 0);
     assert.equal(await phone.locator(rows).count(), 5);
+    assert.equal(
+      await phone
+        .locator(".story-entry")
+        .first()
+        .evaluate((el) => el.classList.contains("note-entry")),
+      true,
+    );
+    assert.equal(await phone.locator(".note-entry .entry-location").count(), 0);
     // Offline map tiles retain working controls and pins, with an honest status.
     await page.route("https://**/*", (route) => route.abort());
     for (const width of [320, 375, 600, 768, 1024, 1440]) {
@@ -672,7 +707,7 @@ process.on("exit", () => server?.kill());
     }
     assert.deepEqual(errors, []);
     console.log(
-      "Passed: map-first layouts, Leaflet controls/pins, mobile-only finds, automatic GPS, addresses, safe notes, canceled GPS, persistent API-backed data and standalone comments, URLs/history/sharing and responsive layouts.",
+      "Passed: intro-first stone details, newest-first story feed, other-stone navigation, map-first overview, Leaflet controls/pins, mobile-only finds, automatic GPS, addresses, safe notes, canceled GPS, persistent API-backed data and standalone comments, URLs/history/sharing and responsive layouts.",
     );
   } finally {
     await browser.close();
