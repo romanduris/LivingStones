@@ -89,6 +89,19 @@ function formatPlace(properties, accuracy) {
     ),
   ].join(", ");
 }
+// The feed header already shows the city and country; keep stored addresses intact.
+function storyAddress(entry) {
+  if (!entry.address) {
+    return `Address unavailable — ${entry.lat.toFixed(5)}, ${entry.lon.toFixed(5)}`;
+  }
+  const normalize = (value) => value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+  const headerParts = new Set([entry.city, entry.country].filter(Boolean).map(normalize));
+  return entry.address
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part && !headerParts.has(normalize(part)))
+    .join(", ") || "Exact address unavailable";
+}
 // A stone stays alive for 90 days after its latest recorded encounter.
 function journeyStatistics(stones, now = Date.now()) {
   const cutoff = now - 90 * 86400000;
@@ -430,17 +443,16 @@ function historyHTML(stone) {
     .map((entry) => {
       const isFind = entry.type === "find";
       const address = isFind
-        ? entry.address ||
-          `Address unavailable — ${entry.lat.toFixed(5)}, ${entry.lon.toFixed(5)}`
+        ? storyAddress(entry)
         : "No location shared with this note.";
       return `<article class="story-entry ${isFind ? "find-entry" : "note-entry"}${entry.local ? " new-find" : ""}" data-entry="${escapeHTML(entry.id)}">
       <header class="entry-header">
         <div class="entry-place">
           <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? `<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : '<span class="entry-kind">A little note</span>'}</div>
-          <p class="entry-address">${escapeHTML(address)}</p>
+          <p class="entry-address">${escapeHTML(address)}${isFind && entry.source === "gps" ? ' <span class="local-badge gps-badge">GPS find</span>' : ""}</p>
           ${isFind && entry.accuracy != null ? `<p class="accuracy-note">GPS accuracy ~${Math.round(entry.accuracy)} m${entry.accuracy > 150 ? " · approximate area" : ""}</p>` : ""}
         </div>
-        <div class="entry-author"><strong class="entry-finder">${escapeHTML(entry.nickname || "A kind stranger")}</strong>${isFind && entry.source !== "seed" ? `<span class="local-badge">${entry.source === "demo" ? "Demo location" : "GPS find"}</span>` : ""}</div>
+        <div class="entry-author"><strong class="entry-finder">${escapeHTML(entry.nickname || "A kind stranger")}</strong>${isFind && entry.source === "demo" ? '<span class="local-badge">Demo location</span>' : ""}</div>
       </header>
       ${entry.message ? `<p class="entry-message">“${escapeHTML(entry.message)}”</p>` : '<p class="entry-message no-message">A little hello, without a note this time.</p>'}
     </article>`;

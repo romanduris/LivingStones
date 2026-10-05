@@ -427,6 +427,10 @@ process.on("exit", () => server?.kill());
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#success-title").waitFor();
     assert.match(await phone.locator(rows).first().innerText(), /Ľanová 8/);
+    const gpsEntry = phone.locator(rows).first();
+    assert.equal(await gpsEntry.locator(".entry-address .gps-badge").count(), 1);
+    assert.equal(await gpsEntry.locator(".entry-author .local-badge").count(), 0);
+    assert.equal(await gpsEntry.locator(".entry-address").innerText(), "Ľanová 8, Ružinov GPS find");
     assert.match(
       await phone.locator(rows).first().innerText(),
       /GPS accuracy ~25 m/,

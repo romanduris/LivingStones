@@ -219,3 +219,17 @@ test("story feed merges standalone notes once, orders newest first and never reo
   assert.equal(entries[1].type, "find");
   assert.equal(JSON.stringify(stone), original);
 });
+
+test("story addresses omit header locations while preserving streets, neighbourhoods and stored data", () => {
+  const entry = {
+    city: "District of Bratislava V",
+    country: "Slovakia",
+    address: "Panónska cesta, Škovránčie pole, Petržalka, District of Bratislava V, Slovakia",
+  };
+  const original = entry.address;
+  assert.equal(context.storyAddress(entry), "Panónska cesta, Škovránčie pole, Petržalka");
+  assert.equal(entry.address, original);
+  assert.equal(context.storyAddress({ ...entry, address: "Bratislavská cesta,  SLOVAKIA , district  of Bratislava V" }), "Bratislavská cesta");
+  assert.equal(context.storyAddress({ ...entry, address: "Slovakia, District of Bratislava V" }), "Exact address unavailable");
+  assert.equal(context.storyAddress({ lat: 0, lon: 0 }), "Address unavailable — 0.00000, 0.00000");
+});
