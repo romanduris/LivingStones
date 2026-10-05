@@ -102,12 +102,12 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       403,
     );
     assert.equal(
-      (await call("/stones/A1/verify", { code: "SUN24" })).status,
+      (await call("/stones/A1/verify", { code: "8451" })).status,
       200,
     );
     assert.equal(
       (
-        await call("/stones/A1/verify", { code: "SUN24" }, undefined, {
+        await call("/stones/A1/verify", { code: "8451" }, undefined, {
           Origin: "https://evil.invalid",
         })
       ).status,
@@ -116,7 +116,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const initial = (await call("/stones/A1")).body.stone;
     assert.equal(initial.creator, "Nina");
     const note = {
-      code: "SUN24",
+      code: "8451",
       nickname: "<b>Friend</b>",
       message: "A note from another browser.",
     };
@@ -154,7 +154,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       400,
     );
     const find = {
-      code: "SUN24",
+      code: "8451",
       nickname: "Tester",
       message: "Our saved adventure.",
       place: {
@@ -252,13 +252,13 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       (
         await call("/stones/C3/finds", {
           ...find,
-          code: "GROW3",
+          code: "8453",
           place: { ...find.place, source: "demo" },
         })
       ).status,
       400,
     );
-    const manual = { ...find, code:"GROW3", place:{lat:48.735429,lon:19.1457338,city:"Banská Bystrica",country:"Slovakia",address:"Approximate city location",source:"manual"} };
+    const manual = { ...find, code:"8453", place:{lat:48.735429,lon:19.1457338,city:"Banská Bystrica",country:"Slovakia",address:"Approximate city location",source:"manual"} };
     const manualKey = randomUUID();
     const manualSaved = await call("/stones/C3/finds", manual, manualKey);
     assert.equal(manualSaved.status, 200);

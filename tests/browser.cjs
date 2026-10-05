@@ -319,6 +319,10 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
     assert.equal(lookups, 0);
     await phone.locator("#start-find").click();
+    assert.equal(await phone.evaluate(() => document.activeElement.id), "find-title");
+    assert.equal(await phone.locator("#find-code").getAttribute("inputmode"), "numeric");
+    await phone.locator("#find-code").click();
+    assert.equal(await phone.evaluate(() => document.activeElement.id), "find-code");
     assert.match(
       await phone.locator(".find-panel").innerText(),
       /enjoy my company/,
@@ -335,7 +339,7 @@ process.on("exit", () => server?.kill());
       /doesn’t match/,
     );
     assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
-    await phone.locator("#find-code").fill("sun24");
+    await phone.locator("#find-code").fill("8451");
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#location-status").waitFor();
     assert.equal(
@@ -438,7 +442,7 @@ process.on("exit", () => server?.kill());
     );
     await phone.evaluate(() => (window.gpsMode = "success"));
     await phone.locator("#start-find").click();
-    await phone.locator("#find-code").fill("SUN24");
+    await phone.locator("#find-code").fill("8451");
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#location-status.ready").waitFor();
     assert.match(
@@ -485,7 +489,7 @@ process.on("exit", () => server?.kill());
     await phone.goto(base + "/?stone=B2");
     await phone.evaluate(() => (window.gpsMode = "zero"));
     await phone.locator("#start-find").click();
-    await phone.locator("#find-code").fill("MOON7");
+    await phone.locator("#find-code").fill("8452");
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#location-status.ready").waitFor();
     assert.match(
@@ -503,7 +507,7 @@ process.on("exit", () => server?.kill());
     await phone.goto(base + "/?stone=D4");
     await phone.evaluate(() => (window.gpsMode = "late"));
     await phone.locator("#start-find").click();
-    await phone.locator("#find-code").fill("LOVE4");
+    await phone.locator("#find-code").fill("8454");
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#use-gps").waitFor();
     await phone.locator("#cancel-find").click();
@@ -513,7 +517,7 @@ process.on("exit", () => server?.kill());
     // A manual city selection wins over a late GPS response.
     await phone.unroute("https://photon.komoot.io/**");
     await phone.locator("#start-find").click();
-    await phone.locator("#find-code").fill("LOVE4");
+    await phone.locator("#find-code").fill("8454");
     await phone.locator("#find-form button[type=submit]").click();
     await chooseCity(phone);
     await phone.evaluate(() => window.releaseGPS());
@@ -536,7 +540,7 @@ process.on("exit", () => server?.kill());
     });
     await mp.goto(base + "/?stone=C3");
     await mp.locator("#start-find").click();
-    await mp.locator("#find-code").fill("GROW3");
+    await mp.locator("#find-code").fill("8453");
     await mp.locator("#find-form button[type=submit]").click();
     await mp.locator("#location-status").waitFor();
     assert.match(
@@ -553,7 +557,7 @@ process.on("exit", () => server?.kill());
     // A lost receipt leaves the form intact; retry uses the original key and saves once.
     await phone.goto(base + "/?stone=A1");
     await phone.locator("#start-find").click();
-    await phone.locator("#find-code").fill("SUN24");
+    await phone.locator("#find-code").fill("8451");
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#choose-city").waitFor();
     await chooseCity(phone);
@@ -580,7 +584,7 @@ process.on("exit", () => server?.kill());
     const beforeNotes = await phone.locator("#total-finds").innerText();
     assert.equal(await phone.locator("#start-comment").count(), 0);
     await phone.evaluate(async () => {
-      await fetch("http://127.0.0.1:8787/api/stones/E5/comments", {method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":crypto.randomUUID()},body:JSON.stringify({code:"WAVE5",nickname:"Kind friend",message:"A little hello that stays. <b>Safe text</b>"})});
+      await fetch("http://127.0.0.1:8787/api/stones/E5/comments", {method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":crypto.randomUUID()},body:JSON.stringify({code:"8455",nickname:"Kind friend",message:"A little hello that stays. <b>Safe text</b>"})});
     });
     await phone.reload();
     await phone.locator("#stone-notes .note-entry").waitFor();
