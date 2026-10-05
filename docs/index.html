@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=23" />
+    <link rel="stylesheet" href="style.css?v=24" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="data.js?v=18" defer></script>
-    <script src="app.js?v=23" defer></script>
+    <script src="app.js?v=24" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -55,37 +55,12 @@
             <h1 id="world-title">Small stones. Big <em>stories.</em></h1>
             <p>
               We’re little painted stones, waiting for people like you. Every
-              person we meet brings us a little more to life.
-            </p>
-            <p>
-              Take us to another town or even another country. Enjoy our
-              company, then leave us somewhere safe for our next friends.
+              person we meet brings us a little more to life. Take us to another
+              town or even another country. Enjoy our company, then leave us
+              somewhere safe for our next friends.
             </p>
           </div>
         </div>
-        <div class="map-frame">
-          <div
-            id="world-map"
-            class="map-panel"
-            role="region"
-            aria-label="Interactive map of the stones’ last known locations"
-          ></div>
-          <button
-            class="map-reset"
-            data-reset-map="world-map"
-            aria-label="Show all stones on the map"
-          >
-            Show all stones ⤢
-          </button>
-        </div>
-        <p id="world-map-status" class="map-status" role="status" hidden></p>
-      </section>
-      <section
-        id="explore"
-        class="stones-section"
-        aria-labelledby="explore-title"
-      >
-        <h2 id="explore-title" class="sr-only">Stone journeys</h2>
         <div class="map-overview">
           <dl class="journey-totals" aria-label="Journey statistics">
             <div>
@@ -109,6 +84,38 @@
             </div>
           </dl>
           <span class="map-hint">Tap a stone. Meet a little friend.</span>
+        </div>
+        <div class="map-frame">
+          <div
+            id="world-map"
+            class="map-panel"
+            role="region"
+            aria-label="Interactive map of the stones’ last known locations"
+          ></div>
+          <button
+            class="map-reset"
+            data-reset-map="world-map"
+            aria-label="Show all stones on the map"
+          >
+            Show all stones ⤢
+          </button>
+        </div>
+        <p id="world-map-status" class="map-status" role="status" hidden></p>
+      </section>
+      <section
+        id="explore"
+        class="stones-section"
+        aria-labelledby="explore-title"
+      >
+        <div class="section-heading">
+          <h2 id="explore-title">
+            <span class="story-count">5</span> stones.
+            <span class="adventure-count">5</span> little adventures.
+          </h2>
+          <span class="hello-stat"
+            ><strong id="hello-count">25</strong>
+            <span id="hello-label">little hellos shared</span></span
+          >
         </div>
         <div
           class="stone-table-frame"
@@ -134,6 +141,9 @@
             <tbody id="stone-rows"></tbody>
           </table>
         </div>
+        <p class="country-key">
+          <span aria-hidden="true">🌍</span> Countries visited by this stone
+        </p>
         <p class="demo-note">
           Fictional journeys. New finds last for this visit only.
         </p>

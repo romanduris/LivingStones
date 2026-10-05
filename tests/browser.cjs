@@ -58,6 +58,12 @@ process.on("exit", () => server?.kill());
       5,
     );
     assert.equal(await page.locator("#total-finds").innerText(), "25");
+    assert.equal(await page.locator(".intro-copy p").count(), 1);
+    assert.equal(await page.locator("#hello-count").innerText(), "25");
+    assert.match(
+      await page.locator("#explore-title").innerText(),
+      /5 stones. 5 little adventures/,
+    );
     assert.equal(await page.locator("#total-countries").innerText(), "3");
     assert.equal(
       await page.evaluate(() => document.querySelector("main>section").id),
@@ -221,6 +227,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(".find-history script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
     assert.equal(await phone.locator("#total-finds").innerText(), "26");
+    assert.equal(await phone.locator("#hello-count").innerText(), "26");
     assert.match(
       await phone
         .locator('.stone-row[data-stone="A1"] .overview-latest')
@@ -386,16 +393,16 @@ process.on("exit", () => server?.kill());
           .getBoundingClientRect();
         return {
           height: map.height,
-          mapBottom: map.bottom,
+          mapTop: map.top,
           statsTop: stats.top,
           statsBottom: stats.bottom,
           tableTop: table.top,
         };
       });
       assert.ok(
-        mapLayout.mapBottom < mapLayout.statsTop &&
-          mapLayout.statsBottom < mapLayout.tableTop,
-        "Statistics sit between map and table",
+        mapLayout.statsBottom < mapLayout.mapTop &&
+          mapLayout.mapTop < mapLayout.tableTop,
+        "Statistics sit above the map",
       );
       assert.equal(
         mapLayout.height,
@@ -450,6 +457,25 @@ process.on("exit", () => server?.kill());
       ])
         assert.equal(await page.locator(cell).first().isVisible(), true);
       assert.equal(await page.locator(".demo-badge").count(), 5);
+      assert.equal(await page.locator(".country-flag").count(), 5);
+      assert.match(
+        await page.locator(".country-key").innerText(),
+        /Countries visited by this stone/,
+      );
+      for (const [selector, alignment] of [
+        [".overview-stone", "right"],
+        [".overview-location", "right"],
+        [".overview-age", "center"],
+        [".overview-finds", "center"],
+      ])
+        assert.equal(
+          await page
+            .locator(selector)
+            .first()
+            .evaluate((el) => getComputedStyle(el).textAlign),
+          alignment,
+        );
+
       assert.equal(
         await page.locator(".find-countries").first().isVisible(),
         true,

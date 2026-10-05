@@ -1252,6 +1252,7 @@ body:has(dialog[open]) {
   display: flex;
   gap: 10px;
   align-items: flex-start;
+  justify-content: flex-end;
   width: 100%;
 }
 .stone-visual {
@@ -1286,8 +1287,7 @@ body:has(dialog[open]) {
 .countries-compact,
 .stone-table .stone-born,
 .born-compact,
-.date-compact,
-.place-compact {
+.date-compact {
   display: none;
 }
 .stone-table .latest-note {
@@ -1426,13 +1426,11 @@ body:has(dialog[open]) {
     color: var(--muted);
   }
   .born-full,
-  .date-full,
-  .place-full {
+  .date-full {
     display: none;
   }
   .born-compact,
-  .date-compact,
-  .place-compact {
+  .date-compact {
     display: inline;
   }
   .stone-table .overview-location strong {
@@ -1440,7 +1438,7 @@ body:has(dialog[open]) {
   }
 }
 
-/* Compact totals introduce the table; all values come from the repository. */
+/* Compact totals lead the map; all values come from the repository. */
 .map-overview {
   display: flex;
   align-items: center;
@@ -1565,5 +1563,88 @@ body:has(dialog[open]) {
 @media (max-width: 360px) {
   #world-map {
     height: 284px;
+  }
+}
+
+/* First and last fields read from the right; numerical fields share a centre. */
+.stone-table th:nth-child(1),
+.stone-table .overview-stone,
+.stone-table th:nth-child(5),
+.stone-table .overview-location,
+.stone-table th:nth-child(6),
+.stone-table .overview-latest {
+  text-align: right;
+}
+.stone-table th:nth-child(2),
+.stone-table .overview-start,
+.stone-table th:nth-child(3),
+.stone-table .overview-age,
+.stone-table th:nth-child(4),
+.stone-table .overview-finds {
+  text-align: center;
+}
+.stone-table .last-place {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+.place-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.country-flag {
+  display: block;
+  flex-shrink: 0;
+  width: 15px;
+  height: 10px;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px #ffffff20;
+}
+.country-key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 13px;
+  line-height: 1.5;
+}
+.country-key + .demo-note {
+  margin-top: 5px;
+}
+.story-count {
+  color: var(--purple);
+}
+.adventure-count {
+  color: var(--coral);
+}
+.hello-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.hello-stat strong {
+  color: var(--yellow);
+  font-weight: 600;
+}
+@media (max-width: 700px) {
+  .stones-section .section-heading {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .stones-section .section-heading h2 {
+    width: 100%;
+  }
+  .hello-stat {
+    font-size: 11px;
+  }
+  .country-key {
+    font-size: 10px;
   }
 }
