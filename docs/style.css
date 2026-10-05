@@ -2054,3 +2054,36 @@ body:has(dialog[open]) {
 .stone-popup-action:hover {
   background: #b49aff18;
 }
+@media (max-width: 600px) {
+  .stone-overview-popup .leaflet-popup-content {
+    margin: 12px;
+  }
+  .stone-popup-heading {
+    gap: 8px;
+  }
+  .stone-popup-heading img {
+    width: 32px;
+    height: 32px;
+  }
+  .stone-popup-heading strong {
+    font-size: 16px;
+  }
+  .stone-popup-facts {
+    gap: 6px;
+    margin: 8px 0 10px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .stone-popup-facts > div {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .stone-popup-city {
+    gap: 3px;
+    margin-top: 2px;
+  }
+  .stone-popup-action {
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+}
