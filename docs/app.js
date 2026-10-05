@@ -279,6 +279,18 @@ function renderOverview() {
   renderMap($("#world-map"), stones);
 }
 
+function overviewPopupHTML(stone, last) {
+  const days = daysTravelling(stone);
+  return `<section class="stone-popup" aria-label="${escapeHTML(stone.name)} summary">
+    <div class="stone-popup-heading"><img src="${escapeHTML(stoneImageURL(stone))}" alt="" width="44" height="44"><strong>${escapeHTML(stone.name)}</strong></div>
+    <dl class="stone-popup-facts">
+      <div><dt>Born</dt><dd>${formatDate(stone.started)}</dd></div>
+      <div><dt>Alive</dt><dd class="stone-popup-age">${days} ${days === 1 ? "day" : "days"}</dd></div>
+      <div><dt>Last found</dt><dd><time datetime="${escapeHTML(last.date)}">${formatMoment(last.date)}</time><span class="stone-popup-city">${escapeHTML(last.city)}${countryFlagHTML(last.country)}</span></dd></div>
+    </dl>
+    <a class="map-popup-link stone-popup-action" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${escapeHTML(stone.id)}">Open stone story <span aria-hidden="true">↗</span></a>
+  </section>`;
+}
 function renderMap(container, stones, journey = false, previewPlace = null) {
   disposeMap(container.id);
   container.replaceChildren();
@@ -372,7 +384,8 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       }),
     })
       .bindPopup(
-        `<strong>${escapeHTML(journey || previewPlace ? find.city : stone.name)}</strong><br>${escapeHTML(find.address || find.city + ", " + find.country)}<br><span class="map-popup-note">${previewPlace ? "Location preview — not submitted" : formatDate(find.date)}${find.local ? " · Saved find" : ""}</span>${!journey && !previewPlace ? `<br><a class="map-popup-link" href="?stone=${stone.id}" data-stone="${stone.id}">Open stone story ↗</a>` : ""}`,
+        !journey && !previewPlace ? overviewPopupHTML(stone, find) : `<strong>${escapeHTML(find.city)}</strong><br>${escapeHTML(find.address || find.city + ", " + find.country)}<br><span class="map-popup-note">${previewPlace ? "Location preview — not submitted" : formatDate(find.date)}${find.local ? " · Saved find" : ""}</span>`,
+        !journey && !previewPlace ? { maxWidth: 260, autoPanPadding: [16, 16], className: "stone-overview-popup" } : {},
       )
       .addTo(map);
     marker.getElement().setAttribute("aria-label", label);
@@ -383,7 +396,6 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
         offset: [0, -15],
         className: "stone-tooltip",
       });
-      marker.on("click", () => openStone(stone.id));
     }
     if (latest && local)
       marker.bindTooltip("Your new find", {

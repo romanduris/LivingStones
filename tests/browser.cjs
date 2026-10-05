@@ -198,6 +198,12 @@ process.on("exit", () => server?.kill());
     await page
       .locator('#world-map .leaflet-marker-icon[title^="Sunny Side"]')
       .click();
+    await page.locator(".stone-overview-popup").waitFor();
+    assert.equal(await page.locator("dialog[open]").count(), 0);
+    assert.equal(new URL(page.url()).searchParams.has("stone"), false);
+    assert.match(await page.locator(".stone-popup-facts").innerText(), /Born.*12 Apr 2025.*Alive.*days.*Last found.*26 Sept 2026.*Trnava/s);
+    assert.equal(await page.locator(".stone-popup-city .country-flag").count(), 1);
+    await page.locator(".stone-popup-action").click();
     await page.waitForURL("**/?stone=A1");
     assert.match(await page.locator("#detail-title").innerText(), /Sunny Side/);
     assert.equal(await page.locator("#start-find").count(), 0);
