@@ -1906,3 +1906,75 @@ body:has(dialog[open]) {
 .city-result:focus-visible {
   border-color: var(--purple);
 }
+
+.detail-pebble {
+  width: 48px;
+  height: 48px;
+}
+.detail-topbar h2 {
+  font-size: 20px;
+}
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.language-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  min-height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: default;
+  opacity: 1;
+}
+.site-header nav {
+  align-items: center;
+}
+.success-panel h3 {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .site-header nav {
+    gap: 10px;
+  }
+  .detail-topbar {
+    gap: 8px;
+  }
+  .detail-topbar h2 {
+    font-size: 18px;
+    gap: 8px;
+  }
+  .detail-pebble {
+    width: 44px;
+    height: 44px;
+  }
+  .detail-header-actions {
+    gap: 6px;
+  }
+}
+@media (max-width: 360px) {
+  .site-header nav {
+    gap: 8px;
+  }
+  .language-switch {
+    width: 32px;
+    padding-inline: 5px;
+  }
+  .language-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

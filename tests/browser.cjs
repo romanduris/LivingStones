@@ -320,6 +320,16 @@ process.on("exit", () => server?.kill());
     assert.equal(lookups, 0);
     await phone.locator("#start-find").click();
     assert.equal(await phone.evaluate(() => document.activeElement.id), "find-title");
+    await phone.waitForFunction(() => {
+      const header = document.querySelector(".detail-topbar").getBoundingClientRect();
+      const title = document.querySelector("#find-title").getBoundingClientRect();
+      const intro = document.querySelector(".find-panel > p").getBoundingClientRect();
+      const dialog = document.querySelector("#stone-dialog").getBoundingClientRect();
+      return title.top >= header.bottom && title.top < header.bottom + 65 && intro.bottom < dialog.bottom;
+    });
+    assert.equal(await phone.locator(".detail-topbar .language-switch").isDisabled(), true);
+    assert.equal(await phone.locator(".site-header .language-switch").isDisabled(), true);
+    assert.match(await phone.locator("#detail-title small").innerText(), /^\(Alive · \d+ days\)$/);
     assert.equal(await phone.locator("#find-code").getAttribute("inputmode"), "numeric");
     await phone.locator("#find-code").click();
     assert.equal(await phone.evaluate(() => document.activeElement.id), "find-code");
@@ -387,6 +397,9 @@ process.on("exit", () => server?.kill());
       .fill("Hello! <script>alert(1)</script>");
     await phone.locator("#find-form button[type=submit]").click();
     await phone.locator("#success-title").waitFor();
+    assert.equal(await phone.locator("#success-title").innerText(), "<b>Tester</b> 👏, you’ve made my day.");
+    assert.equal(await phone.locator("#success-title b").count(), 0);
+    assert.deepEqual(await phone.locator(".success-panel > p").allTextContents(), ["Take me along, then leave me somewhere new for my next friend.", "Your moment is saved in my story."]);
     assert.equal(await phone.locator(rows).count(), 6);
     assert.match(
       await phone.locator(rows).first().innerText(),
@@ -551,6 +564,7 @@ process.on("exit", () => server?.kill());
     await mp.locator("#location-next").click();
     await mp.locator("#find-form button[type=submit]").click();
     await mp.locator("#success-title").waitFor();
+    assert.equal(await mp.locator("#success-title").innerText(), "You’ve made my day. 👏");
     assert.equal(await mp.locator(rows).count(), 6);
     assert.match(await mp.locator(".success-panel").innerText(), /is saved/);
     await phone.unroute("https://photon.komoot.io/**");

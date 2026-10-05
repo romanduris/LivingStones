@@ -480,7 +480,7 @@ function renderDetail() {
   const shareIcon =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
   $("#stone-detail").innerHTML = `
-    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="36" height="36"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span><small>Alive · ${days} ${days === 1 ? "day" : "days"}</small></span></h2><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div>
+    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span><small>(Alive · ${days} ${days === 1 ? "day" : "days"})</small></span></h2><div class="detail-header-actions"><button class="language-switch" type="button" disabled aria-label="Language: English. Language selection coming soon" title="Language selection coming soon"><span aria-hidden="true">🌐</span><span class="language-label">EN</span></button><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
     <div class="detail-body">
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
@@ -517,7 +517,9 @@ function renderDetail() {
       requestId: crypto.randomUUID(),
     };
     renderFlow();
-    $("#find-container").scrollIntoView({ behavior: "smooth", block: "start" });
+    const panel = $("#find-container .find-panel");
+    panel.style.scrollMarginTop = `${$(".detail-topbar").getBoundingClientRect().height + 12}px`;
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
     $("#find-title").focus({ preventScroll: true });
   });
 }
@@ -615,7 +617,9 @@ function renderFlow() {
   disposeMap("location-preview");
   const stone = stoneRepository.get(flow.id);
   if (flow.step === 4) {
-    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">You’ve made my day.</h3><p>A new memory in ${escapeHTML(flow.place.city)} — thanks to you. Take me along, then leave me somewhere new for my next friend.<br>Your moment is saved in my story.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
+    const nickname = flow.nickname.trim();
+    const thanks = nickname ? `${escapeHTML(nickname)} 👏, you’ve made my day.` : "You’ve made my day. 👏";
+    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">${thanks}</h3><p>Take me along, then leave me somewhere new for my next friend.</p><p>Your moment is saved in my story.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
     $("#finish-find").addEventListener("click", () => {
       flow = null;
       renderFlow();
