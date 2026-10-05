@@ -1824,7 +1824,7 @@ body:has(dialog[open]) {
   }
 }
 
-.entry-address .gps-badge {
+.entry-address .local-badge {
   margin: 0 0 0 6px;
   font-size: 10px;
   white-space: nowrap;
@@ -1857,4 +1857,19 @@ body:has(dialog[open]) {
 .stone-views strong {
   color: var(--purple);
   font-weight: 600;
+}
+
+.journey-explanation {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-bottom: 9px;
+}
+.entry-finder {
+  color: var(--yellow);
+}
+@media (max-width: 600px) {
+  .journey-explanation {
+    font-size: 11px;
+  }
 }

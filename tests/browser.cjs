@@ -201,7 +201,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator(".origin-note, .life-summary").count(), 0);
     assert.match((await page.locator(".detail-story").innerText()).replace(/\s+/g, " "), /Nina painted me on 12 Apr 2025 in Petržalka, Slovakia/);
     assert.match(await page.locator(".detail-stats").innerText(), /Days alive.*Finds.*Countries/s);
-    assert.equal(await page.locator(".stone-views").innerText(), "Views: —");
+    assert.equal(await page.locator(".stone-views").innerText(), "Views: 524");
     assert.equal(await page.locator(".find-number").count(), 0);
     assert.equal(await page.locator(".find-entry .country-flag").count(), 5);
     assert.ok(
@@ -430,10 +430,10 @@ process.on("exit", () => server?.kill());
     const gpsEntry = phone.locator(rows).first();
     assert.equal(await gpsEntry.locator(".entry-address .gps-badge").count(), 1);
     assert.equal(await gpsEntry.locator(".entry-author .local-badge").count(), 0);
-    assert.equal(await gpsEntry.locator(".entry-address").innerText(), "Ľanová 8, Ružinov GPS find");
+    assert.equal(await gpsEntry.locator(".entry-address").innerText(), "Ľanová 8, Ružinov GPS find ~25m");
     assert.match(
       await phone.locator(rows).first().innerText(),
-      /GPS accuracy ~25 m/,
+      /GPS find ~25m/,
     );
     const pin = await phone.evaluate(() => {
       const p = mapInstances.get("journey-map").markers.at(-1).getLatLng();

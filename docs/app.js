@@ -449,10 +449,9 @@ function historyHTML(stone) {
       <header class="entry-header">
         <div class="entry-place">
           <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? `<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : '<span class="entry-kind">A little note</span>'}</div>
-          <p class="entry-address">${escapeHTML(address)}${isFind && entry.source === "gps" ? ' <span class="local-badge gps-badge">GPS find</span>' : ""}</p>
-          ${isFind && entry.accuracy != null ? `<p class="accuracy-note">GPS accuracy ~${Math.round(entry.accuracy)} m${entry.accuracy > 150 ? " · approximate area" : ""}</p>` : ""}
+          <p class="entry-address">${escapeHTML(address)}${isFind && entry.source === "gps" ? ` <span class="local-badge gps-badge">GPS find${entry.accuracy != null ? ` ~${Math.round(entry.accuracy)}m` : ""}</span>` : isFind && entry.source === "demo" ? ' <span class="local-badge demo-location-badge">Demo</span>' : ""}</p>
         </div>
-        <div class="entry-author"><strong class="entry-finder">${escapeHTML(entry.nickname || "A kind stranger")}</strong>${isFind && entry.source === "demo" ? '<span class="local-badge">Demo location</span>' : ""}</div>
+        <div class="entry-author"><strong class="entry-finder">${escapeHTML(entry.nickname || "A kind stranger")}</strong></div>
       </header>
       ${entry.message ? `<p class="entry-message">“${escapeHTML(entry.message)}”</p>` : '<p class="entry-message no-message">A little hello, without a note this time.</p>'}
     </article>`;
@@ -493,8 +492,9 @@ function renderDetail() {
       <div id="find-container"></div>
       <section class="detail-journey" aria-labelledby="journey-title">
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
+        <p class="journey-explanation">Follow my journey. Each numbered stop is a little hello.</p>
         <div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div>
-        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}<span class="stone-views" aria-label="Views: counting not yet available">Views: <strong>—</strong></span></span></div>
+        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}<span class="stone-views" title="Example count; view tracking is coming later" aria-label="Views: 524, example count">Views: <strong>524</strong></span></span></div>
         <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${finds}</strong> Finds</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>
       <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">The friends I’ve met.</h3>${supportsPreciseLocation() ? '<button class="button secondary note-button" id="start-comment">Leave a note</button>' : ""}</div><p class="section-subtitle">Every hello is part of my story.</p><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
