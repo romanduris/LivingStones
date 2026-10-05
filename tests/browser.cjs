@@ -196,11 +196,11 @@ process.on("exit", () => server?.kill());
     );
     assert.match(
       await page.locator(".detail-intro").innerText(),
-      /Hi, I’m Sunny Side/,
+      /I’m a little painted stone called Sunny Side/,
     );
     assert.match(
       await page.locator(".origin-note").innerText(),
-      /Nina.*12 Apr 2025.*Bratislava/s,
+      /Born:.*12 Apr 2025.*Bratislava/s,
     );
     assert.equal(await page.locator(".find-number").count(), 0);
     assert.equal(await page.locator(".find-entry .country-flag").count(), 5);
@@ -209,10 +209,10 @@ process.on("exit", () => server?.kill());
         const top = (selector) =>
           document.querySelector(selector).getBoundingClientRect().top;
         return (
-          top(".detail-intro") < top("#journey-map") &&
+          top(".detail-intro") < top(".detail-actions") &&
+          top(".detail-actions") < top("#journey-map") &&
           top("#journey-map") < top(".detail-stats") &&
-          top(".detail-stats") < top(".detail-actions") &&
-          top(".detail-actions") < top(".story-feed")
+          top(".detail-stats") < top(".story-feed")
         );
       }),
     );
@@ -283,6 +283,24 @@ process.on("exit", () => server?.kill());
       });
     });
     await phone.goto(base + "/?stone=A1");
+    for (const width of [320, 375, 390]) {
+      await phone.setViewportSize({ width, height: 844 });
+      const actions = await phone
+        .locator(".detail-actions .button")
+        .evaluateAll((elements) =>
+          elements.map((el) => el.getBoundingClientRect().top),
+        );
+      assert.equal(actions.length, 3);
+      assert.ok(
+        Math.max(...actions) - Math.min(...actions) <= 1,
+        "Three mobile actions share one line",
+      );
+      assert.ok(
+        await phone
+          .locator("#stone-dialog")
+          .evaluate((el) => el.scrollWidth <= el.clientWidth),
+      );
+    }
     assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
     assert.equal(lookups, 0);
     await phone.locator("#start-find").click();
