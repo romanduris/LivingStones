@@ -486,8 +486,6 @@ function renderDetail() {
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
         <p class="detail-story">I’m a little painted stone called <strong>${escapeHTML(stone.name)}</strong>. ${creator} on <strong>${formatDate(stone.started)}</strong> in <strong>${escapeHTML(paintedPlace)}, ${escapeHTML(birth.country)}</strong>. Every person I meet brings me a little more to life. Take me on a trip, then leave me somewhere safe for my next friend.</p>
-        <p class="origin-note">Born: <strong>${formatDate(stone.started)}</strong> in <span class="birth-place"><strong>${escapeHTML(birth.city)}, ${escapeHTML(birth.country)}</strong>${countryFlagHTML(birth.country)}</span>.</p>
-        <p class="life-summary">Alive: <strong>${days} ${days === 1 ? "day" : "days"}</strong>, with <strong>${finds} ${finds === 1 ? "little hello" : "little hellos"}</strong> along the way.</p>
         <p class="find-help">${supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Open my link on your phone to help my story grow."}</p>
         <div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone</button>' : ""}<button class="button secondary share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button><button class="button secondary" id="other-stones">Other stones ↗</button></div>
         <div id="share-fallback" class="share-fallback" hidden></div>
@@ -496,8 +494,8 @@ function renderDetail() {
       <section class="detail-journey" aria-labelledby="journey-title">
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
         <div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div>
-        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span>${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}</div>
-        <div class="detail-stats" aria-label="My journey statistics"><span><strong>${days}</strong> days travelling</span><span><strong>${finds}</strong> finds</span><span><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> countries</span></div>
+        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}<span class="stone-views" aria-label="Views: counting not yet available">Views: <strong>—</strong></span></span></div>
+        <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${finds}</strong> Finds</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>
       <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">The friends I’ve met.</h3>${supportsPreciseLocation() ? '<button class="button secondary note-button" id="start-comment">Leave a note</button>' : ""}</div><p class="section-subtitle">Every hello is part of my story.</p><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
       <p class="detail-footnote">${stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story."} Looking never records a find.</p>

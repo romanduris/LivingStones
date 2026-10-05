@@ -1830,3 +1830,31 @@ body:has(dialog[open]) {
   white-space: nowrap;
   vertical-align: baseline;
 }
+
+.detail-stats .stat-alive strong {
+  color: var(--teal);
+}
+.detail-stats .stat-finds strong {
+  color: var(--yellow);
+}
+.detail-stats .stat-countries strong {
+  color: var(--purple);
+}
+.detail-stats > span {
+  white-space: nowrap;
+}
+.journey-caption-end {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-left: auto;
+}
+.stone-views {
+  white-space: nowrap;
+}
+.stone-views strong {
+  color: var(--purple);
+  font-weight: 600;
+}

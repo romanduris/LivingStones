@@ -198,10 +198,10 @@ process.on("exit", () => server?.kill());
       await page.locator(".detail-intro").innerText(),
       /I’m a little painted stone called Sunny Side/,
     );
-    assert.match(
-      await page.locator(".origin-note").innerText(),
-      /Born:.*12 Apr 2025.*Bratislava/s,
-    );
+    assert.equal(await page.locator(".origin-note, .life-summary").count(), 0);
+    assert.match(await page.locator(".detail-story").innerText(), /Nina painted me on 12 Apr 2025 in Petržalka, Slovakia/);
+    assert.match(await page.locator(".detail-stats").innerText(), /Days alive.*Finds.*Countries/s);
+    assert.equal(await page.locator(".stone-views").innerText(), "Views: —");
     assert.equal(await page.locator(".find-number").count(), 0);
     assert.equal(await page.locator(".find-entry .country-flag").count(), 5);
     assert.ok(
