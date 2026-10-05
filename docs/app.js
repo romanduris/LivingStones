@@ -485,9 +485,9 @@ function renderDetail() {
     <div class="detail-body">
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
-        <p class="detail-story">I’m a little painted stone called <strong>${escapeHTML(stone.name)}</strong>. ${creator} on <strong>${formatDate(stone.started)}</strong> in <strong>${escapeHTML(paintedPlace)}, ${escapeHTML(birth.country)}</strong>. Every person I meet brings me a little more to life. Take me on a trip, then leave me somewhere safe for my next friend.</p>
+        <p class="detail-story">I’m a little painted stone called <strong>${escapeHTML(stone.name)}</strong>. ${creator} on <strong>${formatDate(stone.started)}</strong> in <span class="birth-place"><strong>${escapeHTML(paintedPlace)}, ${escapeHTML(birth.country)}</strong>${countryFlagHTML(birth.country)}</span>. Every person I meet brings me a little more to life. Take me on a trip, then leave me somewhere safe for my next friend. 😊</p>
         <p class="find-help">${supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Open my link on your phone to help my story grow."}</p>
-        <div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone</button>' : ""}<button class="button secondary share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button><button class="button secondary" id="other-stones">Other stones ↗</button></div>
+        <div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone</button>' : ""}<button class="button secondary" id="other-stones">Other stones ↗</button><button class="button secondary share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
         <div id="share-fallback" class="share-fallback" hidden></div>
       </section>
       <div id="find-container"></div>

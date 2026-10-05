@@ -199,7 +199,7 @@ process.on("exit", () => server?.kill());
       /I’m a little painted stone called Sunny Side/,
     );
     assert.equal(await page.locator(".origin-note, .life-summary").count(), 0);
-    assert.match(await page.locator(".detail-story").innerText(), /Nina painted me on 12 Apr 2025 in Petržalka, Slovakia/);
+    assert.match((await page.locator(".detail-story").innerText()).replace(/\s+/g, " "), /Nina painted me on 12 Apr 2025 in Petržalka, Slovakia/);
     assert.match(await page.locator(".detail-stats").innerText(), /Days alive.*Finds.*Countries/s);
     assert.equal(await page.locator(".stone-views").innerText(), "Views: —");
     assert.equal(await page.locator(".find-number").count(), 0);
