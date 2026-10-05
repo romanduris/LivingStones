@@ -148,6 +148,20 @@ process.on("exit", () => server?.kill());
     });
     await page.goto(base);
     assert.equal(await page.locator(".stone-row").count(), 5);
+    for (const code of ["en", "sk", "hu", "de"]) {
+      await page.locator('.site-header .language-switch').click();
+      await page.locator('#main-language-menu:popover-open').waitFor();
+      assert.deepEqual(await page.locator('#main-language-menu [data-language]').evaluateAll(els=>els.map(el=>el.dataset.language)), ["en", "sk", "hu", "de"]);
+      await page.locator(`#main-language-menu [data-language="${code}"]`).click();
+      assert.equal(await page.locator('#main-language-menu:popover-open').count(), 0);
+      assert.equal(await page.locator('.site-header .language-label').textContent(), "EN");
+      assert.equal(await page.locator('html').getAttribute('lang'), "en");
+    }
+    await page.locator('.site-header .language-switch').focus();
+    await page.keyboard.press('Enter');
+    await page.locator('#main-language-menu:popover-open').waitFor();
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#main-language-menu:popover-open').count(), 0);
     assert.equal(await page.locator(".stone-thumbnail img").count(), 5);
     assert.equal(await page.locator("#map-legend").count(), 0);
     assert.match(
@@ -333,8 +347,16 @@ process.on("exit", () => server?.kill());
       const dialog = document.querySelector("#stone-dialog").getBoundingClientRect();
       return title.top >= header.bottom && title.top < header.bottom + 65 && intro.bottom < dialog.bottom;
     });
-    assert.equal(await phone.locator(".detail-topbar .language-switch").isDisabled(), true);
-    assert.equal(await phone.locator(".site-header .language-switch").isDisabled(), true);
+    assert.equal(await phone.locator(".detail-topbar .language-switch").isEnabled(), true);
+    await phone.locator('.detail-topbar .language-switch').click();
+    await phone.locator('#detail-language-menu [data-language="de"]').click();
+    assert.equal(await phone.locator('.detail-topbar .language-label').textContent(), "EN");
+    assert.equal(await phone.locator('dialog[open]').count(), 1);
+    await phone.locator('.detail-topbar .language-switch').click();
+    await phone.keyboard.press('Escape');
+    assert.equal(await phone.locator('#detail-language-menu:popover-open').count(), 0);
+    assert.equal(await phone.locator('dialog[open]').count(), 1);
+    assert.equal(await phone.locator(".site-header .language-switch").isEnabled(), true);
     assert.match(await phone.locator("#detail-title small").innerText(), /^\(Alive · \d+ days\)$/);
     assert.equal(await phone.locator("#find-code").getAttribute("inputmode"), "numeric");
     await phone.locator("#find-code").click();
@@ -405,6 +427,11 @@ process.on("exit", () => server?.kill());
     await phone.locator("#success-title").waitFor();
     assert.equal(await phone.locator("#success-title").innerText(), "<b>Tester</b> 👏, you’ve made my day.");
     assert.equal(await phone.locator("#success-title b").count(), 0);
+    assert.ok(await phone.locator('.success-heading').evaluate(el=>{
+      const icon=el.querySelector('.success-icon').getBoundingClientRect();
+      const title=el.querySelector('h3').getBoundingClientRect();
+      return icon.right < title.left && Math.abs(icon.top-title.top) < 8;
+    }));
     assert.deepEqual(await phone.locator(".success-panel > p").allTextContents(), ["Take me along, then leave me somewhere new for my next friend.", "Your moment is saved in my story."]);
     assert.equal(await phone.locator(rows).count(), 6);
     assert.match(

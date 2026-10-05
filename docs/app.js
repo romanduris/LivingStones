@@ -492,7 +492,7 @@ function renderDetail() {
   const shareIcon =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
   $("#stone-detail").innerHTML = `
-    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span><small>(Alive · ${days} ${days === 1 ? "day" : "days"})</small></span></h2><div class="detail-header-actions"><button class="language-switch" type="button" disabled aria-label="Language: English. Language selection coming soon" title="Language selection coming soon"><span aria-hidden="true">🌐</span><span class="language-label">EN</span></button><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
+    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span><small>(Alive · ${days} ${days === 1 ? "day" : "days"})</small></span></h2><div class="detail-header-actions"><div class="language-picker"><button class="language-switch" type="button" popovertarget="detail-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><span aria-hidden="true">🌐</span><span class="language-label">EN</span></button><div id="detail-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus>English <span aria-hidden="true">✓</span></button><button type="button" data-language="sk">Slovenčina</button><button type="button" data-language="hu">Magyar</button><button type="button" data-language="de">Deutsch</button></div></div><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
     <div class="detail-body">
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
@@ -631,7 +631,7 @@ function renderFlow() {
   if (flow.step === 4) {
     const nickname = flow.nickname.trim();
     const thanks = nickname ? `${escapeHTML(nickname)} 👏, you’ve made my day.` : "You’ve made my day. 👏";
-    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">${thanks}</h3><p>Take me along, then leave me somewhere new for my next friend.</p><p>Your moment is saved in my story.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
+    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><div class="success-heading"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">${thanks}</h3></div><p>Take me along, then leave me somewhere new for my next friend.</p><p>Your moment is saved in my story.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
     $("#finish-find").addEventListener("click", () => {
       flow = null;
       renderFlow();
@@ -972,7 +972,31 @@ function requestLocation() {
     fail({});
   }
 }
+// Language choices are a UI preview; English remains the active language.
+function positionLanguageMenu(menu) {
+  const button = document.querySelector(`[popovertarget="${menu.id}"]`);
+  if (!button) return;
+  const rect = button.getBoundingClientRect();
+  menu.style.left = `${Math.max(12, Math.min(rect.right - 176, innerWidth - 188))}px`;
+  menu.style.top = `${Math.max(12, Math.min(rect.bottom + 8, innerHeight - 188))}px`;
+}
+document.addEventListener("beforetoggle", (event) => {
+  if (!event.target.matches?.(".language-menu")) return;
+  const button = document.querySelector(`[popovertarget="${event.target.id}"]`);
+  button?.setAttribute("aria-expanded", String(event.newState === "open"));
+  if (event.newState === "open") positionLanguageMenu(event.target);
+}, true);
+const repositionLanguages = () => document.querySelectorAll(".language-menu:popover-open").forEach(positionLanguageMenu);
+window.addEventListener("resize", repositionLanguages);
+document.addEventListener("scroll", repositionLanguages, true);
 document.addEventListener("click", (event) => {
+  const choice = event.target.closest("[data-language]");
+  if (choice) {
+    const menu = choice.closest(".language-menu");
+    menu.hidePopover();
+    document.querySelector(`[popovertarget="${menu.id}"]`)?.focus({ preventScroll: true });
+    return;
+  }
   const reset = event.target.closest("[data-reset-map]");
   if (reset) {
     mapInstances.get(reset.dataset.resetMap)?.fit();

@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=39" />
+    <link rel="stylesheet" href="style.css?v=40" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="config.js?v=1" defer></script>
-    <script src="app.js?v=39" defer></script>
+    <script src="app.js?v=40" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -46,7 +46,7 @@
       <nav aria-label="Main navigation">
         <a href="#world">Map</a><a href="#explore">Stones</a
         ><a href="#how-it-works">About</a>
-        <button class="language-switch" type="button" disabled aria-label="Language: English. Language selection coming soon" title="Language selection coming soon"><span aria-hidden="true">🌐</span><span class="language-label">EN</span></button>
+        <div class="language-picker"><button class="language-switch" type="button" popovertarget="main-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><span aria-hidden="true">🌐</span><span class="language-label">EN</span></button><div id="main-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus>English <span aria-hidden="true">✓</span></button><button type="button" data-language="sk">Slovenčina</button><button type="button" data-language="hu">Magyar</button><button type="button" data-language="de">Deutsch</button></div></div>
       </nav>
     </header>
     <main class="wrap">

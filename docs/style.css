@@ -2087,3 +2087,61 @@ body:has(dialog[open]) {
     font-size: 11px;
   }
 }
+
+.language-switch {
+  cursor: pointer;
+}
+.language-switch:hover,
+.language-switch[aria-expanded="true"] {
+  color: var(--purple);
+  border-color: #b49aff66;
+}
+.language-menu {
+  position: fixed;
+  inset: auto;
+  width: 176px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: "Nunito Sans", system-ui, sans-serif;
+  box-shadow: 0 10px 28px #0b101b55;
+}
+.language-menu:popover-open {
+  display: grid;
+  gap: 2px;
+}
+.language-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  border-radius: 4px;
+  padding: 9px 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.language-menu button:hover,
+.language-menu button[aria-current="true"] {
+  background: #b49aff12;
+  color: var(--purple);
+}
+.success-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+.success-heading .success-icon {
+  margin: 0;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.success-heading h3 {
+  min-width: 0;
+}
