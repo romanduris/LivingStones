@@ -449,7 +449,7 @@ function historyHTML(stone) {
       <header class="entry-header">
         <div class="entry-place">
           <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? `<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : '<span class="entry-kind">A little note</span>'}</div>
-          <p class="entry-address">${escapeHTML(address)}${isFind && entry.source === "gps" ? ` <span class="local-badge gps-badge">GPS find${entry.accuracy != null ? ` ~${Math.round(entry.accuracy)}m` : ""}</span>` : isFind && entry.source === "demo" ? ' <span class="local-badge demo-location-badge">Demo</span>' : ""}</p>
+          <p class="entry-address">${escapeHTML(address)}${isFind && entry.source === "gps" ? ` <span class="local-badge gps-badge">GPS find${entry.accuracy != null ? ` ~${Math.round(entry.accuracy)}m` : ""}</span>` : isFind && entry.source === "manual" ? ' <span class="local-badge manual-badge">Manual</span>' : isFind && entry.source === "demo" ? ' <span class="local-badge demo-location-badge">Demo</span>' : ""}</p>
         </div>
         <div class="entry-author"><strong class="entry-finder">${escapeHTML(entry.nickname || "A kind stranger")}</strong></div>
       </header>
@@ -497,14 +497,13 @@ function renderDetail() {
         <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}<span class="stone-views" title="Example count; view tracking is coming later" aria-label="Views: 524, example count">Views: <strong>524</strong></span></span></div>
         <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${finds}</strong> Finds</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>
-      <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">The friends I’ve met.</h3>${supportsPreciseLocation() ? '<button class="button secondary note-button" id="start-comment">Leave a note</button>' : ""}</div><p class="section-subtitle">Every hello is part of my story.</p><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
+      <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">The friends I’ve met.</h3></div><p class="section-subtitle">Every hello is part of my story.</p><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
       <p class="detail-footnote">${stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story."} Looking never records a find.</p>
     </div>`;
   renderMap($("#journey-map"), [stone], true);
   $("#close-detail").addEventListener("click", closeDetail);
   $("#share-stone").addEventListener("click", shareStone);
   $("#other-stones").addEventListener("click", showOtherStones);
-  $("#start-comment")?.addEventListener("click", () => startComment(stone));
   $("#start-find")?.addEventListener("click", () => {
     if (!supportsPreciseLocation()) return;
     flow = {
@@ -630,19 +629,12 @@ function renderFlow() {
   const steps = `<div class="find-steps" aria-label="Find progress">${["The Find Code", "Your location", "Your moment"].map((title, i) => `<span class="${flow.step === i + 1 ? "active" : flow.step > i + 1 ? "done" : ""}" ${flow.step === i + 1 ? 'aria-current="step"' : ""}>${i + 1}. ${title}</span>`).join("")}</div>`;
   let content = "";
   if (flow.step === 1)
-    content = `<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">My code is on the back. ${stone.demo ? `Try <strong>${escapeHTML(stone.code)}</strong> for this demo stone.` : ""} Continue to request your phone’s location, or pick a demo place.</p><div class="form-actions"><button class="button primary" type="submit">Continue &amp; locate <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+    content = `<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">My code is on the back. ${stone.demo ? `Try <strong>${escapeHTML(stone.code)}</strong> for this demo stone.` : ""} Continue to request your phone’s location, or choose your city if GPS is unavailable.</p><div class="form-actions"><button class="button primary" type="submit">Continue &amp; locate <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
   if (flow.step === 2)
-    content = `<p class="location-consent">Your phone needs permission to find our meeting place. Coordinates go to Photon for the address. A demo place works too.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : "No location selected yet."}</p><div class="map-frame location-preview-frame" id="location-preview-frame" ${flow.place ? "" : "hidden"}><div class="map-panel location-preview-map" id="location-preview" role="region" aria-label="Preview of your find location"></div></div><p class="location-separator">OR TRY A FICTIONAL LOCATION</p><label class="field" for="demo-city">Demo city<select id="demo-city"><option value="">Choose a city…</option>${DEMO_PLACES.map((place, index) => `<option value="${index}" ${flow.place?.source === "demo" && flow.place.city === place.city ? "selected" : ""}>${place.city}, ${place.country}</option>`).join("")}</select></label><p class="field-hint">Demo locations are clearly marked in the history.</p><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
+    content = `<p class="location-consent">Your phone needs permission to find our meeting place. Coordinates go to Photon for the address. If GPS is unavailable, you can choose your city instead.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : "No location selected yet."}</p><div class="map-frame location-preview-frame" id="location-preview-frame" ${flow.place ? "" : "hidden"}><div class="map-panel location-preview-map" id="location-preview" role="region" aria-label="Preview of your find location"></div></div><button class="manual-location-toggle" id="choose-city" type="button" aria-expanded="${Boolean(flow.manualOpen)}" aria-controls="manual-location">Location not working? Choose a city</button><div id="manual-location" ${flow.manualOpen ? "" : "hidden"}><label class="field" for="manual-city">City<input id="manual-city" maxlength="120" autocomplete="off" placeholder="Start typing a city…" value="${flow.place?.source === "manual" ? escapeHTML(flow.place.city) : ""}" aria-describedby="city-search-status"></label><p class="field-hint">Choose a result to mark the approximate city location. City searches go to Photon.</p><p class="field-hint" id="city-search-status" role="status"></p><div id="city-results" class="city-results" aria-label="Matching cities"></div></div><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
   if (flow.step === 3)
-    content = `<div class="review-location">⌖ ${escapeHTML(flow.place.address || flow.place.city + ", " + flow.place.country)}${flow.place.source === "demo" ? " · Demo location" : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">Your find and note will become a public part of my story. Take me somewhere new for my next friend.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+    content = `<div class="review-location">⌖ ${escapeHTML(flow.place.source === "manual" ? flow.place.city + ", " + flow.place.country : flow.place.address || flow.place.city + ", " + flow.place.country)}${flow.place.source === "manual" ? " · Manual city location" : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">Your find and note will become a public part of my story. Take me somewhere new for my next friend.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
   target.innerHTML = `<section class="find-panel" aria-labelledby="find-title"><h3 id="find-title" tabindex="-1">I’m glad you found me.</h3><p>Take me along, enjoy my company, then leave me safely in another town for my next friend.</p>${steps}<form id="find-form">${content}<p id="find-error" class="error" role="alert"></p></form></section>`;
-  if (!stone.demo && flow.step === 2) {
-    $("#demo-city").closest("label").hidden = true;
-    $(".location-separator").hidden = true;
-    $("#demo-city").disabled = true;
-    $(".location-consent").textContent =
-      "Allow your phone’s location so I can remember where we met. Coordinates go to Photon for the address.";
-  }
   $("#cancel-find").addEventListener("click", () => {
     flow = null;
     renderFlow();
@@ -733,20 +725,100 @@ function renderFlow() {
     }
     $("#find-title").focus({ preventScroll: true });
   });
-  $("#demo-city")?.addEventListener("change", (event) => {
-    const index = event.target.value;
-    flow.place =
-      index === "" ? null : { ...DEMO_PLACES[Number(index)], source: "demo" };
-    $("#location-status").textContent = flow.place
-      ? placeLabel(flow.place)
-      : "No location selected yet.";
-    $("#location-status").classList.toggle("ready", Boolean(flow.place));
-    $("#location-next").disabled = !flow.place;
-    renderLocationPreview();
-  });
+  if (flow.step === 2) bindCitySearch();
   $("#use-gps")?.addEventListener("click", requestLocation);
   if (flow.step === 2 && flow.place) renderLocationPreview();
 }
+function bindCitySearch() {
+  const activeFlow = flow;
+  const input = $("#manual-city"), results = $("#city-results"), status = $("#city-search-status");
+  let timer, controller;
+  const current = () => flow === activeFlow && flow.step === 2 && $("#manual-city") === input;
+  const cancel = () => { clearTimeout(timer); controller?.abort(); };
+  const updatePlace = (place) => {
+    flow.place = place;
+    $("#location-status").textContent = place ? placeLabel(place) : "Choose a city from the suggestions.";
+    $("#location-status").classList.toggle("ready", Boolean(place));
+    $("#location-next").disabled = !place;
+    renderLocationPreview();
+  };
+  $("#choose-city").onclick = () => {
+    cancel();
+    activeFlow.locationRun = (activeFlow.locationRun || 0) + 1;
+    activeFlow.busy = false;
+    $("#use-gps").disabled = false;
+    input.disabled = false;
+    activeFlow.manualOpen = true;
+    $("#manual-location").hidden = false;
+    $("#choose-city").setAttribute("aria-expanded", "true");
+    if (flow.place?.source !== "manual") updatePlace(null);
+    input.focus();
+  };
+  input.addEventListener("input", () => {
+    cancel();
+    results.replaceChildren();
+    updatePlace(null);
+    const query = input.value.trim();
+    status.textContent = query.length < 2 ? "Type at least two letters." : "Searching cities…";
+    if (query.length < 2) return;
+    timer = setTimeout(async () => {
+      if (!current()) return;
+      const request = controller = new AbortController();
+      const timeout = setTimeout(() => request.abort(), 8000);
+      const valid = () => current() && controller === request && input.value.trim() === query && !input.disabled;
+      try {
+        const url = new URL("https://photon.komoot.io/api/");
+        url.search = new URLSearchParams({ q: query, limit: "6", lang: "en", layer: "city" });
+        const response = await fetch(url, { signal: request.signal });
+        if (!response.ok) throw Error("City search unavailable");
+        const data = await response.json();
+        if (!valid()) return;
+        const seen = new Set();
+        for (const feature of data.features || []) {
+          const [lon, lat] = feature.geometry?.coordinates || [];
+          const p = feature.properties || {};
+          const city = p.name || p.city, country = p.country;
+          if (!city || !country || !validCoordinates(lat, lon) || feature.geometry?.type !== "Point") continue;
+          const label = [city, p.state, country].filter(Boolean).join(", ");
+          if (seen.has(label)) continue;
+          seen.add(label);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "city-result";
+          button.textContent = label;
+          button.onclick = () => {
+            if (!valid()) return;
+            cancel();
+            activeFlow.locationRun = (activeFlow.locationRun || 0) + 1;
+            input.value = city;
+            results.replaceChildren();
+            status.textContent = "City selected — approximate location.";
+            updatePlace({ city, country, lat, lon, address: "Approximate city location", source: "manual", accuracy: null });
+          };
+          results.append(button);
+        }
+        status.textContent = results.children.length ? "Choose your city below." : "No matching cities. Try a different spelling.";
+      } catch {
+        if (valid()) status.textContent = "City search is unavailable. Try typing again or use GPS.";
+      } finally { clearTimeout(timeout); }
+    }, 350);
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === "ArrowDown") {
+      event.preventDefault();
+      results.querySelector("button")?.focus();
+    }
+  });
+  results.addEventListener("keydown", (event) => {
+    if (!["ArrowDown", "ArrowUp", "Escape"].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === "Escape") { input.focus(); return; }
+    const buttons = [...results.querySelectorAll("button")];
+    const index = buttons.indexOf(document.activeElement);
+    buttons[(index + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length]?.focus();
+  });
+}
+
 function renderLocationPreview() {
   const frame = $("#location-preview-frame");
   if (!frame) return;
@@ -769,7 +841,7 @@ function saveDraft() {
   }
 }
 function placeLabel(place) {
-  return `${place.source === "demo" ? "Demo location" : "Device location"}: ${place.address || place.city + ", " + place.country}${place.accuracy != null ? ` · accuracy ~${Math.round(place.accuracy)} m` : ""}`;
+  return `${place.source === "manual" ? "Manual city location" : "Device location"}: ${place.source === "manual" ? place.city + ", " + place.country + " · approximate location" : place.address || place.city + ", " + place.country}${place.accuracy != null ? ` · accuracy ~${Math.round(place.accuracy)} m` : ""}`;
 }
 const placeCache = new Map();
 async function lookupPlace(coords) {
@@ -815,40 +887,36 @@ function requestLocation() {
   if (!flow || flow.busy || !supportsPreciseLocation()) return;
   const activeFlow = flow,
     button = $("#use-gps"),
-    status = $("#location-status");
+    status = $("#location-status"),
+    run = activeFlow.locationRun = (activeFlow.locationRun || 0) + 1;
   const current = () =>
-    flow === activeFlow && flow.step === 2 && $("#use-gps") === button;
+    flow === activeFlow && flow.step === 2 && $("#use-gps") === button && activeFlow.locationRun === run;
   if (!navigator.geolocation) {
-    status.textContent = stoneRepository.get(flow.id).demo
-      ? "GPS is unavailable in this browser. Choose a demo city to continue."
-      : "GPS is unavailable in this browser. Open my link in a browser with location support.";
+    status.textContent = "GPS is unavailable in this browser. Choose a city to continue.";
     return;
   }
   activeFlow.busy = true;
   button.disabled = true;
   $("#location-next").disabled = true;
-  $("#demo-city").disabled = true;
+  $("#manual-city").disabled = true;
   status.textContent = "Waiting for permission and your location…";
   const unlock = () => {
     activeFlow.busy = false;
     if (current()) {
       button.disabled = false;
       $("#location-next").disabled = !flow.place;
-      $("#demo-city").disabled = !stoneRepository.get(flow.id).demo;
+      $("#manual-city").disabled = false;
     }
   };
   const fail = (error) => {
     if (!current()) return;
     status.textContent =
       {
-        1: "Location permission was denied. You can enable it in browser settings, or choose a demo city.",
-        2: "Your location is unavailable. Try again or choose a demo city.",
-        3: "Location took too long. Try again or choose a demo city.",
+        1: "Location permission was denied. You can enable it in browser settings, or choose a city.",
+        2: "Your location is unavailable. Try again or choose a city.",
+        3: "Location took too long. Try again or choose a city.",
       }[error.code] ||
-      "Could not get your location. Choose a demo city to continue.";
-    if (!stoneRepository.get(flow.id).demo)
-      status.textContent =
-        "We couldn’t get your location. Allow location in your browser settings and try again.";
+      "Could not get your location. Choose a city to continue.";
     unlock();
   };
   try {
@@ -874,7 +942,8 @@ function requestLocation() {
           accuracy: coords.accuracy,
           source: "gps",
         };
-        $("#demo-city").value = "";
+        $("#manual-city").value = "";
+        $("#city-results").replaceChildren();
         status.textContent = placeLabel(flow.place);
         status.classList.add("ready");
         renderLocationPreview();
@@ -937,65 +1006,3 @@ async function boot() {
   }
 }
 boot();
-
-function startComment(stone) {
-  if (!supportsPreciseLocation()) return;
-  flow = null;
-  disposeMap("location-preview");
-  const target = $("#find-container");
-  const state = { key: crypto.randomUUID(), payload: null, busy: false };
-  target.innerHTML = `<section class="find-panel"><h3>A little hello makes my day.</h3><p>Take me on an adventure, then leave me somewhere safe for my next friend.</p><form id="comment-form"><label class="field">Find Code<input id="comment-code" required maxlength="32" autocomplete="off" autocapitalize="characters"></label>${stone.demo ? `<p class="field-hint">Demo code: <strong>${escapeHTML(stone.code)}</strong></p>` : ""}<label class="field">Your nickname <small>optional</small><input id="comment-nickname" maxlength="40" autocomplete="nickname"></label><label class="field">Your little note<textarea id="comment-message" required maxlength="400"></textarea></label><p class="field-hint">Your note is public. It won’t record a find or move my pin.</p><div class="form-actions"><button class="button primary" type="submit">Send my little note ↗</button><button class="button secondary" id="cancel-comment" type="button">Cancel</button></div><p id="comment-error" class="error" role="alert"></p></form></section>`;
-  $("#cancel-comment").onclick = () => {
-    target.replaceChildren();
-    $("#start-comment").focus();
-  };
-  $("#comment-form").onsubmit = async (event) => {
-    event.preventDefault();
-    if (state.busy) return;
-    const form = event.currentTarget;
-    const payload = {
-      code: $("#comment-code").value.trim().toUpperCase(),
-      nickname: $("#comment-nickname").value.trim(),
-      message: $("#comment-message").value.trim(),
-    };
-    if (
-      state.payload &&
-      JSON.stringify(payload) !== JSON.stringify(state.payload)
-    )
-      state.key = crypto.randomUUID();
-    state.payload = payload;
-    state.busy = true;
-    form
-      .querySelectorAll("input,textarea,button")
-      .forEach((el) => (el.disabled = true));
-    $("#comment-error").textContent = "Saving your little note…";
-    try {
-      const saved = await stoneRepository.addComment(
-        stone.id,
-        payload,
-        state.key,
-      );
-      renderOverview();
-      if (selectedId === stone.id && $("#stone-dialog").open) {
-        renderDetail();
-        const note = $(
-          `.note-entry[data-entry="${CSS.escape(saved.recordId)}"]`,
-        );
-        note.scrollIntoView({ behavior: "smooth", block: "center" });
-        note.setAttribute("tabindex", "-1");
-        note.focus({ preventScroll: true });
-      }
-      toast("Your little note is saved. Thank you for saying hello.");
-    } catch (error) {
-      state.busy = false;
-      if (form.isConnected) {
-        form
-          .querySelectorAll("input,textarea,button")
-          .forEach((el) => (el.disabled = false));
-        $("#comment-error").textContent = error.message;
-      }
-    }
-  };
-  target.scrollIntoView({ behavior: "smooth", block: "start" });
-  $("#comment-code").focus({ preventScroll: true });
-}

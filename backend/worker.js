@@ -174,10 +174,10 @@ async function handle(request, env) {
     )
       fail(400, "Choose a valid location first.");
     if (
-      !["gps", "demo"].includes(place.source) ||
+      !["gps", "manual", "demo"].includes(place.source) ||
       (place.source === "demo" && !stone.is_demo)
     )
-      fail(400, "This stone needs your GPS location.");
+      fail(400, "Choose your GPS location or select a city.");
     if (
       place.source === "gps" &&
       (typeof place.accuracy !== "number" ||

@@ -229,6 +229,11 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     current = (await call("/stones/A1")).body.stone;
     assert.equal(current.finds.length, 6);
     assert.equal(current.comments.length, 7);
+    // Rebuilding the source constraint preserves existing finds, attached notes and replay IDs.
+    const beforeMigration = structuredClone(current);
+    cli(["d1", "execute", "livingstones-local-db", "--local", "--persist-to", state, "--file", "backend/migrations/0003_manual_locations.sql"]);
+    assert.deepEqual((await call("/stones/A1")).body.stone, beforeMigration);
+    assert.equal((await call("/stones/A1/finds", find, key)).body.replayed, true);
     // A real stone's code is not public and fictional locations are refused.
     cli([
       "d1",
@@ -253,6 +258,15 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       ).status,
       400,
     );
+    const manual = { ...find, code:"GROW3", place:{lat:48.735429,lon:19.1457338,city:"Banská Bystrica",country:"Slovakia",address:"Approximate city location",source:"manual"} };
+    const manualKey = randomUUID();
+    const manualSaved = await call("/stones/C3/finds", manual, manualKey);
+    assert.equal(manualSaved.status, 200);
+    assert.equal(manualSaved.body.stone.finds.at(-1).source, "manual");
+    assert.equal(manualSaved.body.stone.finds.at(-1).accuracy, null);
+    assert.equal((await call("/stones/C3/finds", manual, manualKey)).body.replayed, true);
+    assert.equal((await call("/stones/C3")).body.stone.finds.at(-1).lat, 48.735429);
+    assert.equal((await call("/stones/C3/finds", {...manual,place:{...manual.place,source:"invalid"}})).status, 400);
     const preflight = await fetch(
       `http://127.0.0.1:${port}/api/stones/A1/finds`,
       { method: "OPTIONS", headers: { Origin: origin } },

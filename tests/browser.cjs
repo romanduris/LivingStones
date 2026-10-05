@@ -37,6 +37,15 @@ process.on("exit", () => server?.kill());
       }));
     const submissions = new Map();
     context.dropNextFindReply = false;
+    await context.route("https://photon.komoot.io/api/**", async (route) => {
+      const q = new URL(route.request().url()).searchParams.get("q");
+      if (q === "failure") return route.fulfill({status:503,body:"Unavailable"});
+      const cities = [
+        {name:"Banská Bystrica", country:"Slovakia", state:"Banskobystrický kraj", coordinates:[19.1457338,48.735429]},
+        {name:"Bratislava", country:"Slovakia", coordinates:[17.107,48.148]},
+      ].filter(c => c.name.toLowerCase().startsWith(q.toLowerCase()));
+      await route.fulfill({contentType:"application/json",body:JSON.stringify({features:cities.map(c=>({properties:{name:c.name,country:c.country,state:c.state},geometry:{type:"Point",coordinates:c.coordinates}}))})});
+    });
     await context.route("http://127.0.0.1:8787/**", async (route) => {
       const req = route.request(),
         parts = new URL(req.url()).pathname.split("/");
@@ -80,6 +89,7 @@ process.on("exit", () => server?.kill());
       }
       if (kind === "finds" && context.dropNextFindReply && status === 200) {
         context.dropNextFindReply = false;
+
         status = 503;
         result = { error: "The reply was interrupted. Please retry." };
       }
@@ -109,6 +119,11 @@ process.on("exit", () => server?.kill());
       }
     };
     const rows = ".story-feed .find-entry";
+    async function chooseCity(page, city = "Bratislava") {
+      await page.locator("#choose-city").click();
+      await page.locator("#manual-city").fill(city.slice(0,3));
+      await page.locator(".city-result").filter({hasText:city}).click();
+    }
     const desktop = await browser.newContext({
       viewport: { width: 1440, height: 1050 },
     });
@@ -335,14 +350,26 @@ process.on("exit", () => server?.kill());
       await phone.locator("#use-gps").click();
       assert.equal(await phone.locator("#use-gps").isEnabled(), true);
     }
-    await phone.locator("#demo-city").selectOption("3");
+    assert.equal(await phone.locator("#demo-city, #start-comment").count(), 0);
+    assert.equal(await phone.locator("#manual-city").isVisible(), false);
+    await phone.locator("#choose-city").click();
+    await phone.locator("#manual-city").fill("failure");
+    await phone.waitForFunction(() => document.querySelector("#city-search-status").textContent.includes("unavailable"));
+    assert.equal(await phone.locator("#location-next").isEnabled(), false);
+    await phone.locator("#manual-city").fill("zzzz");
+    await phone.waitForFunction(() => document.querySelector("#city-search-status").textContent.includes("No matching"));
+    await chooseCity(phone, "Banská Bystrica");
+    assert.deepEqual(await phone.evaluate(() => {
+      const p = mapInstances.get("location-preview").markers[0].getLatLng();
+      return [p.lat,p.lng];
+    }), [48.735429,19.1457338]);
     assert.equal(
       await phone.locator("#location-preview .leaflet-marker-icon").count(),
       1,
     );
     assert.match(
       await phone.locator("#location-status").innerText(),
-      /Bernolákov sad/,
+      /Banská Bystrica/,
     );
     assert.equal(
       await phone.locator(rows).count(),
@@ -359,7 +386,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(rows).count(), 6);
     assert.match(
       await phone.locator(rows).first().innerText(),
-      /Bernolákov sad/,
+      /Banská Bystrica/,
     );
     assert.match(
       await phone.locator(rows).first().innerText(),
@@ -368,6 +395,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(".story-feed script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
     assert.equal(await phone.locator("#total-finds").innerText(), "26");
+    assert.equal(await phone.locator(rows).first().locator(".entry-address .manual-badge").innerText(), "Manual");
     assert.equal(await phone.locator("#hello-count").innerText(), "26");
     assert.match(
       await phone
@@ -482,6 +510,18 @@ process.on("exit", () => server?.kill());
     await phone.evaluate(() => window.releaseGPS());
     assert.equal(await phone.locator(rows).count(), 5);
     assert.equal(await phone.locator("#find-container").innerText(), "");
+    // A manual city selection wins over a late GPS response.
+    await phone.unroute("https://photon.komoot.io/**");
+    await phone.locator("#start-find").click();
+    await phone.locator("#find-code").fill("LOVE4");
+    await phone.locator("#find-form button[type=submit]").click();
+    await chooseCity(phone);
+    await phone.evaluate(() => window.releaseGPS());
+    assert.match(await phone.locator("#location-status").innerText(), /Manual city location:.*Bratislava/);
+    assert.equal(await phone.locator("#location-next").isEnabled(), true);
+    await phone.locator("#manual-city").fill("Ba");
+    assert.equal(await phone.locator("#location-next").isEnabled(), false);
+    await phone.locator("#cancel-find").click();
     // No browser storage is needed or accessed.
     const memory = await browser.newContext({ ...devices["iPhone 13"] });
     const mp = await memory.newPage();
@@ -503,19 +543,20 @@ process.on("exit", () => server?.kill());
       await mp.locator("#location-status").innerText(),
       /unavailable/,
     );
-    await mp.locator("#demo-city").selectOption("0");
+    await chooseCity(mp);
     await mp.locator("#location-next").click();
     await mp.locator("#find-form button[type=submit]").click();
     await mp.locator("#success-title").waitFor();
     assert.equal(await mp.locator(rows).count(), 6);
     assert.match(await mp.locator(".success-panel").innerText(), /is saved/);
+    await phone.unroute("https://photon.komoot.io/**");
     // A lost receipt leaves the form intact; retry uses the original key and saves once.
     await phone.goto(base + "/?stone=A1");
     await phone.locator("#start-find").click();
     await phone.locator("#find-code").fill("SUN24");
     await phone.locator("#find-form button[type=submit]").click();
-    await phone.locator("#demo-city").waitFor();
-    await phone.locator("#demo-city").selectOption("0");
+    await phone.locator("#choose-city").waitFor();
+    await chooseCity(phone);
     await phone.locator("#location-next").click();
     await phone.locator("#find-message").fill("A moment worth one save.");
     mobile.dropNextFindReply = true;
@@ -537,13 +578,11 @@ process.on("exit", () => server?.kill());
     // Standalone comments persist across refresh and never change the map/find count.
     await phone.goto(base + "/?stone=E5");
     const beforeNotes = await phone.locator("#total-finds").innerText();
-    await phone.locator("#start-comment").click();
-    await phone.locator("#comment-code").fill("WAVE5");
-    await phone.locator("#comment-nickname").fill("Kind friend");
-    await phone
-      .locator("#comment-message")
-      .fill("A little hello that stays. <b>Safe text</b>");
-    await phone.locator("#comment-form button[type=submit]").click();
+    assert.equal(await phone.locator("#start-comment").count(), 0);
+    await phone.evaluate(async () => {
+      await fetch("http://127.0.0.1:8787/api/stones/E5/comments", {method:"POST",headers:{"Content-Type":"application/json","Idempotency-Key":crypto.randomUUID()},body:JSON.stringify({code:"WAVE5",nickname:"Kind friend",message:"A little hello that stays. <b>Safe text</b>"})});
+    });
+    await phone.reload();
     await phone.locator("#stone-notes .note-entry").waitFor();
     assert.equal(await phone.locator("#total-finds").innerText(), beforeNotes);
     await phone.reload();
