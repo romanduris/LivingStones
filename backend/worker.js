@@ -1,0 +1,308 @@
+class APIError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+const fail = (status, message) => {
+  throw new APIError(status, message);
+};
+const sha256 = async (value) =>
+  [
+    ...new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)),
+    ),
+  ]
+    .map((n) => n.toString(16).padStart(2, "0"))
+    .join("");
+function text(value, max, required = false) {
+  if (value == null && !required) return "";
+  if (
+    typeof value !== "string" ||
+    value.length > max ||
+    (required && !value.trim())
+  )
+    fail(400, "Please check the form fields.");
+  return value.trim();
+}
+async function listStones(db, id) {
+  const where = id ? " WHERE id = ?" : "";
+  const statements = [
+    db.prepare(
+      "SELECT id,name,tagline,story,born,image,theme,color,is_demo,demo_code FROM stones" +
+        where +
+        (id ? "" : " ORDER BY id"),
+    ),
+    db.prepare(
+      "SELECT * FROM finds" +
+        (id ? " WHERE stone_id = ?" : "") +
+        " ORDER BY occurred_at,id",
+    ),
+    db.prepare(
+      "SELECT * FROM comments" +
+        (id ? " WHERE stone_id = ?" : "") +
+        " ORDER BY created_at,id",
+    ),
+  ].map((s) => (id ? s.bind(id) : s));
+  const [stones, finds, comments] = await db.batch(statements);
+  return stones.results.map((s) => ({
+    id: s.id,
+    name: s.name,
+    tagline: s.tagline,
+    story: s.story,
+    started: s.born,
+    image: s.image,
+    theme: s.theme,
+    color: s.color,
+    demo: Boolean(s.is_demo),
+    ...(s.is_demo ? { code: s.demo_code } : {}),
+    finds: finds.results
+      .filter((f) => f.stone_id === s.id)
+      .map((f) => ({
+        id: f.id,
+        date: f.source === "seed" ? f.occurred_at.slice(0, 10) : f.occurred_at,
+        lat: f.lat,
+        lon: f.lon,
+        accuracy: f.accuracy,
+        city: f.city,
+        country: f.country,
+        address: f.address,
+        nickname: f.nickname,
+        source: f.source,
+        message:
+          comments.results.find((c) => c.find_id === f.id)?.message || "",
+      })),
+    comments: comments.results
+      .filter((c) => c.stone_id === s.id)
+      .map((c) => ({
+        id: c.id,
+        findId: c.find_id,
+        date: c.created_at,
+        nickname: c.nickname,
+        message: c.message,
+      })),
+  }));
+}
+async function rateLimit(request, env) {
+  // Bucket all attempts, including bad codes. No raw IP addresses are stored.
+  const now = Math.floor(Date.now() / 1000),
+    bucket = await sha256(
+      (request.headers.get("CF-Connecting-IP") || "local") +
+        ":" +
+        Math.floor(now / 600),
+    );
+  const result = await env.DB.prepare(
+    "INSERT INTO rate_limits(bucket,attempts,expires_at) VALUES (?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=attempts+1 RETURNING attempts",
+  )
+    .bind(bucket, now + 1200)
+    .first();
+  if (result.attempts > 40)
+    fail(429, "Too many attempts. Please try again in a few minutes.");
+  await env.DB.prepare("DELETE FROM rate_limits WHERE expires_at < ?")
+    .bind(now)
+    .run();
+}
+async function handle(request, env) {
+  const url = new URL(request.url),
+    path = url.pathname;
+  if (request.method === "GET" && path === "/api/health") {
+    await env.DB.prepare("SELECT id FROM stones LIMIT 1").first();
+    return { ok: true, service: "livingstones-api" };
+  }
+  if (request.method === "GET" && path === "/api/stones")
+    return { stones: await listStones(env.DB) };
+  const match = path.match(
+    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments))?$/,
+  );
+  if (!match) fail(404, "That page could not be found.");
+  const [, id, kind] = match;
+  if (request.method === "GET" && !kind) {
+    const stone = (await listStones(env.DB, id))[0];
+    if (!stone) fail(404, "This stone could not be found.");
+    return { stone };
+  }
+  if (request.method !== "POST" || !kind) fail(405, "Method not allowed.");
+  const origin = request.headers.get("Origin");
+  const allowed = (env.ALLOWED_ORIGINS || "").split(",");
+  if (!origin || !allowed.includes(origin))
+    fail(403, "Please open the Living Stones website to add your moment.");
+  if (!request.headers.get("Content-Type")?.startsWith("application/json"))
+    fail(415, "Please send JSON.");
+  if (Number(request.headers.get("Content-Length")) > 8192)
+    fail(413, "This message is too large.");
+  const raw = await request.text();
+  if (raw.length > 8192) fail(413, "This message is too large.");
+  let body;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    fail(400, "Please check the form fields.");
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    fail(400, "Please check the form fields.");
+  await rateLimit(request, env);
+  const stone = await env.DB.prepare(
+    "SELECT code_hash,is_demo FROM stones WHERE id = ?",
+  )
+    .bind(id)
+    .first();
+  if (!stone) fail(404, "This stone could not be found.");
+  const code = text(body.code, 32, true).toUpperCase();
+  if ((await sha256(code)) !== stone.code_hash)
+    fail(
+      403,
+      "That code doesn’t match this stone. Check the back of the stone.",
+    );
+  if (kind === "verify") return { ok: true };
+  const key = request.headers.get("Idempotency-Key");
+  if (!key || !/^[a-zA-Z0-9-]{16,80}$/.test(key))
+    fail(400, "Please retry from the form.");
+  const nickname = text(body.nickname, 40) || "A kind stranger";
+  const message = text(body.message, 400, kind === "comments");
+  let place;
+  if (kind === "finds") {
+    place = body.place;
+    if (
+      !place ||
+      typeof place.lat !== "number" ||
+      typeof place.lon !== "number" ||
+      !Number.isFinite(place.lat) ||
+      !Number.isFinite(place.lon) ||
+      Math.abs(place.lat) > 90 ||
+      Math.abs(place.lon) > 180
+    )
+      fail(400, "Choose a valid location first.");
+    if (
+      !["gps", "demo"].includes(place.source) ||
+      (place.source === "demo" && !stone.is_demo)
+    )
+      fail(400, "This stone needs your GPS location.");
+    if (
+      place.source === "gps" &&
+      (typeof place.accuracy !== "number" ||
+        !Number.isFinite(place.accuracy) ||
+        place.accuracy < 0)
+    )
+      fail(400, "Please request your GPS location again.");
+    place = {
+      lat: place.lat,
+      lon: place.lon,
+      accuracy: place.source === "gps" ? place.accuracy : null,
+      source: place.source,
+      city: text(place.city, 120, true),
+      country: text(place.country, 80, true),
+      address: text(place.address, 300),
+    };
+  }
+  const fingerprint = await sha256(
+    JSON.stringify({ id, kind, nickname, message, place: place || null }),
+  );
+  const existing = await env.DB.prepare(
+    "SELECT * FROM submissions WHERE id = ?",
+  )
+    .bind(key)
+    .first();
+  if (existing) {
+    if (existing.fingerprint !== fingerprint)
+      fail(409, "That request was already used. Close the form and try again.");
+    return {
+      stone: (await listStones(env.DB, id))[0],
+      recordId: existing.record_id,
+      replayed: true,
+    };
+  }
+  const recordId = crypto.randomUUID(),
+    date = new Date().toISOString();
+  const claim = env.DB.prepare(
+    "INSERT INTO submissions(id,fingerprint,stone_id,record_id,kind,created_at) VALUES (?,?,?,?,?,?)",
+  ).bind(key, fingerprint, id, recordId, kind, date);
+  const statements = [claim];
+  if (kind === "finds")
+    statements.push(
+      env.DB.prepare(
+        "INSERT INTO finds(id,stone_id,occurred_at,lat,lon,accuracy,city,country,address,nickname,source) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+      ).bind(
+        recordId,
+        id,
+        date,
+        place.lat,
+        place.lon,
+        place.accuracy,
+        place.city,
+        place.country,
+        place.address,
+        nickname,
+        place.source,
+      ),
+    );
+  if (message)
+    statements.push(
+      env.DB.prepare(
+        "INSERT INTO comments(id,stone_id,find_id,created_at,nickname,message) VALUES (?,?,?,?,?,?)",
+      ).bind(
+        kind === "comments" ? recordId : crypto.randomUUID(),
+        id,
+        kind === "finds" ? recordId : null,
+        date,
+        nickname,
+        message,
+      ),
+    );
+  // D1 batch is transactional: a find and its message are committed together.
+  try {
+    await env.DB.batch(statements);
+  } catch (error) {
+    // Concurrent retries can race between reading the key and claiming it.
+    const saved = await env.DB.prepare("SELECT * FROM submissions WHERE id = ?")
+      .bind(key)
+      .first();
+    if (!saved) throw error;
+    if (saved.fingerprint !== fingerprint)
+      fail(409, "That request was already used. Close the form and try again.");
+    return {
+      stone: (await listStones(env.DB, id))[0],
+      recordId: saved.record_id,
+      replayed: true,
+    };
+  }
+  return { stone: (await listStones(env.DB, id))[0], recordId };
+}
+export default {
+  async fetch(request, env) {
+    const origin = request.headers.get("Origin");
+    const allowed = (env.ALLOWED_ORIGINS || "").split(",").includes(origin);
+    const headers = {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      Vary: "Origin",
+      "X-Content-Type-Options": "nosniff",
+      ...(allowed ? { "Access-Control-Allow-Origin": origin } : {}),
+    };
+    if (request.method === "OPTIONS")
+      return new Response(null, {
+        status: allowed ? 204 : 403,
+        headers: {
+          ...headers,
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key",
+          "Access-Control-Max-Age": "600",
+        },
+      });
+    try {
+      return new Response(JSON.stringify(await handle(request, env)), {
+        headers,
+      });
+    } catch (error) {
+      if (!error.status)
+        console.error("Living Stones API request failed", error);
+      return new Response(
+        JSON.stringify({
+          error: error.status
+            ? error.message
+            : "We couldn’t save or load this moment. Please try again.",
+        }),
+        { status: error.status || 500, headers },
+      );
+    }
+  },
+};

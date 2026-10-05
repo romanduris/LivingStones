@@ -1,0 +1,28 @@
+{
+  "name": "livingstones",
+  "version": "1.0.0",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0",
+    "wrangler": "^4.147.0"
+  },
+  "scripts": {
+    "test": "node --test tests/page.test.cjs && node tests/api.cjs && node tests/browser.cjs",
+    "dev:api": "wrangler dev --config wrangler.local.jsonc --port 8787",
+    "seed": "node scripts/seed.cjs",
+    "deploy": "wrangler deploy --config wrangler.jsonc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romanduris/LivingStones.git"
+  },
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/romanduris/LivingStones/issues"
+  },
+  "homepage": "https://github.com/romanduris/LivingStones#readme",
+  "private": true
+}

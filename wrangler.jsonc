@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "livingstones-api",
+  "main": "backend/worker.js",
+  "compatibility_date": "2026-10-05",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": {
+    "ALLOWED_ORIGINS": "https://romanduris.github.io",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "livingstones-db",
+      "database_id": "abc06c1b-e845-434a-b105-0b17b7f82908",
+      "migrations_dir": "backend/migrations",
+    },
+  ],
+}

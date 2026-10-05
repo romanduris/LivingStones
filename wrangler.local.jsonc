@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "livingstones-local",
+  "main": "backend/worker.js",
+  "compatibility_date": "2026-10-05",
+  "vars": { "ALLOWED_ORIGINS": "http://127.0.0.1:8137,http://localhost:8137" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "livingstones-local-db",
+      "database_id": "11111111-1111-1111-1111-111111111111",
+      "migrations_dir": "backend/migrations",
+    },
+  ],
+}

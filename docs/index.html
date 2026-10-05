@@ -25,10 +25,11 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=25" />
+    <link rel="stylesheet" href="style.css?v=26" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
-    <script src="data.js?v=18" defer></script>
-    <script src="app.js?v=24" defer></script>
+    <script src="places.js?v=1" defer></script>
+    <script src="config.js?v=1" defer></script>
+    <script src="app.js?v=26" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -61,26 +62,27 @@
             </p>
           </div>
         </div>
+        <p id="data-status" class="data-status" role="status" hidden></p>
         <div class="map-overview">
           <dl class="journey-totals" aria-label="Journey statistics">
             <div>
               <dt>Stones</dt>
-              <dd id="total-stones">5</dd>
+              <dd id="total-stones">—</dd>
             </div>
             <div>
               <dt title="Found within the last 90 days">
                 Alive
                 <span class="sr-only">— found within the last 90 days</span>
               </dt>
-              <dd id="total-active">5</dd>
+              <dd id="total-active">—</dd>
             </div>
             <div>
               <dt>Finds</dt>
-              <dd id="total-finds" aria-live="polite">25</dd>
+              <dd id="total-finds" aria-live="polite">—</dd>
             </div>
             <div>
               <dt>Countries</dt>
-              <dd id="total-countries">3</dd>
+              <dd id="total-countries">—</dd>
             </div>
           </dl>
           <span class="map-hint">Tap a stone. Meet a little friend.</span>
@@ -145,7 +147,8 @@
           <span aria-hidden="true">🌍</span> Countries visited by this stone
         </p>
         <p class="demo-note">
-          Fictional journeys. New finds last for this visit only.
+          Demo stones have fictional beginnings. New finds and notes are saved
+          in their stories.
         </p>
       </section>
       <section
@@ -181,7 +184,7 @@
     </main>
     <footer class="wrap">
       <span>Living Stones · Small moments, shared.</span
-      ><span>Visual MVP · No backend</span>
+      ><span>Every little hello stays with us.</span>
     </footer>
     <dialog id="stone-dialog" aria-labelledby="detail-title">
       <div id="stone-detail"></div>

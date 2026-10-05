@@ -11,7 +11,8 @@ const context = vm.createContext({ navigator: { userAgent: "" } });
 vm.runInContext(functions, context);
 const data = vm.createContext({});
 vm.runInContext(
-  fs.readFileSync("docs/data.js", "utf8") + ";globalThis.stones=DEMO_STONES;",
+  fs.readFileSync("fixtures/demo-data.js", "utf8") +
+    ";globalThis.stones=DEMO_STONES;",
   data,
 );
 test("five distinct demo stones have realistic chronological journeys and valid locations", () => {
@@ -117,47 +118,6 @@ test("root and docs entry points match except their asset paths", () => {
   assert.ok(docs.includes('<html lang="en">'));
 });
 
-test("finds are visit-only and never access browser persistence", () => {
-  const sandbox = vm.createContext({
-    localStorage: {
-      getItem() {
-        throw Error("Storage must not be accessed");
-      },
-      setItem() {
-        throw Error("Storage must not be accessed");
-      },
-    },
-  });
-  vm.runInContext(
-    fs.readFileSync("docs/data.js", "utf8") +
-      "\n" +
-      functions +
-      "\n" +
-      source.slice(
-        source.indexOf("// This repository"),
-        source.indexOf("let selectedId"),
-      ) +
-      ";globalThis.repo = stoneRepository;",
-    sandbox,
-  );
-  const before = sandbox.repo.get("A1");
-  sandbox.repo.addFind("A1", {
-    date: new Date().toISOString(),
-    city: "Bratislava",
-    country: "Slovakia",
-    address: "Demo address",
-    lat: 48.1486,
-    lon: 17.1077,
-    nickname: "Test",
-    message: "Hello",
-    source: "demo",
-  });
-  assert.equal(before.finds.length, 5);
-  assert.equal(sandbox.repo.get("A1").finds.length, 6);
-  assert.equal(sandbox.repo.get("B2").finds.length, 5);
-  assert.equal(sandbox.repo.get("A1").finds.at(-1).local, true);
-  assert.throws(() => sandbox.repo.addFind("A1", { lat: 200, lon: 17 }));
-});
 test("a house number is included only with a sufficiently accurate street", () => {
   assert.equal(
     context.formatPlace(

@@ -1,5 +1,13 @@
 const { chromium, devices } = require("playwright");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const fixture = vm.createContext({});
+vm.runInContext(
+  fs.readFileSync("fixtures/demo-data.js", "utf8") +
+    ";globalThis.stones=DEMO_STONES",
+  fixture,
+);
 const { spawn } = require("node:child_process");
 const base = process.env.LIVINGSTONES_TEST_URL || "http://127.0.0.1:8137";
 const server = process.env.LIVINGSTONES_TEST_URL
@@ -14,10 +22,91 @@ process.on("exit", () => server?.kill());
       server.once("exit", (code) => reject(Error("Server exited: " + code)));
     });
   const browser = await chromium.launch({ headless: true });
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (options) => {
+    const context = await newContext(options);
+    const stones = JSON.parse(JSON.stringify(fixture.stones));
+    for (const stone of stones)
+      stone.comments = stone.finds.map((f, i) => ({
+        id: `seed-${stone.id}-${i}`,
+        findId: "seed",
+        date: f.date,
+        nickname: f.nickname,
+        message: f.message,
+      }));
+    const submissions = new Map();
+    context.dropNextFindReply = false;
+    await context.route("http://127.0.0.1:8787/**", async (route) => {
+      const req = route.request(),
+        parts = new URL(req.url()).pathname.split("/");
+      const id = parts[3],
+        kind = parts[4],
+        stone = stones.find((s) => s.id === id);
+      let result = { stones },
+        status = 200;
+      if (req.method() === "POST") {
+        const body = req.postDataJSON();
+        if (body.code !== stone?.code) {
+          status = 403;
+          result = { error: "That code doesn’t match this stone." };
+        } else if (kind === "verify") result = { ok: true };
+        else {
+          const key = req.headers()["idempotency-key"];
+          if (submissions.has(key)) result = submissions.get(key);
+          else {
+            const recordId = String(Date.now()) + Math.random(),
+              date = new Date().toISOString();
+            if (kind === "finds")
+              stone.finds.push({
+                ...body.place,
+                id: recordId,
+                date,
+                nickname: body.nickname || "A kind stranger",
+                message: body.message,
+              });
+            if (body.message)
+              stone.comments.push({
+                id: recordId,
+                date,
+                findId: kind === "finds" ? recordId : null,
+                nickname: body.nickname || "A kind stranger",
+                message: body.message,
+              });
+            result = { stone, recordId };
+            submissions.set(key, structuredClone(result));
+          }
+        }
+      }
+      if (kind === "finds" && context.dropNextFindReply && status === 200) {
+        context.dropNextFindReply = false;
+        status = 503;
+        result = { error: "The reply was interrupted. Please retry." };
+      }
+      await route.fulfill({
+        status,
+        contentType: "application/json",
+        body: JSON.stringify(result),
+      });
+    });
+    return context;
+  };
   try {
     const errors = [];
-    const attach = (page) =>
+    const attach = (page) => {
       page.on("pageerror", (error) => errors.push(error.message));
+      for (const method of ["goto", "reload"]) {
+        const original = page[method].bind(page);
+        page[method] = async (...args) => {
+          const result = await original(...args);
+          await page.waitForFunction(
+            () =>
+              stoneRepository.list().length === 5 &&
+              document.querySelector("#data-status").hidden,
+          );
+          return result;
+        };
+      }
+    };
     const rows = ".find-history tbody tr";
     const desktop = await browser.newContext({
       viewport: { width: 1440, height: 1050 },
@@ -176,6 +265,11 @@ process.on("exit", () => server?.kill());
     );
     await phone.locator("#find-code").fill("WRONG");
     await phone.locator("#find-form button[type=submit]").click();
+    await phone.waitForFunction(() =>
+      document
+        .querySelector("#find-error")
+        .textContent.includes("doesn’t match"),
+    );
     assert.match(
       await phone.locator("#find-error").innerText(),
       /doesn’t match/,
@@ -183,6 +277,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
     await phone.locator("#find-code").fill("sun24");
     await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#location-status").waitFor();
     assert.equal(
       await phone.evaluate(() => window.gpsCalls),
       1,
@@ -215,6 +310,7 @@ process.on("exit", () => server?.kill());
       .locator("#find-message")
       .fill("Hello! <script>alert(1)</script>");
     await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#success-title").waitFor();
     assert.equal(await phone.locator(rows).count(), 6);
     assert.match(
       await phone.locator(rows).last().innerText(),
@@ -245,8 +341,8 @@ process.on("exit", () => server?.kill());
     await phone.reload();
     assert.equal(
       await phone.locator(rows).count(),
-      5,
-      "Refresh resets previews",
+      6,
+      "Refresh retains saved finds",
     );
     // Actual GPS coordinates, successful reverse lookup, map and address table.
     await phone.route("https://photon.komoot.io/**", (route) =>
@@ -281,9 +377,10 @@ process.on("exit", () => server?.kill());
       return [p.lat, p.lng];
     });
     assert.deepEqual(preview, [48.156, 17.155]);
-    assert.equal(await phone.locator(rows).count(), 5);
+    assert.equal(await phone.locator(rows).count(), 6);
     await phone.locator("#location-next").click();
     await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#success-title").waitFor();
     assert.match(await phone.locator(rows).last().innerText(), /Ľanová 8/);
     assert.match(
       await phone.locator(rows).last().innerText(),
@@ -304,7 +401,7 @@ process.on("exit", () => server?.kill());
     await phone.screenshot({ path: "/tmp/livingstones-v2-gps.png" });
     assert.ok(lookups > 0);
     await phone.reload();
-    assert.equal(await phone.locator(rows).count(), 5);
+    assert.equal(await phone.locator(rows).count(), 7);
     // A failed lookup still displays the exact point, including zero coordinates.
     await phone.unroute("https://photon.komoot.io/**");
     await phone.route("https://photon.komoot.io/**", (route) => route.abort());
@@ -320,6 +417,7 @@ process.on("exit", () => server?.kill());
     );
     await phone.locator("#location-next").click();
     await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#success-title").waitFor();
     assert.match(
       await phone.locator(rows).last().innerText(),
       /Address unavailable — 0.00000, 0.00000/,
@@ -330,6 +428,7 @@ process.on("exit", () => server?.kill());
     await phone.locator("#start-find").click();
     await phone.locator("#find-code").fill("LOVE4");
     await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#use-gps").waitFor();
     await phone.locator("#cancel-find").click();
     await phone.evaluate(() => window.releaseGPS());
     assert.equal(await phone.locator(rows).count(), 5);
@@ -350,6 +449,7 @@ process.on("exit", () => server?.kill());
     await mp.locator("#start-find").click();
     await mp.locator("#find-code").fill("GROW3");
     await mp.locator("#find-form button[type=submit]").click();
+    await mp.locator("#location-status").waitFor();
     assert.match(
       await mp.locator("#location-status").innerText(),
       /unavailable/,
@@ -357,11 +457,53 @@ process.on("exit", () => server?.kill());
     await mp.locator("#demo-city").selectOption("0");
     await mp.locator("#location-next").click();
     await mp.locator("#find-form button[type=submit]").click();
+    await mp.locator("#success-title").waitFor();
     assert.equal(await mp.locator(rows).count(), 6);
-    assert.match(
-      await mp.locator(".success-panel").innerText(),
-      /this visit only/,
+    assert.match(await mp.locator(".success-panel").innerText(), /is saved/);
+    // A lost receipt leaves the form intact; retry uses the original key and saves once.
+    await phone.goto(base + "/?stone=A1");
+    await phone.locator("#start-find").click();
+    await phone.locator("#find-code").fill("SUN24");
+    await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#demo-city").waitFor();
+    await phone.locator("#demo-city").selectOption("0");
+    await phone.locator("#location-next").click();
+    await phone.locator("#find-message").fill("A moment worth one save.");
+    mobile.dropNextFindReply = true;
+    await phone.locator("#find-form button[type=submit]").click();
+    await phone.waitForFunction(() =>
+      document.querySelector("#find-error").textContent.includes("interrupted"),
     );
+    assert.equal(await phone.locator("#success-title").count(), 0);
+    assert.equal(await phone.locator(rows).count(), 7);
+    assert.equal(
+      await phone.locator("#find-message").inputValue(),
+      "A moment worth one save.",
+    );
+    await phone.locator("#find-form button[type=submit]").click();
+    await phone.locator("#success-title").waitFor();
+    assert.equal(await phone.locator(rows).count(), 8);
+    await phone.reload();
+    assert.equal(await phone.locator(rows).count(), 8);
+    // Standalone comments persist across refresh and never change the map/find count.
+    await phone.goto(base + "/?stone=E5");
+    const beforeNotes = await phone.locator("#total-finds").innerText();
+    await phone.locator("#start-comment").click();
+    await phone.locator("#comment-code").fill("WAVE5");
+    await phone.locator("#comment-nickname").fill("Kind friend");
+    await phone
+      .locator("#comment-message")
+      .fill("A little hello that stays. <b>Safe text</b>");
+    await phone.locator("#comment-form button[type=submit]").click();
+    await phone.locator("#stone-notes article").waitFor();
+    assert.equal(await phone.locator("#total-finds").innerText(), beforeNotes);
+    await phone.reload();
+    assert.match(
+      await phone.locator("#stone-notes").innerText(),
+      /A little hello that stays/,
+    );
+    assert.equal(await phone.locator("#stone-notes b").count(), 0);
+    assert.equal(await phone.locator(rows).count(), 5);
     // Offline map tiles retain working controls and pins, with an honest status.
     await page.route("https://**/*", (route) => route.abort());
     for (const width of [320, 375, 600, 768, 1024, 1440]) {
@@ -530,7 +672,7 @@ process.on("exit", () => server?.kill());
     }
     assert.deepEqual(errors, []);
     console.log(
-      "Passed: map-first layouts, Leaflet controls/pins, mobile-only finds, automatic GPS, addresses, safe notes, canceled GPS, visit-only data, URLs/history/sharing and responsive layouts.",
+      "Passed: map-first layouts, Leaflet controls/pins, mobile-only finds, automatic GPS, addresses, safe notes, canceled GPS, persistent API-backed data and standalone comments, URLs/history/sharing and responsive layouts.",
     );
   } finally {
     await browser.close();

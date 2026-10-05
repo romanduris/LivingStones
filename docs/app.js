@@ -103,29 +103,62 @@ function journeyStatistics(stones, now = Date.now()) {
     countries: new Set(finds.map((find) => find.country).filter(Boolean)).size,
   };
 }
-// This repository is the only data boundary. New finds live in memory for
-// this visit: no localStorage, database, or server writes.
+// This repository is the only data boundary. The API is the source of truth.
 const stoneRepository = (() => {
-  const additions = {};
-  const get = (id) => {
-    const base = DEMO_STONES.find((stone) => stone.id === id);
-    return base
-      ? {
-          ...base,
-          finds: [...base.finds, ...(additions[id] || [])].sort(
-            (a, b) => Date.parse(a.date) - Date.parse(b.date),
-          ),
-        }
-      : null;
-  };
+  let stones = [];
+  async function request(path, body, key) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch(LIVINGSTONES_API + path, {
+        method: body ? "POST" : "GET",
+        credentials: "omit",
+        cache: "no-store",
+        signal: controller.signal,
+        headers: body
+          ? {
+              "Content-Type": "application/json",
+              ...(key ? { "Idempotency-Key": key } : {}),
+            }
+          : {},
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Please try again.");
+      return data;
+    } catch (error) {
+      if (error.name === "AbortError" || error instanceof TypeError)
+        throw new Error(
+          "We couldn’t reach my story. Please try again — your form is still here.",
+        );
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  async function save(id, kind, body, key) {
+    const result = await request(
+      `/api/stones/${encodeURIComponent(id)}/${kind}`,
+      body,
+      key,
+    );
+    if (kind === "finds") {
+      const find = result.stone.finds.find((f) => f.id === result.recordId);
+      if (find) find.local = true;
+    }
+    stones = stones.map((s) => (s.id === id ? result.stone : s));
+    return result;
+  }
   return {
-    get,
-    list: () => DEMO_STONES.map((stone) => get(stone.id)),
-    addFind(id, find) {
-      if (!get(id) || !validCoordinates(find.lat, find.lon))
-        throw new Error("Invalid find");
-      additions[id] = [...(additions[id] || []), { ...find, local: true }];
+    get: (id) => stones.find((s) => s.id === id) || null,
+    list: () => stones,
+    async load() {
+      stones = (await request("/api/stones")).stones;
     },
+    verify: (id, code) =>
+      request(`/api/stones/${encodeURIComponent(id)}/verify`, { code }),
+    addFind: (id, body, key) => save(id, "finds", body, key),
+    addComment: (id, body, key) => save(id, "comments", body, key),
   };
 })();
 let selectedId = null;
@@ -154,7 +187,8 @@ function renderOverview() {
   $("#stone-rows").innerHTML = stones
     .map((stone) => {
       const last = stone.finds.at(-1),
-        birth = stone.finds[0];
+        birth = stone.finds[0],
+        lastComment = stone.comments?.at(-1) || last;
       const countries = new Set(stone.finds.map((find) => find.country)).size;
       const countryCode =
         { Slovakia: "SK", Austria: "AT", Hungary: "HU" }[birth.country] ||
@@ -185,7 +219,7 @@ function renderOverview() {
       const flag = flagCode
         ? `<img class="country-flag" src="${new URL(`flags/${flagCode}.svg`, assetBase).href}" alt="${escapeHTML(last.country)}" width="15" height="10">`
         : "";
-      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${fullBirth}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span>${stone.demo ? '<span class="demo-badge">Demo</span>' : ""}</span><span class="stone-identity"><strong>${stone.name}</strong><small class="stone-tagline">${stone.tagline}</small><small class="stone-born" title="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">Born: ${compactBirth} · ${escapeHTML(countryCode)}</span></small></span></a></td><td class="overview-start" data-label="Born"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Age"><strong>${daysTravelling(stone)} <span class="age-unit">days</span></strong></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small class="find-countries" title="${countries} ${countries === 1 ? "country" : "countries"}" aria-label="${countries} ${countries === 1 ? "country" : "countries"}"><span class="countries-full">${countries} ${countries === 1 ? "country" : "countries"}</span><span class="countries-compact" aria-hidden="true">${countries} <span class="country-globe">🌍</span></span></small></td><td class="overview-location" data-label="Last Found"><time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}"><span class="date-full">${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}</span><span class="date-compact" aria-hidden="true">${shortDate}${lastTime ? " · " + lastTime : ""}</span></time><strong class="last-place" title="${escapeHTML(fullPlace)}"><span class="place-name">${escapeHTML(last.city)}</span>${flag}</strong></td><td class="overview-latest" data-label="Last Comment"><small class="latest-note" title="${escapeHTML(last.nickname + (last.message ? ": “" + last.message + "”" : ""))}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
+      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${escapeHTML(stone.name)}, ${escapeHTML(fullBirth)}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span>${stone.demo ? '<span class="demo-badge">Demo</span>' : '<span class="demo-badge real-badge">Real</span>'}</span><span class="stone-identity"><strong>${escapeHTML(stone.name)}</strong><small class="stone-tagline">${escapeHTML(stone.tagline)}</small><small class="stone-born" title="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">Born: ${compactBirth} · ${escapeHTML(countryCode)}</span></small></span></a></td><td class="overview-start" data-label="Born"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Age"><strong>${daysTravelling(stone)} <span class="age-unit">days</span></strong></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small class="find-countries" title="${countries} ${countries === 1 ? "country" : "countries"}" aria-label="${countries} ${countries === 1 ? "country" : "countries"}"><span class="countries-full">${countries} ${countries === 1 ? "country" : "countries"}</span><span class="countries-compact" aria-hidden="true">${countries} <span class="country-globe">🌍</span></span></small></td><td class="overview-location" data-label="Last Found"><time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}"><span class="date-full">${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}</span><span class="date-compact" aria-hidden="true">${shortDate}${lastTime ? " · " + lastTime : ""}</span></time><strong class="last-place" title="${escapeHTML(fullPlace)}"><span class="place-name">${escapeHTML(last.city)}</span>${flag}</strong></td><td class="overview-latest" data-label="Last Comment"><small class="latest-note" title="${escapeHTML(lastComment.nickname + (lastComment.message ? ": “" + lastComment.message + "”" : ""))}">${escapeHTML(lastComment.nickname)}${lastComment.message ? ": “" + escapeHTML(lastComment.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
     })
     .join("");
   const stats = journeyStatistics(stones);
@@ -205,6 +239,10 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
   disposeMap(container.id);
   container.replaceChildren();
   container.parentElement.querySelector(".map-notice")?.remove();
+  if (!stones.length && !previewPlace) {
+    container.textContent = "Our first little adventures are on their way.";
+    return;
+  }
   const points = previewPlace
     ? [previewPlace]
     : journey
@@ -276,8 +314,8 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
     const label = previewPlace
       ? "Your find location"
       : journey
-        ? `${index + 1}. ${find.city}, ${find.country}${find.local ? " · Your preview find" : ""}`
-        : `${stone.name} · ${find.city}`;
+        ? `${index + 1}. ${find.city}, ${find.country}${find.local ? " · Your saved find" : ""}`
+        : `${escapeHTML(stone.name)} · ${find.city}`;
     const marker = L.marker([find.lat, find.lon], {
       title: label,
       alt: label,
@@ -290,7 +328,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       }),
     })
       .bindPopup(
-        `<strong>${escapeHTML(journey || previewPlace ? find.city : stone.name)}</strong><br>${escapeHTML(find.address || find.city + ", " + find.country)}<br><span class="map-popup-note">${previewPlace ? "Location preview — not submitted" : formatDate(find.date)}${find.local ? " · Preview for this visit" : ""}</span>${!journey && !previewPlace ? `<br><a class="map-popup-link" href="?stone=${stone.id}" data-stone="${stone.id}">Open stone story ↗</a>` : ""}`,
+        `<strong>${escapeHTML(journey || previewPlace ? find.city : stone.name)}</strong><br>${escapeHTML(find.address || find.city + ", " + find.country)}<br><span class="map-popup-note">${previewPlace ? "Location preview — not submitted" : formatDate(find.date)}${find.local ? " · Saved find" : ""}</span>${!journey && !previewPlace ? `<br><a class="map-popup-link" href="?stone=${stone.id}" data-stone="${stone.id}">Open stone story ↗</a>` : ""}`,
       )
       .addTo(map);
     marker.getElement().setAttribute("aria-label", label);
@@ -342,7 +380,7 @@ function historyHTML(stone) {
   return stone.finds
     .map(
       (find, index) =>
-        `<tr class="${find.local ? "new-find" : ""}"><td class="find-number">${index + 1}</td><td class="find-date"><time datetime="${escapeHTML(find.date)}">${formatDate(find.date)}</time>${find.local ? `<br><span class="local-badge">${find.source === "demo" ? "Demo preview" : "GPS preview"}</span>` : ""}</td><td class="find-place"><strong>${escapeHTML(find.city)}, ${escapeHTML(find.country)}</strong><small>${escapeHTML(find.address || "Address unavailable — " + find.lat.toFixed(5) + ", " + find.lon.toFixed(5))}</small>${find.accuracy != null ? `<span class="accuracy-note">GPS accuracy ~${Math.round(find.accuracy)} m${find.accuracy > 150 ? " · approximate area" : ""}</span>` : ""}</td><td class="find-finder">${escapeHTML(find.nickname || "A kind stranger")}</td><td class="find-message">${find.message ? "“" + escapeHTML(find.message) + "”" : "—"}</td></tr>`,
+        `<tr class="${find.local ? "new-find" : ""}"><td class="find-number">${index + 1}</td><td class="find-date"><time datetime="${escapeHTML(find.date)}">${formatDate(find.date)}</time>${find.source !== "seed" ? `<br><span class="local-badge">${find.source === "demo" ? "Demo location" : "GPS find"}</span>` : ""}</td><td class="find-place"><strong>${escapeHTML(find.city)}, ${escapeHTML(find.country)}</strong><small>${escapeHTML(find.address || "Address unavailable — " + find.lat.toFixed(5) + ", " + find.lon.toFixed(5))}</small>${find.accuracy != null ? `<span class="accuracy-note">GPS accuracy ~${Math.round(find.accuracy)} m${find.accuracy > 150 ? " · approximate area" : ""}</span>` : ""}</td><td class="find-finder">${escapeHTML(find.nickname || "A kind stranger")}</td><td class="find-message">${find.message ? "“" + escapeHTML(find.message) + "”" : "—"}</td></tr>`,
     )
     .join("");
 }
@@ -354,10 +392,11 @@ function renderDetail() {
   const last = stone.finds.at(-1),
     birth = stone.finds[0];
   $("#stone-detail").innerHTML =
-    `<div class="detail-topbar"><h2 id="detail-title"><span class="color-dot" style="--stone-color:${stone.color}"></span>${stone.name}<small>${stone.id}</small></h2><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div><div class="detail-body"><section aria-labelledby="journey-title"><h3 id="journey-title" class="sr-only">${stone.name} journey map</h3><div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${stone.name}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div><div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span>${last.local ? '<span class="new-find-key">✦ Your new find · preview</span>' : "Numbers follow the history below."}</span></div></section><div class="detail-summary"><div class="detail-image theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${stone.name}, a painted ${stone.theme} stone"></div><div class="detail-copy"><h3>${stone.tagline}</h3><p class="detail-story">${stone.story}</p><p class="origin-note">My first home: ${escapeHTML(birth.city)} · ${escapeHTML(birth.address)} · ${formatDate(stone.started)}</p><div class="detail-stats"><span><strong>${daysTravelling(stone)}</strong> days travelling</span><span><strong>${stone.finds.length}</strong> finds</span><span><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> countries</span></div><div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone ↗</button>' : ""}<button class="button secondary" id="share-stone">Share my story ↗</button></div>${supportsPreciseLocation() ? "" : '<p class="desktop-note">Found me? Open my link on your phone to tell me where we met.</p>'}<div id="share-fallback" class="share-fallback" hidden></div></div></div><div id="find-container"></div><section class="detail-section" aria-labelledby="history-title"><h3 id="history-title">The friends I’ve met.</h3><p class="section-subtitle">Every hello is part of my story.</p><div class="table-scroll"><table class="find-history"><caption class="sr-only">Find history, including dates, addresses, finders and messages</caption><thead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Location / address</th><th scope="col">Finder</th><th scope="col">Their note</th></tr></thead><tbody>${historyHTML(stone)}</tbody></table></div></section><p class="detail-footnote">Demo story. New finds disappear on refresh. Looking never records a find.</p></div>`;
+    `<div class="detail-topbar"><h2 id="detail-title"><span class="color-dot" style="--stone-color:${stone.color}"></span>${escapeHTML(stone.name)}<small>${stone.id}</small></h2><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div><div class="detail-body"><section aria-labelledby="journey-title"><h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3><div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div><div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span>${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : "Numbers follow the history below."}</span></div></section><div class="detail-summary"><div class="detail-image theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.name)}, a painted ${stone.theme} stone"></div><div class="detail-copy"><h3>${escapeHTML(stone.tagline)}</h3><p class="detail-story">${escapeHTML(stone.story)}</p><p class="origin-note">My first home: ${escapeHTML(birth.city)} · ${escapeHTML(birth.address)} · ${formatDate(stone.started)}</p><div class="detail-stats"><span><strong>${daysTravelling(stone)}</strong> days travelling</span><span><strong>${stone.finds.length}</strong> finds</span><span><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> countries</span></div><div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone ↗</button><button class="button secondary" id="start-comment">Leave a little note</button>' : ""}<button class="button secondary" id="share-stone">Share my story ↗</button></div>${supportsPreciseLocation() ? "" : '<p class="desktop-note">Found me? Open my link on your phone to tell me where we met.</p>'}<div id="share-fallback" class="share-fallback" hidden></div></div></div><div id="find-container"></div><section class="detail-section" aria-labelledby="history-title"><h3 id="history-title">The friends I’ve met.</h3><p class="section-subtitle">Every hello is part of my story.</p><div class="table-scroll"><table class="find-history"><caption class="sr-only">Find history, including dates, addresses, finders and messages</caption><thead><tr><th scope="col">#</th><th scope="col">Date</th><th scope="col">Location / address</th><th scope="col">Finder</th><th scope="col">Their note</th></tr></thead><tbody>${historyHTML(stone)}</tbody></table></div></section>${commentsHTML(stone)}<p class="detail-footnote">${stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story."} Looking never records a find.</p></div>`;
   renderMap($("#journey-map"), [stone], true);
   $("#close-detail").addEventListener("click", closeDetail);
   $("#share-stone").addEventListener("click", shareStone);
+  $("#start-comment")?.addEventListener("click", () => startComment(stone));
   $("#start-find")?.addEventListener("click", () => {
     if (!supportsPreciseLocation()) return;
     flow = {
@@ -368,6 +407,7 @@ function renderDetail() {
       message: "",
       code: "",
       busy: false,
+      requestId: crypto.randomUUID(),
     };
     renderFlow();
     $("#find-container").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -415,7 +455,9 @@ function syncURL() {
         );
     focusTarget?.focus({ preventScroll: true });
     if (id)
-      toast("That stone is not in this demo. Meet one of our five explorers.");
+      toast(
+        "That stone is not in our collection. Meet another little explorer.",
+      );
   }
 }
 async function shareStone() {
@@ -453,7 +495,7 @@ function renderFlow() {
   disposeMap("location-preview");
   const stone = stoneRepository.get(flow.id);
   if (flow.step === 4) {
-    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">You’ve made my day.</h3><p>A new memory in ${escapeHTML(flow.place.city)} — thanks to you. Take me along, then leave me somewhere new for my next friend.<br>Preview for this visit only; refreshing resets it.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
+    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">You’ve made my day.</h3><p>A new memory in ${escapeHTML(flow.place.city)} — thanks to you. Take me along, then leave me somewhere new for my next friend.<br>Your moment is saved in my story.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
     $("#finish-find").addEventListener("click", () => {
       flow = null;
       renderFlow();
@@ -467,12 +509,19 @@ function renderFlow() {
   const steps = `<div class="find-steps" aria-label="Find progress">${["The Find Code", "Your location", "Your moment"].map((title, i) => `<span class="${flow.step === i + 1 ? "active" : flow.step > i + 1 ? "done" : ""}" ${flow.step === i + 1 ? 'aria-current="step"' : ""}>${i + 1}. ${title}</span>`).join("")}</div>`;
   let content = "";
   if (flow.step === 1)
-    content = `<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">My code is on the back. Try <strong>${stone.code}</strong> in this demo. Continue to request your phone’s location, or pick a demo place.</p><div class="form-actions"><button class="button primary" type="submit">Continue &amp; locate <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+    content = `<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">My code is on the back. ${stone.demo ? `Try <strong>${escapeHTML(stone.code)}</strong> for this demo stone.` : ""} Continue to request your phone’s location, or pick a demo place.</p><div class="form-actions"><button class="button primary" type="submit">Continue &amp; locate <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
   if (flow.step === 2)
     content = `<p class="location-consent">Your phone needs permission to find our meeting place. Coordinates go to Photon for the address. A demo place works too.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : "No location selected yet."}</p><div class="map-frame location-preview-frame" id="location-preview-frame" ${flow.place ? "" : "hidden"}><div class="map-panel location-preview-map" id="location-preview" role="region" aria-label="Preview of your find location"></div></div><p class="location-separator">OR TRY A FICTIONAL LOCATION</p><label class="field" for="demo-city">Demo city<select id="demo-city"><option value="">Choose a city…</option>${DEMO_PLACES.map((place, index) => `<option value="${index}" ${flow.place?.source === "demo" && flow.place.city === place.city ? "selected" : ""}>${place.city}, ${place.country}</option>`).join("")}</select></label><p class="field-hint">Demo locations are clearly marked in the history.</p><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
   if (flow.step === 3)
-    content = `<div class="review-location">⌖ ${escapeHTML(flow.place.address || flow.place.city + ", " + flow.place.country)}${flow.place.source === "demo" ? " · Demo location" : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">This is a prototype. Your find is a preview for this visit only. Refreshing resets it.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+    content = `<div class="review-location">⌖ ${escapeHTML(flow.place.address || flow.place.city + ", " + flow.place.country)}${flow.place.source === "demo" ? " · Demo location" : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">Your find and note will become a public part of my story. Take me somewhere new for my next friend.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
   target.innerHTML = `<section class="find-panel" aria-labelledby="find-title"><h3 id="find-title" tabindex="-1">I’m glad you found me.</h3><p>Take me along, enjoy my company, then leave me safely in another town for my next friend.</p>${steps}<form id="find-form">${content}<p id="find-error" class="error" role="alert"></p></form></section>`;
+  if (!stone.demo && flow.step === 2) {
+    $("#demo-city").closest("label").hidden = true;
+    $(".location-separator").hidden = true;
+    $("#demo-city").disabled = true;
+    $(".location-consent").textContent =
+      "Allow your phone’s location so I can remember where we met. Coordinates go to Photon for the address.";
+  }
   $("#cancel-find").addEventListener("click", () => {
     flow = null;
     renderFlow();
@@ -485,18 +534,28 @@ function renderFlow() {
     renderFlow();
     $("#find-title").focus({ preventScroll: true });
   });
-  $("#find-form").addEventListener("submit", (event) => {
+  $("#find-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!flow || flow.busy || !supportsPreciseLocation()) return;
     if (flow.step === 1) {
       flow.code = $("#find-code").value.trim().toUpperCase();
-      if (flow.code !== stone.code) {
-        $("#find-error").textContent =
-          "That code doesn’t match this stone. Check the back, or use the demo code above.";
+      const activeFlow = flow;
+      flow.busy = true;
+      const submit = $("#find-form button[type=submit]");
+      submit.disabled = true;
+      try {
+        await stoneRepository.verify(flow.id, flow.code);
+      } catch (error) {
+        if (flow !== activeFlow) return;
+        flow.busy = false;
+        submit.disabled = false;
+        $("#find-error").textContent = error.message;
         $("#find-code").setAttribute("aria-invalid", "true");
         $("#find-code").focus();
         return;
       }
+      if (flow !== activeFlow) return;
+      flow.busy = false;
       flow.step = 2;
       renderFlow();
       requestLocation();
@@ -507,12 +566,39 @@ function renderFlow() {
     } else if (flow.step === 3) {
       saveDraft();
       flow.busy = true;
-      stoneRepository.addFind(flow.id, {
-        ...flow.place,
-        date: new Date().toISOString(),
-        nickname: flow.nickname.trim() || "A kind stranger",
+      const activeFlow = flow;
+      // Keep the exact payload and key for retries after a lost response.
+      const submission = {
+        code: flow.code,
+        place: { ...flow.place },
+        nickname: flow.nickname.trim(),
         message: flow.message.trim(),
-      });
+      };
+      if (
+        flow.submission &&
+        JSON.stringify(flow.submission) !== JSON.stringify(submission)
+      )
+        flow.requestId = crypto.randomUUID();
+      flow.submission = submission;
+      $("#find-form")
+        .querySelectorAll("button, input, textarea")
+        .forEach((el) => (el.disabled = true));
+      $("#find-error").textContent = "Saving our little moment…";
+      try {
+        await stoneRepository.addFind(flow.id, flow.submission, flow.requestId);
+      } catch (error) {
+        if (flow !== activeFlow) return;
+        flow.busy = false;
+        $("#find-form")
+          .querySelectorAll("button, input, textarea")
+          .forEach((el) => (el.disabled = false));
+        $("#find-error").textContent = error.message;
+        return;
+      }
+      if (flow !== activeFlow) {
+        renderOverview();
+        return;
+      }
       flow.step = 4;
       renderOverview();
       renderDetail();
@@ -613,7 +699,9 @@ function requestLocation() {
     flow === activeFlow && flow.step === 2 && $("#use-gps") === button;
   if (!navigator.geolocation) {
     status.textContent =
-      "GPS is unavailable in this browser. Choose a demo city to continue.";
+      stoneRepository.get(flow.id).demo
+        ? "GPS is unavailable in this browser. Choose a demo city to continue."
+        : "GPS is unavailable in this browser. Open my link in a browser with location support.";
     return;
   }
   activeFlow.busy = true;
@@ -626,7 +714,7 @@ function requestLocation() {
     if (current()) {
       button.disabled = false;
       $("#location-next").disabled = !flow.place;
-      $("#demo-city").disabled = false;
+      $("#demo-city").disabled = !stoneRepository.get(flow.id).demo;
     }
   };
   const fail = (error) => {
@@ -638,6 +726,8 @@ function requestLocation() {
         3: "Location took too long. Try again or choose a demo city.",
       }[error.code] ||
       "Could not get your location. Choose a demo city to continue.";
+    if (!stoneRepository.get(flow.id).demo)
+      status.textContent = "We couldn’t get your location. Allow location in your browser settings and try again.";
     unlock();
   };
   try {
@@ -711,5 +801,78 @@ $("#stone-dialog").addEventListener("click", (event) => {
     closeDetail();
 });
 window.addEventListener("popstate", syncURL);
-renderOverview();
-syncURL();
+async function boot() {
+  const status = $("#data-status");
+  status.hidden = false;
+  status.textContent = "Our little stories are on their way…";
+  try {
+    await stoneRepository.load();
+    renderOverview();
+    syncURL();
+    status.hidden = true;
+  } catch (error) {
+    status.innerHTML = `<span>${escapeHTML(error.message)}</span> <button class="button secondary" id="retry-load">Try again</button>`;
+    $("#retry-load").addEventListener("click", boot);
+  }
+}
+boot();
+
+function commentsHTML(stone) {
+  const notes = (stone.comments || []).filter((c) => !c.findId);
+  return `<section class="detail-section" aria-labelledby="notes-title"><h3 id="notes-title">Little notes along the way.</h3><p class="section-subtitle">A note says hello. A confirmed find tells me where we met.</p><div id="stone-notes">${notes.length ? notes.map((c) => `<article class="stone-note"><strong>${escapeHTML(c.nickname)}</strong> <time datetime="${escapeHTML(c.date)}">${formatDate(c.date)}</time><p>${escapeHTML(c.message)}</p></article>`).join("") : '<p class="section-subtitle">Be the first to leave me a little note.</p>'}</div></section>`;
+}
+function startComment(stone) {
+  if (!supportsPreciseLocation()) return;
+  flow = null;
+  disposeMap("location-preview");
+  const target = $("#find-container");
+  const state = { key: crypto.randomUUID(), payload: null, busy: false };
+  target.innerHTML = `<section class="find-panel"><h3>A little hello makes my day.</h3><p>Take me on an adventure, then leave me somewhere safe for my next friend.</p><form id="comment-form"><label class="field">Find Code<input id="comment-code" required maxlength="32" autocomplete="off" autocapitalize="characters"></label>${stone.demo ? `<p class="field-hint">Demo code: <strong>${escapeHTML(stone.code)}</strong></p>` : ""}<label class="field">Your nickname <small>optional</small><input id="comment-nickname" maxlength="40" autocomplete="nickname"></label><label class="field">Your little note<textarea id="comment-message" required maxlength="400"></textarea></label><p class="field-hint">Your note is public. It won’t record a find or move my pin.</p><div class="form-actions"><button class="button primary" type="submit">Send my little note ↗</button><button class="button secondary" id="cancel-comment" type="button">Cancel</button></div><p id="comment-error" class="error" role="alert"></p></form></section>`;
+  $("#cancel-comment").onclick = () => {
+    target.replaceChildren();
+    $("#start-comment").focus();
+  };
+  $("#comment-form").onsubmit = async (event) => {
+    event.preventDefault();
+    if (state.busy) return;
+    const form = event.currentTarget;
+    const payload = {
+      code: $("#comment-code").value.trim().toUpperCase(),
+      nickname: $("#comment-nickname").value.trim(),
+      message: $("#comment-message").value.trim(),
+    };
+    if (
+      state.payload &&
+      JSON.stringify(payload) !== JSON.stringify(state.payload)
+    )
+      state.key = crypto.randomUUID();
+    state.payload = payload;
+    state.busy = true;
+    form
+      .querySelectorAll("input,textarea,button")
+      .forEach((el) => (el.disabled = true));
+    $("#comment-error").textContent = "Saving your little note…";
+    try {
+      await stoneRepository.addComment(stone.id, payload, state.key);
+      renderOverview();
+      if (selectedId === stone.id && $("#stone-dialog").open) {
+        renderDetail();
+        const note = $("#stone-notes article:last-child");
+        note.scrollIntoView({ behavior: "smooth", block: "center" });
+        note.setAttribute("tabindex", "-1");
+        note.focus({ preventScroll: true });
+      }
+      toast("Your little note is saved. Thank you for saying hello.");
+    } catch (error) {
+      state.busy = false;
+      if (form.isConnected) {
+        form
+          .querySelectorAll("input,textarea,button")
+          .forEach((el) => (el.disabled = false));
+        $("#comment-error").textContent = error.message;
+      }
+    }
+  };
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  $("#comment-code").focus({ preventScroll: true });
+}

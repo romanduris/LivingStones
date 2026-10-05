@@ -1,45 +1,73 @@
 # Living Stones
 
-An English visual MVP for painted stones that pass between people. A single-paragraph, collective, first-person introduction explains how painted stones come to life through shared encounters and invites finders to carry them to another town or country. Maps lead both the home page and each stone detail. A compact statistics strip above the map shows Stones, Alive, Finds and Countries; the values update from the repository, including visit-only finds. A compact overview table shows miniature stone images, origins, age, find counts, last addresses and latest notes; on smaller screens it remains a table that fits the display without horizontal scrolling. Still alive means its latest encounter is within the past 90 days, inclusive. The counts follow the repository and update immediately after a visit-only find, as do the coloured stone/adventure heading and little hellos shared count above the table. The main map is 20% shorter on phones; desktop map dimensions stay unchanged. Table headers and values align left in Stone, right in Last Found, centrally in Born, Age and Finds, with first lines aligned across cells. Last Found includes a small country flag after the city. A globe key below the table explains the country count. Rows have increased vertical spacing and use at most two lines of text per cell. Last Comment hides below 1100 px; Born hides below 800 px and moves under the stone name. Phones retain Stone, Age, Finds and Last Found, with compact dates and country abbreviations. Each phone find count includes the number of countries underneath with a globe icon. Demo badges sit below each thumbnail; IDs stay in detail URLs rather than overview rows. Last Found combines the last-find date and city, including time when supplied by a visit-only find. Each fictional stone is flagged with `demo: true` and receives a small outlined Demo badge in its overview row. Five fictional stones have 25 finds around Bratislava, all within 100 km of the city, including nearby Austria and Hungary.
+Painted stones, shared journeys. English, map-first website: https://romanduris.github.io/LivingStones/.
 
-Live site: https://romanduris.github.io/LivingStones/
+The frontend is published from `docs/` using GitHub Pages. The root `index.html` serves the same UI locally with `docs/` asset paths. Keep both entry points in sync.
 
-## Run locally
+## Live data
 
-Run `python3 -m http.server 8000`, then open http://localhost:8000. Alternatively serve `docs/` directly. Both entry points support `?stone=A1`, `B2`, `C3`, `D4`, or `E5`. Opening or sharing a stone never records a find.
+Cloudflare Worker **livingstones-api** serves the API at https://livingstones-api.livingstones-romanduris.workers.dev. Its `DB` binding points only to D1 **livingstones-db**. The frontend reads stones, finds and messages through the API; it does not use hardcoded stone journeys or browser storage as its data source. Cloudflare management credentials never enter the frontend.
 
-## Try a find
+Five fictional stones are marked **Demo**. Stones with `is_demo = 0` show **Real**; their Find Codes are never returned by the API. The seed contains 25 finds and 25 finder notes around Bratislava, Austria and Hungary. `fixtures/demo-data.js` is input for seeding and tests, not a browser script. Existing SVG images can later be replaced with asset paths or full photo URLs.
 
-Computers show the map, stone story and find history. Phones and tablets additionally show **I found this stone**. Detection uses user-agent, Client Hints and iPad touch checks; resizing a computer window does not enable the mobile flow.
+Opening a stone or its shared `?stone=A1` link only reads data. Desktop visitors see its story. Phones and tablets can record a find using a Find Code, GPS and an optional nickname/note. After permission, a preview map displays the location and GPS accuracy; Photon provides a street/area name when available. Demo stones also allow explicitly labelled fictional locations. Real stones require GPS. Only a successful database write updates the history, maps and totals.
 
-| Stone       | ID  | Demo Find Code |
-| ----------- | --- | -------------- |
-| Sunny Side  | A1  | SUN24          |
-| Little Luna | B2  | MOON7          |
-| Slow Bloom  | C3  | GROW3          |
-| Wildheart   | D4  | LOVE4          |
-| Ocean Echo  | E5  | WAVE5          |
+**Leave a little note** stores a standalone message with a Find Code. It does not add a find, move the pin, or revive the stone. Both kinds of messages remain after refresh and are visible to other visitors. Alive means found in the last 90 days. All public form text is rendered as text, not HTML.
 
-Enter the code and select **Continue & locate** to request device location. After permission, the UI shows a location preview with the reported GPS accuracy and a reverse-geocoded street/area. Alternatively select a fictional nearby location. Add an optional nickname and note, then submit to preview a new chapter. Overview rows, statistics, the overview map, journey route and address table update immediately. The new marker is purple and labelled **Your new find**.
+Requests have stable idempotency keys so retries after lost responses cannot create duplicate records. Find and associated note writes are transactional. The API validates codes, text lengths, coordinates and request origins, uses bound SQL parameters, and limits write attempts. CORS is configured for the GitHub Pages origin; it is not authentication. Demo codes remain public for testing. Real Find Codes must be sufficiently random and kept on the physical stones. Coordinates, nicknames and messages are public; no raw IP addresses are stored in the write limiter.
 
-Finds are held only in JavaScript memory for the current visit. Refreshing clears them. There is no localStorage/sessionStorage persistence, backend, database, or server-side verification. Demo codes are intentionally visible examples. Older prototype storage is ignored.
+## Design
 
-Finders are invited to take the stone along, enjoy its company, and leave it somewhere new — ideally another town — where someone else can find it.
+The sticky charcoal navigation, Baloo 2 headings and Nunito Sans text use local WOFF2 fonts with their licenses in `docs/assets/fonts/`. Purple, coral, teal and yellow accents match the painted pebble brand. Leaflet is locally vendored. OpenStreetMap tiles receive a subdued charcoal/purple filter, with lavender marker outlines and journey routes. Attribution remains visible. If tiles fail, location markers and controls still work.
 
-## Maps and location
+The overview remains a table at phone sizes: Stone is left aligned, Age/Finds centered, Last Found right aligned. Less important columns disappear progressively and birth details move underneath the stone name. Maps remain first in the overview and in the stone dialog. URL/history/sharing support stays in the main page.
 
-The self-hosted [Leaflet 1.9.4](https://leafletjs.com/) library uses [OpenStreetMap](https://www.openstreetmap.org/copyright) tiles, following the map implementation of the supplied BTS Flight Scanner reference. Maps support dragging, zooming, marker popups and reset controls. The overview shows last known locations; numbered detail markers and a dashed line follow the chronological table. Connections illustrate the sequence of finds rather than actual travel paths. External tile requests require internet access; if tiles fail, markers and controls remain available with a status message. Leaflet's BSD license is included under `docs/vendor/leaflet/LICENSE`.
+## Development and tests
 
-GPS needs HTTPS or localhost and browser permission. No GPS or reverse-geocoding request occurs simply by viewing a stone. After a valid code and the explicit **Continue & locate** action, GPS is requested with a 15-second timeout. Coordinates are sent to [Photon](https://photon.komoot.io/) only to look up the address/area (eight-second timeout). Address lookup failure preserves exact coordinates; denied, unavailable or timed-out GPS can be retried or replaced with a demo location. Streets and house numbers are omitted when reported accuracy exceeds 150 m. Addresses are map estimates, not verified postal addresses. Canceling a pending request discards its result.
+```sh
+npm ci
+npx playwright install chromium
+npm test
+```
 
-## Data and UI
+Tests cover the seed, devices, GPS accuracy/addresses, 90-day Alive calculation, real local D1 writes, input validation, private real codes, transaction/idempotency behavior, repeated seeding, write limiting, persistent finds/notes, URL behavior and responsive layouts. API tests create a temporary **local** D1 store; they never use the production database. Browser tests use isolated API fixtures to check UI behavior and refresh persistence.
 
-`docs/data.js` contains the fictional local journeys, birthplaces, addresses and finder messages. `stoneRepository` in `docs/app.js` isolates reads and visit-only writes so an API can replace the data source later. The rest of the UI handles URL state, the native modal, browser history, sharing and maps. The five original stone illustrations are in `docs/assets/stone-*.svg`. The `image` field accepts an asset path or full photo URL, so real photos can replace the illustrations without changing the overview or detail layout. A grayscale/inversion filter with a subtle purple tint applies only to the map tiles to create a subdued charcoal-purple basemap. Stone markers retain their individual colours inside lavender outlines, and journey routes remain lavender. Zoom controls, tooltips, attribution, popups, detail and GPS preview maps share the dark theme. Headings and navigation use Baloo 2; body text and tables use Nunito Sans. Subset WOFF2 fonts are served locally under `docs/assets/fonts/`, alongside their SIL Open Font Licenses, with system fallbacks. Body text and table details are slightly larger for easier reading on phones. Purple, coral, teal and yellow accents complement the charcoal layout, light text and painted pebble logo, inspired by the supplied Websupport reference. The top navigation stays visible while scrolling, with anchor offsets to keep section headings visible.
+To run the complete stack locally:
 
-## Validation and publication
+```sh
+npx wrangler d1 migrations apply livingstones-local-db --local --config wrangler.local.jsonc
+npx wrangler d1 execute livingstones-local-db --local --config wrangler.local.jsonc --file backend/seed.sql
+npm run dev:api
+# In another terminal:
+python3 -m http.server 8137
+```
 
-Run `node --test tests/page.test.cjs` for data, distance, device detection, coordinate/address and memory-only repository checks.
+Open http://127.0.0.1:8137. `docs/config.js` selects port 8787 on localhost and the public Worker elsewhere. The local configuration has a different database name/ID and allows only local frontend origins. Local state and environment files are ignored by Git.
 
-Browser checks require Python 3 and Playwright (`npm install --no-save --package-lock=false playwright`, then `npx playwright install chromium`). Run `node tests/browser.cjs`; it starts a temporary local server on port 8137. Tests cover map-first ordering, map controls/markers, mobile-only finding, automatic GPS after code confirmation, address lookup, permission failures, canceled requests, preview-only data, URL/history/sharing, safe user text, unavailable map tiles and responsive layouts.
+## Production operations
 
-GitHub Pages serves `main` at the repository root. Keep root and docs HTML identical apart from asset paths. Commit and push confirmed changes to `main`, then verify the live publication.
+Provide `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as environment secrets. Do not commit or print their values. Production configuration and binding UUID are in `wrangler.jsonc`.
+
+```sh
+npm run seed
+npx wrangler d1 migrations apply livingstones-db --remote --config wrangler.jsonc
+npx wrangler d1 execute livingstones-db --remote --config wrangler.jsonc --file backend/seed.sql
+npm run deploy
+```
+
+Seeding uses deterministic IDs and `INSERT OR IGNORE`; running it again preserves all new finds and messages. Add schema changes as new migration files. The GitHub Pages frontend deploys when `main` is pushed; Worker changes are deployed separately using the commands above. Readiness endpoint: `/api/health`.
+
+BTSflighttickets resources are not part of either Wrangler configuration. Projects have separate Workers, databases and migrations; account quotas and billing remain shared.
+
+## API
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /api/health` | Checks the database binding |
+| `GET /api/stones` | Public journeys and messages |
+| `GET /api/stones/:id` | Public stone detail |
+| `POST /api/stones/:id/verify` | Validates Find Code before requesting GPS |
+| `POST /api/stones/:id/finds` | Saves a confirmed find and optional message |
+| `POST /api/stones/:id/comments` | Saves a note without a find |
+
+Writes require JSON, the allowed frontend Origin, and `code`. Find/comment submissions also require an `Idempotency-Key`. The Worker supplies timestamps and record IDs. No administration or stone-creation endpoint is exposed in this first backend; real stones can be inserted through controlled D1 migrations/operations when ready.

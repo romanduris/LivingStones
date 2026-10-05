@@ -1650,3 +1650,30 @@ body:has(dialog[open]) {
     font-size: 10px;
   }
 }
+/* Saved moments use the existing compact, accessible layout. */
+.real-badge {
+  color: var(--teal, #62d7cb);
+  border-color: #62d7cb;
+  background: #213b3b;
+}
+.data-status {
+  padding: 12px 0;
+  color: #b0bac5;
+}
+.data-status .button {
+  margin-left: 8px;
+}
+.stone-note {
+  border-bottom: 1px solid #3b4651;
+  padding: 14px 0;
+}
+.stone-note time {
+  font-size: 12px;
+  color: #b0bac5;
+  margin-left: 12px;
+}
+.stone-note p {
+  margin: 6px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
