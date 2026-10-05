@@ -606,7 +606,7 @@ process.on("exit", () => server?.kill());
       );
       for (const [selector, alignment] of [
         [".overview-stone", "left"],
-        [".overview-location", "right"],
+        [".overview-location", width > 1100 ? "center" : "right"],
         [".overview-age", "center"],
         [".overview-finds", "center"],
       ])

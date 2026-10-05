@@ -1670,3 +1670,38 @@ body:has(dialog[open]) {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* The final data column aligns right as less essential columns disappear. */
+.stone-table .overview-arrow {
+  text-align: right;
+}
+@media (min-width: 1101px) {
+  .stone-table th:nth-child(5),
+  .stone-table .overview-location {
+    text-align: center;
+  }
+  .stone-table .last-place {
+    justify-content: center;
+  }
+}
+.stone-table .last-ago {
+  margin-top: 1px;
+  color: var(--purple);
+  font-size: 11px;
+  line-height: 15px;
+}
+.ago-compact {
+  display: none;
+}
+@media (max-width: 600px) {
+  .stone-table .last-ago {
+    font-size: 10px;
+    line-height: 13px;
+  }
+  .ago-full {
+    display: none;
+  }
+  .ago-compact {
+    display: inline;
+  }
+}

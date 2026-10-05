@@ -171,3 +171,12 @@ test("alive stones use an inclusive 90-day window and statistics follow added st
   assert.equal(updated.countries, 4);
   assert.equal(context.journeyStatistics([], now).alive, 0);
 });
+
+test("find recency follows displayed calendar dates across midnight and uses readable singular labels", () => {
+  const now = Date.parse("2026-10-05T00:10:00Z");
+  assert.equal(context.findRecency("2026-10-05T00:01:00Z", now).label, "(today)");
+  assert.equal(context.findRecency("2026-10-04T23:55:00Z", now).label, "(1 day ago)");
+  assert.equal(context.findRecency("2026-09-29", now).label, "(6 days ago)");
+  assert.equal(context.findRecency("2026-09-29", now).compact, "(6d ago)");
+  assert.equal(context.findRecency("2026-10-06", now).label, "(today)");
+});
