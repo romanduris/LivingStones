@@ -187,11 +187,6 @@ function renderOverview() {
   $("#total-active").textContent = stats.alive;
   $("#total-finds").textContent = stats.finds;
   $("#total-countries").textContent = stats.countries;
-  $("#explore-title").innerHTML =
-    `<span class="story-count">${stats.created}</span> ${stats.created === 1 ? "stone" : "stones"}. <span class="adventure-count">${stats.created}</span> little ${stats.created === 1 ? "adventure" : "adventures"}.`;
-  $("#hello-count").textContent = stats.finds;
-  $("#hello-label").textContent =
-    stats.finds === 1 ? "little hello shared" : "little hellos shared";
   renderMap($("#world-map"), stones);
 }
 

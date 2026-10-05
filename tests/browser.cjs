@@ -58,11 +58,6 @@ process.on("exit", () => server?.kill());
       5,
     );
     assert.equal(await page.locator("#total-finds").innerText(), "25");
-    assert.equal(await page.locator("#hello-count").innerText(), "25");
-    assert.match(
-      await page.locator("#explore-title").innerText(),
-      /5 stones. 5 little adventures/,
-    );
     assert.equal(await page.locator("#total-countries").innerText(), "3");
     assert.equal(
       await page.evaluate(() => document.querySelector("main>section").id),
@@ -226,7 +221,6 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(".find-history script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
     assert.equal(await phone.locator("#total-finds").innerText(), "26");
-    assert.equal(await phone.locator("#hello-count").innerText(), "26");
     assert.match(
       await phone
         .locator('.stone-row[data-stone="A1"] .overview-latest')
@@ -380,6 +374,48 @@ process.on("exit", () => server?.kill());
         5,
       );
       assert.equal(await page.locator("#start-find").count(), 0);
+      const mapLayout = await page.evaluate(() => {
+        const map = document
+          .querySelector("#world-map")
+          .getBoundingClientRect();
+        const stats = document
+          .querySelector(".map-overview")
+          .getBoundingClientRect();
+        const table = document
+          .querySelector(".stone-table-frame")
+          .getBoundingClientRect();
+        return {
+          height: map.height,
+          mapBottom: map.bottom,
+          statsTop: stats.top,
+          statsBottom: stats.bottom,
+          tableTop: table.top,
+        };
+      });
+      assert.ok(
+        mapLayout.mapBottom < mapLayout.statsTop &&
+          mapLayout.statsBottom < mapLayout.tableTop,
+        "Statistics sit between map and table",
+      );
+      assert.equal(
+        mapLayout.height,
+        width <= 360 ? 284 : width <= 700 ? 304 : width <= 1000 ? 420 : 460,
+      );
+      const contentTops = await page
+        .locator(".stone-row")
+        .first()
+        .evaluate((row) =>
+          [
+            ...row.querySelectorAll(
+              ".stone-identity > strong, .overview-age > strong, .overview-finds > strong, .overview-location > time",
+            ),
+          ].map((el) => el.getBoundingClientRect().top),
+        );
+      assert.ok(
+        Math.max(...contentTops) - Math.min(...contentTops) <= 1,
+        "First text lines align across columns",
+      );
+
       assert.equal(
         await page
           .locator(".stone-row")

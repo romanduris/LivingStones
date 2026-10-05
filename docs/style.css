@@ -1183,22 +1183,22 @@ body:has(dialog[open]) {
   color: var(--muted);
 }
 .stone-table th:nth-child(1) {
-  width: 25%;
+  width: 24%;
 }
 .stone-table th:nth-child(2) {
   width: 14%;
 }
 .stone-table th:nth-child(3) {
-  width: 12%;
+  width: 10%;
 }
 .stone-table th:nth-child(4) {
-  width: 9%;
+  width: 8%;
 }
 .stone-table th:nth-child(5) {
   width: 20%;
 }
 .stone-table th:nth-child(6) {
-  width: 18%;
+  width: 22%;
 }
 .stone-table th:nth-child(7) {
   width: 2%;
@@ -1215,7 +1215,8 @@ body:has(dialog[open]) {
 .stone-table td {
   padding: 15px 12px;
   border-bottom: 1px solid var(--line);
-  vertical-align: middle;
+  vertical-align: top;
+  text-align: left;
   line-height: 1.5;
 }
 .stone-row:last-child td {
@@ -1250,7 +1251,7 @@ body:has(dialog[open]) {
 .stone-link {
   display: flex;
   gap: 10px;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
 }
 .stone-visual {
@@ -1297,7 +1298,7 @@ body:has(dialog[open]) {
   overflow: hidden;
 }
 .stone-table .overview-arrow {
-  padding: 0;
+  padding: 15px 0;
   color: var(--purple);
   font-size: 15px;
 }
@@ -1307,19 +1308,19 @@ body:has(dialog[open]) {
     display: none;
   }
   .stone-table th:nth-child(1) {
-    width: 32%;
+    width: 30%;
   }
   .stone-table th:nth-child(2) {
     width: 19%;
   }
   .stone-table th:nth-child(3) {
-    width: 17%;
+    width: 13%;
   }
   .stone-table th:nth-child(4) {
     width: 10%;
   }
   .stone-table th:nth-child(5) {
-    width: 20%;
+    width: 26%;
   }
 }
 @media (max-width: 800px) {
@@ -1334,16 +1335,16 @@ body:has(dialog[open]) {
     display: block;
   }
   .stone-table th:nth-child(1) {
-    width: 43%;
+    width: 40%;
   }
   .stone-table th:nth-child(3) {
-    width: 17%;
+    width: 14%;
   }
   .stone-table th:nth-child(4) {
     width: 12%;
   }
   .stone-table th:nth-child(5) {
-    width: 26%;
+    width: 32%;
   }
   .stone-table th,
   .stone-table td {
@@ -1360,13 +1361,13 @@ body:has(dialog[open]) {
     display: none;
   }
   .stone-table th:nth-child(1) {
-    width: 44%;
+    width: 43%;
   }
   .stone-table th:nth-child(3) {
-    width: 16%;
+    width: 14%;
   }
   .stone-table th:nth-child(4) {
-    width: 10%;
+    width: 13%;
   }
   .stone-table th:nth-child(5) {
     width: 30%;
@@ -1375,7 +1376,7 @@ body:has(dialog[open]) {
     font-size: 9px;
     letter-spacing: 0;
     line-height: 1.5;
-    padding: 9px 2px;
+    padding: 9px 5px;
   }
   .stone-table td {
     padding: 15px 5px;
@@ -1393,10 +1394,12 @@ body:has(dialog[open]) {
   }
   .stone-table .stone-identity small {
     font-size: 9px;
+    line-height: 14px;
   }
   .stone-table td strong,
   .stone-table td time {
     font-size: 11px;
+    line-height: 18px;
   }
   .stone-table .overview-finds small {
     display: block;
@@ -1437,13 +1440,13 @@ body:has(dialog[open]) {
   }
 }
 
-/* Compact totals lead the map; all values come from the stone repository. */
+/* Compact totals introduce the table; all values come from the repository. */
 .map-overview {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-block: 22px 17px;
+  margin-block: 0 17px;
 }
 .journey-totals {
   display: flex;
@@ -1529,57 +1532,38 @@ body:has(dialog[open]) {
 }
 @media (max-width: 700px) {
   .map-overview {
-    margin-block: 20px 15px;
+    margin-block: 0 14px;
   }
   .journey-totals {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
   .journey-totals > div {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: baseline;
     gap: 4px;
   }
   .journey-totals dt {
-    font-size: 12px;
+    font-size: 11px;
   }
   .journey-totals dd {
-    font-size: 21px;
+    font-size: 18px;
   }
   .map-hint {
     display: none;
   }
 }
 
-.story-count {
-  color: var(--purple);
-}
-.adventure-count {
-  color: var(--coral);
-}
-.hello-stat {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-.hello-stat strong {
-  color: var(--yellow);
-  font-weight: 600;
-}
 @media (max-width: 700px) {
-  .stones-section .section-heading {
-    flex-wrap: wrap;
-    gap: 5px;
+  #world-map {
+    height: 304px;
   }
-  .stones-section .section-heading h2 {
-    width: 100%;
-  }
-  .hello-stat {
-    font-size: 11px;
+}
+@media (max-width: 360px) {
+  #world-map {
+    height: 284px;
   }
 }
