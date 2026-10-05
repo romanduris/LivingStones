@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=20" />
+    <link rel="stylesheet" href="style.css?v=21" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="data.js?v=18" defer></script>
-    <script src="app.js?v=18" defer></script>
+    <script src="app.js?v=21" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -110,9 +110,6 @@
           <h2 id="explore-title">Five stones. Five little adventures.</h2>
           <span class="section-label">FICTIONAL DEMO JOURNEYS</span>
         </div>
-        <p id="stone-table-help" class="table-scroll-hint">
-          Swipe to explore our stories <span aria-hidden="true">↔</span>
-        </p>
         <div
           class="stone-table-frame"
           role="region"
@@ -126,11 +123,14 @@
             <thead>
               <tr>
                 <th scope="col">Stone</th>
-                <th scope="col">Journey started</th>
-                <th scope="col">Time travelling</th>
+                <th scope="col">Born</th>
+                <th scope="col">
+                  <span class="heading-full">Time travelling</span
+                  ><span class="heading-short">Travel time</span>
+                </th>
                 <th scope="col">Finds</th>
-                <th scope="col">Last found at</th>
-                <th scope="col">Latest chapter</th>
+                <th scope="col">Last Found</th>
+                <th scope="col">Last Comment</th>
                 <th scope="col"><span class="sr-only">Open story</span></th>
               </tr>
             </thead>

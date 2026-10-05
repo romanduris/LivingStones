@@ -224,7 +224,7 @@ process.on("exit", () => server?.kill());
     assert.match(
       await phone
         .locator('.stone-row[data-stone="A1"] .overview-latest')
-        .innerText(),
+        .textContent(),
       /Tester/,
     );
     await phone.locator("#finish-find").click();
@@ -357,7 +357,7 @@ process.on("exit", () => server?.kill());
     );
     // Offline map tiles retain working controls and pins, with an honest status.
     await page.route("https://**/*", (route) => route.abort());
-    for (const width of [320, 375, 768, 1440]) {
+    for (const width of [320, 375, 600, 768, 1024, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(base);
       assert.equal(
@@ -382,29 +382,50 @@ process.on("exit", () => server?.kill());
         "table-row",
       );
       assert.equal(await page.locator(".stone-table thead").isVisible(), true);
-      if (width <= 900) {
-        const position = await page.evaluate(() => {
-          const frame = document.querySelector(".stone-table-frame"),
-            cell = document.querySelector(".overview-stone");
-          const before = cell.getBoundingClientRect().left;
-          frame.scrollLeft = 250;
-          return {
-            before,
-            after: cell.getBoundingClientRect().left,
-            offset: frame.scrollLeft,
-            scrolls: frame.scrollWidth > frame.clientWidth,
-          };
-        });
-        assert.equal(position.scrolls, true);
-        assert.equal(position.offset, 250);
-        assert.ok(
-          Math.abs(position.before - position.after) < 1,
-          "Stone identity stays visible while scrolling",
-        );
-        await page.evaluate(
-          () => (document.querySelector(".stone-table-frame").scrollLeft = 0),
-        );
-      }
+      assert.equal(
+        await page
+          .locator(".stone-table-frame")
+          .evaluate((frame) => frame.scrollWidth <= frame.clientWidth),
+        true,
+        `Table fits without horizontal scrolling at ${width}`,
+      );
+      assert.equal(
+        await page.locator(".overview-latest").first().isVisible(),
+        width > 1100,
+      );
+      assert.equal(
+        await page.locator(".overview-start").first().isVisible(),
+        width > 800,
+      );
+      assert.equal(
+        await page.locator(".stone-born").first().isVisible(),
+        width <= 800,
+      );
+      for (const cell of [
+        ".overview-age",
+        ".overview-finds",
+        ".overview-location",
+      ])
+        assert.equal(await page.locator(cell).first().isVisible(), true);
+      assert.equal(await page.locator(".demo-badge").count(), 5);
+      assert.ok(
+        await page
+          .locator(".stone-row")
+          .first()
+          .evaluate((row) => row.getBoundingClientRect().height <= 72),
+        "Compact stone row",
+      );
+      assert.ok(
+        await page
+          .locator(".stone-visual")
+          .first()
+          .evaluate(
+            (el) =>
+              el.querySelector(".demo-badge").getBoundingClientRect().top >=
+              el.querySelector("img").getBoundingClientRect().bottom,
+          ),
+        "Demo badge is below photo",
+      );
       await page.locator(".stone-row").last().scrollIntoViewIfNeeded();
       await page.waitForFunction(() =>
         [...document.querySelectorAll(".stone-thumbnail img")].every(

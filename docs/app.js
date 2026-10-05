@@ -142,7 +142,30 @@ function renderOverview() {
       const last = stone.finds.at(-1),
         birth = stone.finds[0];
       const countries = new Set(stone.finds.map((find) => find.country)).size;
-      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${stone.finds.length} finds, last seen in ${escapeHTML(last.city)}"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span><span class="stone-identity"><strong>${stone.name}</strong><small class="stone-meta">${stone.id}${stone.demo ? ' <span class="demo-badge">Demo</span>' : ""}</small><small>${stone.tagline}</small></span></a></td><td class="overview-start" data-label="Journey started"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.city)}, ${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Time travelling"><strong>${daysTravelling(stone)} days</strong><small>On the move</small></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small>${countries} ${countries === 1 ? "country" : "countries"}</small></td><td class="overview-location" data-label="Last found at"><strong>${escapeHTML(last.city)}, ${escapeHTML(last.country)}</strong><small>${escapeHTML(last.address || "Address unavailable")}</small></td><td class="overview-latest" data-label="Latest chapter"><time datetime="${escapeHTML(last.date)}">${formatDate(last.date)}${last.local ? " · Preview" : ""}</time><small class="latest-note" title="${escapeHTML(last.message)}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
+      const countryCode =
+        { Slovakia: "SK", Austria: "AT", Hungary: "HU" }[birth.country] ||
+        birth.country;
+      const compactBirth = new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "2-digit",
+        timeZone: "UTC",
+      }).format(new Date(stone.started));
+      const fullBirth = `Born: ${formatDate(stone.started)}, ${birth.country}`;
+      const fullPlace = `${last.city}, ${last.country}`;
+      const lastTime = last.date.includes("T")
+        ? new Intl.DateTimeFormat("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }).format(new Date(last.date))
+        : "";
+      const shortDate = new Intl.DateTimeFormat("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: lastTime ? undefined : "2-digit",
+        timeZone: "UTC",
+      }).format(new Date(last.date));
+      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${fullBirth}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span>${stone.demo ? '<span class="demo-badge">Demo</span>' : ""}</span><span class="stone-identity"><strong>${stone.name}</strong><small class="stone-tagline">${stone.tagline}</small><small class="stone-born" title="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">Born: ${compactBirth} · ${escapeHTML(countryCode)}</span></small></span></a></td><td class="overview-start" data-label="Born"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Time travelling"><strong>${daysTravelling(stone)} <span class="age-unit">days</span></strong></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small>${countries} ${countries === 1 ? "country" : "countries"}</small></td><td class="overview-location" data-label="Last Found"><time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}"><span class="date-full">${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}</span><span class="date-compact" aria-hidden="true">${shortDate}${lastTime ? " · " + lastTime : ""}</span></time><strong title="${escapeHTML(fullPlace)}"><span class="place-full">${escapeHTML(fullPlace)}</span><span class="place-compact" aria-hidden="true">${escapeHTML(last.city)}</span></strong></td><td class="overview-latest" data-label="Last Comment"><small class="latest-note" title="${escapeHTML(last.nickname + (last.message ? ": “" + last.message + "”" : ""))}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
     })
     .join("");
   $("#total-stones").textContent = stones.length;
