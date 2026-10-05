@@ -463,7 +463,7 @@ process.on("exit", () => server?.kill());
         /Countries visited by this stone/,
       );
       for (const [selector, alignment] of [
-        [".overview-stone", "right"],
+        [".overview-stone", "left"],
         [".overview-location", "right"],
         [".overview-age", "center"],
         [".overview-finds", "center"],

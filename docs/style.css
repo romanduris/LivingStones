@@ -1252,7 +1252,7 @@ body:has(dialog[open]) {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  justify-content: flex-end;
+  justify-content: flex-start;
   width: 100%;
 }
 .stone-visual {
@@ -1566,9 +1566,11 @@ body:has(dialog[open]) {
   }
 }
 
-/* First and last fields read from the right; numerical fields share a centre. */
+/* Stone reads from the left; last fields read from the right; numbers share a centre. */
 .stone-table th:nth-child(1),
-.stone-table .overview-stone,
+.stone-table .overview-stone {
+  text-align: left;
+}
 .stone-table th:nth-child(5),
 .stone-table .overview-location,
 .stone-table th:nth-child(6),
