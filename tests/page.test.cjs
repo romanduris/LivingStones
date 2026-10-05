@@ -180,3 +180,34 @@ test("a house number is included only with a sufficiently accurate street", () =
     "Bratislava",
   );
 });
+
+test("alive stones use an inclusive 90-day window and statistics follow added stones and finds", () => {
+  const now = Date.parse("2026-10-05T12:00:00Z");
+  const day = 86400000;
+  const stoneAt = (timestamp, country) => ({
+    finds: [{ date: new Date(timestamp).toISOString(), country }],
+  });
+  const stones = [
+    stoneAt(now, "Slovakia"),
+    stoneAt(now - 90 * day, "Austria"),
+    stoneAt(now - 90 * day - 1, "Hungary"),
+    stoneAt(now + 1, "Slovakia"),
+    { finds: [] },
+  ];
+  const stats = context.journeyStatistics(stones, now);
+  assert.equal(stats.created, 5);
+  assert.equal(stats.alive, 2);
+  assert.equal(stats.finds, 4);
+  assert.equal(stats.countries, 3);
+  stones[2].finds.push({
+    date: new Date(now).toISOString(),
+    country: "Czechia",
+  });
+  stones.push(stoneAt(now, "Austria"));
+  const updated = context.journeyStatistics(stones, now);
+  assert.equal(updated.created, 6);
+  assert.equal(updated.alive, 4);
+  assert.equal(updated.finds, 6);
+  assert.equal(updated.countries, 4);
+  assert.equal(context.journeyStatistics([], now).alive, 0);
+});

@@ -1213,7 +1213,7 @@ body:has(dialog[open]) {
   background: #343c4b;
 }
 .stone-table td {
-  padding: 6px 12px;
+  padding: 15px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
   line-height: 1.5;
@@ -1282,7 +1282,7 @@ body:has(dialog[open]) {
 .stone-table .stone-identity small {
   font-size: 11px;
 }
-.heading-short,
+.countries-compact,
 .stone-table .stone-born,
 .born-compact,
 .date-compact,
@@ -1378,7 +1378,7 @@ body:has(dialog[open]) {
     padding: 9px 2px;
   }
   .stone-table td {
-    padding: 7px 5px;
+    padding: 15px 5px;
   }
   .stone-link {
     gap: 5px;
@@ -1399,7 +1399,18 @@ body:has(dialog[open]) {
     font-size: 11px;
   }
   .stone-table .overview-finds small {
+    display: block;
+    font-size: 9px;
+    overflow: visible;
+  }
+  .countries-full {
     display: none;
+  }
+  .countries-compact {
+    display: inline;
+  }
+  .country-globe {
+    font-size: 8px;
   }
   .stone-table .overview-age strong {
     white-space: normal;
@@ -1411,13 +1422,11 @@ body:has(dialog[open]) {
     font-weight: 400;
     color: var(--muted);
   }
-  .heading-full,
   .born-full,
   .date-full,
   .place-full {
     display: none;
   }
-  .heading-short,
   .born-compact,
   .date-compact,
   .place-compact {
@@ -1541,5 +1550,36 @@ body:has(dialog[open]) {
   }
   .map-hint {
     display: none;
+  }
+}
+
+.story-count {
+  color: var(--purple);
+}
+.adventure-count {
+  color: var(--coral);
+}
+.hello-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.hello-stat strong {
+  color: var(--yellow);
+  font-weight: 600;
+}
+@media (max-width: 700px) {
+  .stones-section .section-heading {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .stones-section .section-heading h2 {
+    width: 100%;
+  }
+  .hello-stat {
+    font-size: 11px;
   }
 }

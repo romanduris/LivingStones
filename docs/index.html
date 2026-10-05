@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=21" />
+    <link rel="stylesheet" href="style.css?v=22" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="data.js?v=18" defer></script>
-    <script src="app.js?v=21" defer></script>
+    <script src="app.js?v=22" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -66,19 +66,22 @@
         <div class="map-overview">
           <dl class="journey-totals" aria-label="Journey statistics">
             <div>
-              <dt>Stones</dt>
+              <dt>Stones created</dt>
               <dd id="total-stones">5</dd>
             </div>
             <div>
-              <dt>On the move</dt>
+              <dt title="Found within the last 90 days">
+                Still alive
+                <span class="sr-only">— found within the last 90 days</span>
+              </dt>
               <dd id="total-active">5</dd>
             </div>
             <div>
-              <dt>Finds</dt>
+              <dt>Finds recorded</dt>
               <dd id="total-finds" aria-live="polite">25</dd>
             </div>
             <div>
-              <dt>Countries</dt>
+              <dt>Countries visited</dt>
               <dd id="total-countries">3</dd>
             </div>
           </dl>
@@ -107,8 +110,14 @@
         aria-labelledby="explore-title"
       >
         <div class="section-heading">
-          <h2 id="explore-title">Five stones. Five little adventures.</h2>
-          <span class="section-label">FICTIONAL DEMO JOURNEYS</span>
+          <h2 id="explore-title">
+            <span class="story-count">5</span> stones.
+            <span class="adventure-count">5</span> little adventures.
+          </h2>
+          <span class="hello-stat"
+            ><strong id="hello-count">25</strong>
+            <span id="hello-label">little hellos shared</span></span
+          >
         </div>
         <div
           class="stone-table-frame"
@@ -124,10 +133,7 @@
               <tr>
                 <th scope="col">Stone</th>
                 <th scope="col">Born</th>
-                <th scope="col">
-                  <span class="heading-full">Time travelling</span
-                  ><span class="heading-short">Travel time</span>
-                </th>
+                <th scope="col">Age</th>
                 <th scope="col">Finds</th>
                 <th scope="col">Last Found</th>
                 <th scope="col">Last Comment</th>

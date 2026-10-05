@@ -58,6 +58,11 @@ process.on("exit", () => server?.kill());
       5,
     );
     assert.equal(await page.locator("#total-finds").innerText(), "25");
+    assert.equal(await page.locator("#hello-count").innerText(), "25");
+    assert.match(
+      await page.locator("#explore-title").innerText(),
+      /5 stones. 5 little adventures/,
+    );
     assert.equal(await page.locator("#total-countries").innerText(), "3");
     assert.equal(
       await page.evaluate(() => document.querySelector("main>section").id),
@@ -221,6 +226,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(".find-history script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
     assert.equal(await phone.locator("#total-finds").innerText(), "26");
+    assert.equal(await phone.locator("#hello-count").innerText(), "26");
     assert.match(
       await phone
         .locator('.stone-row[data-stone="A1"] .overview-latest')
@@ -408,11 +414,15 @@ process.on("exit", () => server?.kill());
       ])
         assert.equal(await page.locator(cell).first().isVisible(), true);
       assert.equal(await page.locator(".demo-badge").count(), 5);
+      assert.equal(
+        await page.locator(".find-countries").first().isVisible(),
+        true,
+      );
       assert.ok(
         await page
           .locator(".stone-row")
           .first()
-          .evaluate((row) => row.getBoundingClientRect().height <= 72),
+          .evaluate((row) => row.getBoundingClientRect().height <= 86),
         "Compact stone row",
       );
       assert.ok(

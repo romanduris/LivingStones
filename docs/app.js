@@ -89,6 +89,20 @@ function formatPlace(properties, accuracy) {
     ),
   ].join(", ");
 }
+// A stone stays alive for 90 days after its latest recorded encounter.
+function journeyStatistics(stones, now = Date.now()) {
+  const cutoff = now - 90 * 86400000;
+  const finds = stones.flatMap((stone) => stone.finds);
+  return {
+    created: stones.length,
+    alive: stones.filter((stone) => {
+      const lastSeen = Date.parse(stone.finds.at(-1)?.date);
+      return lastSeen >= cutoff && lastSeen <= now;
+    }).length,
+    finds: finds.length,
+    countries: new Set(finds.map((find) => find.country).filter(Boolean)).size,
+  };
+}
 // This repository is the only data boundary. New finds live in memory for
 // this visit: no localStorage, database, or server writes.
 const stoneRepository = (() => {
@@ -165,20 +179,19 @@ function renderOverview() {
         year: lastTime ? undefined : "2-digit",
         timeZone: "UTC",
       }).format(new Date(last.date));
-      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${fullBirth}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span>${stone.demo ? '<span class="demo-badge">Demo</span>' : ""}</span><span class="stone-identity"><strong>${stone.name}</strong><small class="stone-tagline">${stone.tagline}</small><small class="stone-born" title="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">Born: ${compactBirth} · ${escapeHTML(countryCode)}</span></small></span></a></td><td class="overview-start" data-label="Born"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Time travelling"><strong>${daysTravelling(stone)} <span class="age-unit">days</span></strong></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small>${countries} ${countries === 1 ? "country" : "countries"}</small></td><td class="overview-location" data-label="Last Found"><time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}"><span class="date-full">${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}</span><span class="date-compact" aria-hidden="true">${shortDate}${lastTime ? " · " + lastTime : ""}</span></time><strong title="${escapeHTML(fullPlace)}"><span class="place-full">${escapeHTML(fullPlace)}</span><span class="place-compact" aria-hidden="true">${escapeHTML(last.city)}</span></strong></td><td class="overview-latest" data-label="Last Comment"><small class="latest-note" title="${escapeHTML(last.nickname + (last.message ? ": “" + last.message + "”" : ""))}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
+      return `<tr class="stone-row" data-stone="${stone.id}"><td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${stone.name}, ${fullBirth}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span>${stone.demo ? '<span class="demo-badge">Demo</span>' : ""}</span><span class="stone-identity"><strong>${stone.name}</strong><small class="stone-tagline">${stone.tagline}</small><small class="stone-born" title="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">Born: ${compactBirth} · ${escapeHTML(countryCode)}</span></small></span></a></td><td class="overview-start" data-label="Born"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.country)}</small></td><td class="overview-age" data-label="Age"><strong>${daysTravelling(stone)} <span class="age-unit">days</span></strong></td><td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong><small class="find-countries" title="${countries} ${countries === 1 ? "country" : "countries"}" aria-label="${countries} ${countries === 1 ? "country" : "countries"}"><span class="countries-full">${countries} ${countries === 1 ? "country" : "countries"}</span><span class="countries-compact" aria-hidden="true">${countries} <span class="country-globe">🌍</span></span></small></td><td class="overview-location" data-label="Last Found"><time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}"><span class="date-full">${formatDate(last.date)}${lastTime ? " · " + lastTime : ""}</span><span class="date-compact" aria-hidden="true">${shortDate}${lastTime ? " · " + lastTime : ""}</span></time><strong title="${escapeHTML(fullPlace)}"><span class="place-full">${escapeHTML(fullPlace)}</span><span class="place-compact" aria-hidden="true">${escapeHTML(last.city)}</span></strong></td><td class="overview-latest" data-label="Last Comment"><small class="latest-note" title="${escapeHTML(last.nickname + (last.message ? ": “" + last.message + "”" : ""))}">${escapeHTML(last.nickname)}${last.message ? ": “" + escapeHTML(last.message) + "”" : ""}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td></tr>`;
     })
     .join("");
-  $("#total-stones").textContent = stones.length;
-  $("#total-active").textContent = stones.filter(
-    (stone) => stone.finds.length > 0,
-  ).length;
-  $("#total-finds").textContent = stones.reduce(
-    (sum, stone) => sum + stone.finds.length,
-    0,
-  );
-  $("#total-countries").textContent = new Set(
-    stones.flatMap((stone) => stone.finds.map((find) => find.country)),
-  ).size;
+  const stats = journeyStatistics(stones);
+  $("#total-stones").textContent = stats.created;
+  $("#total-active").textContent = stats.alive;
+  $("#total-finds").textContent = stats.finds;
+  $("#total-countries").textContent = stats.countries;
+  $("#explore-title").innerHTML =
+    `<span class="story-count">${stats.created}</span> ${stats.created === 1 ? "stone" : "stones"}. <span class="adventure-count">${stats.created}</span> little ${stats.created === 1 ? "adventure" : "adventures"}.`;
+  $("#hello-count").textContent = stats.finds;
+  $("#hello-label").textContent =
+    stats.finds === 1 ? "little hello shared" : "little hellos shared";
   renderMap($("#world-map"), stones);
 }
 
