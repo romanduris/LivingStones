@@ -1284,7 +1284,6 @@ body:has(dialog[open]) {
 .stone-table .stone-identity small {
   font-size: 11px;
 }
-.countries-compact,
 .stone-table .stone-born,
 .born-compact,
 .date-compact {
@@ -1405,12 +1404,6 @@ body:has(dialog[open]) {
     display: block;
     font-size: 9px;
     overflow: visible;
-  }
-  .countries-full {
-    display: none;
-  }
-  .countries-compact {
-    display: inline;
   }
   .country-globe {
     font-size: 8px;
