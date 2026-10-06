@@ -467,6 +467,10 @@ function historyHTML(stone) {
     })
     .join("");
 }
+function openedFromQR() {
+  const params = new URL(location.href).searchParams;
+  return params.get("source") === "qr" && params.get("stone") === selectedId;
+}
 function renderDetail() {
   const stone = stoneRepository.get(selectedId);
   if (!stone) return;
@@ -494,8 +498,8 @@ function renderDetail() {
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
         <p class="detail-story">I’m a little painted stone called <strong>${escapeHTML(stone.name)}</strong>. ${creator} on <strong>${formatDate(stone.started)}</strong> in <span class="birth-place"><strong>${escapeHTML(paintedPlace)}, ${escapeHTML(birth.country)}</strong>${countryFlagHTML(birth.country)}</span>. Every person I meet brings me a little more to life. Take me on a trip, then leave me somewhere safe for my next friend. 😊</p>
-        <p class="find-help">${supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Open my link on your phone to help my story grow."}</p>
-        <div class="detail-actions">${supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone</button>' : ""}<button class="button secondary" id="other-stones">Other stones ↗</button><button class="button secondary share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
+        ${openedFromQR() ? `<p class="find-help">${supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Scan my QR code on your phone to help my story grow."}</p>` : ""}
+        <div class="detail-actions">${openedFromQR() && supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone</button>' : ""}<button class="button secondary" id="other-stones">Other stones ↗</button><button class="button secondary share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
         <div id="share-fallback" class="share-fallback" hidden></div>
       </section>
       <div id="find-container"></div>
@@ -514,7 +518,7 @@ function renderDetail() {
   $("#share-stone").addEventListener("click", shareStone);
   $("#other-stones").addEventListener("click", showOtherStones);
   $("#start-find")?.addEventListener("click", () => {
-    if (!supportsPreciseLocation()) return;
+    if (!openedFromQR() || !supportsPreciseLocation()) return;
     flow = {
       id: stone.id,
       step: 1,
@@ -549,6 +553,13 @@ function openStone(id, updateURL = true) {
   if (!stoneRepository.get(id)) return;
   const dialog = $("#stone-dialog");
   if (!dialog.open) returnFocus = document.activeElement;
+  if (updateURL) {
+    const url = new URL(location.href);
+    url.searchParams.set("stone", id);
+    url.searchParams.delete("source");
+    if (url.href !== location.href)
+      history.pushState({ livingstonesDetail: true }, "", url);
+  }
   selectedId = id;
   overviewVisible = false;
   flow = null;
@@ -560,11 +571,6 @@ function openStone(id, updateURL = true) {
       if (counter) counter.textContent = views;
     }
   }).catch(() => {});
-  if (updateURL && new URL(location.href).searchParams.get("stone") !== id) {
-    const url = new URL(location.href);
-    url.searchParams.set("stone", id);
-    history.pushState({ livingstonesDetail: true }, "", url);
-  }
   dialog.scrollTop = 0;
   $("#close-detail").focus({ preventScroll: true });
 }
@@ -573,6 +579,7 @@ function closeDetail() {
   else {
     const url = new URL(location.href);
     url.searchParams.delete("stone");
+    url.searchParams.delete("source");
     history.replaceState(null, "", url);
     syncURL();
   }
@@ -605,6 +612,7 @@ function syncURL() {
 async function shareStone() {
   const url = new URL(location.href);
   url.searchParams.set("stone", selectedId);
+  url.searchParams.delete("source");
   if (navigator.share && supportsPreciseLocation()) {
     try {
       await navigator.share({

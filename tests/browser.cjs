@@ -287,7 +287,8 @@ process.on("exit", () => server?.kill());
     assert.match(await page.locator("#detail-title").innerText(), /Ocean Echo/);
     await page.locator("#close-detail").click();
     assert.equal(await page.locator("dialog[open]").count(), 0);
-    await page.goto(base + "/docs/?stone=C3");
+    await page.goto(base + "/docs/?stone=C3&source=qr");
+    assert.equal(await page.locator("#start-find").count(), 0);
     assert.match(await page.locator("#detail-title").innerText(), /Slow Bloom/);
     await page.locator("#other-stones").click();
     await page.waitForURL(base + "/docs/");
@@ -332,6 +333,31 @@ process.on("exit", () => server?.kill());
       });
     });
     await phone.goto(base + "/?stone=A1");
+    assert.equal(await phone.locator("#start-find, .find-help").count(), 0, "Ordinary mobile story links do not offer a find");
+    await phone.goto(base + "/?stone=A1&source=other");
+    assert.equal(await phone.locator("#start-find").count(), 0, "Only the QR parameter enables the find action");
+    await phone.goto(base + "/?stone=A1&source=qr");
+    await phone.evaluate(() => {
+      window.sharedStory = null;
+      Object.defineProperty(navigator, "share", {configurable:true,value:async data => {window.sharedStory = data;}});
+    });
+    await phone.locator("#share-stone").click();
+    const sharedStory = await phone.evaluate(() => window.sharedStory.url);
+    assert.equal(new URL(sharedStory).searchParams.get("source"), null, "Native sharing strips QR access");
+    await phone.evaluate(() => {
+      Object.defineProperty(navigator, "share", {configurable:true,value:undefined});
+      Object.defineProperty(navigator, "clipboard", {configurable:true,value:{writeText:async url => {window.copiedLink=url;}}});
+    });
+    await phone.locator("#share-stone").click();
+    assert.equal(await phone.evaluate(() => new URL(window.copiedLink).searchParams.get("source")), null);
+    await phone.evaluate(() => {
+      Object.defineProperty(navigator, "clipboard", {configurable:true,value:{writeText:async () => {throw Error("Unavailable");}}});
+    });
+    await phone.locator("#share-stone").click();
+    assert.equal(new URL(await phone.locator("#share-fallback input").inputValue()).searchParams.get("source"), null);
+    await phone.goto(sharedStory);
+    assert.equal(await phone.locator("#start-find").count(), 0, "Opening the shared story hides the find action");
+    await phone.goto(base + "/?stone=A1&source=qr");
     assert.equal(mobile.homepageViews || 0,0,"A direct story link does not count a homepage visit");
     for (const width of [320, 375, 390]) {
       await phone.setViewportSize({ width, height: 844 });
@@ -474,8 +500,10 @@ process.on("exit", () => server?.kill());
       /Tester/,
     );
     await phone.locator("#finish-find").click();
-    await phone.locator("#close-detail").click();
+    await phone.locator("#other-stones").click();
+    assert.equal(new URL(phone.url()).searchParams.get("source"), null, "Returning to the list clears QR access");
     await phone.locator('.stone-link[data-stone="A1"]').click();
+    assert.equal(await phone.locator("#start-find, .find-help").count(), 0, "List navigation does not inherit QR access");
     assert.equal(
       await phone.locator(rows).count(),
       6,
@@ -487,6 +515,7 @@ process.on("exit", () => server?.kill());
       6,
       "Refresh retains saved finds",
     );
+    await phone.goto(base + "/?stone=A1&source=qr");
     // Actual GPS coordinates, successful reverse lookup, map and address table.
     await phone.route("https://photon.komoot.io/**", (route) =>
       route.fulfill({
@@ -552,7 +581,7 @@ process.on("exit", () => server?.kill());
     // A failed lookup still displays the exact point, including zero coordinates.
     await phone.unroute("https://photon.komoot.io/**");
     await phone.route("https://photon.komoot.io/**", (route) => route.abort());
-    await phone.goto(base + "/?stone=B2");
+    await phone.goto(base + "/?stone=B2&source=qr");
     await phone.evaluate(() => (window.gpsMode = "zero"));
     await phone.locator("#start-find").click();
     await phone.locator("#find-code").fill("8452");
@@ -570,7 +599,7 @@ process.on("exit", () => server?.kill());
       /Address unavailable — 0.00000, 0.00000/,
     );
     // Canceling a pending GPS request must not create or alter a find.
-    await phone.goto(base + "/?stone=D4");
+    await phone.goto(base + "/?stone=D4&source=qr");
     await phone.evaluate(() => (window.gpsMode = "late"));
     await phone.locator("#start-find").click();
     await phone.locator("#find-code").fill("8454");
@@ -604,7 +633,7 @@ process.on("exit", () => server?.kill());
       });
       Object.defineProperty(navigator, "geolocation", { value: undefined });
     });
-    await mp.goto(base + "/?stone=C3");
+    await mp.goto(base + "/?stone=C3&source=qr");
     await mp.locator("#start-find").click();
     await mp.locator("#find-code").fill("8453");
     await mp.locator("#find-form button[type=submit]").click();
@@ -622,7 +651,7 @@ process.on("exit", () => server?.kill());
     assert.match(await mp.locator(".success-panel").innerText(), /is saved/);
     await phone.unroute("https://photon.komoot.io/**");
     // A lost receipt leaves the form intact; retry uses the original key and saves once.
-    await phone.goto(base + "/?stone=A1");
+    await phone.goto(base + "/?stone=A1&source=qr");
     await phone.locator("#start-find").click();
     await phone.locator("#find-code").fill("8451");
     await phone.locator("#find-form button[type=submit]").click();
@@ -647,7 +676,7 @@ process.on("exit", () => server?.kill());
     await phone.reload();
     assert.equal(await phone.locator(rows).count(), 8);
     // Standalone comments persist across refresh and never change the map/find count.
-    await phone.goto(base + "/?stone=E5");
+    await phone.goto(base + "/?stone=E5&source=qr");
     const beforeNotes = await phone.locator("#total-finds").innerText();
     assert.equal(await phone.locator("#start-comment").count(), 0);
     await phone.evaluate(async () => {

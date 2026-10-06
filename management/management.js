@@ -93,15 +93,16 @@ async function load() {
     statsTarget=params.get('target')||statsTarget;await loadStats();
   }
 }
+function qrStoryURL(stone){return 'https://livingstones.rodulab.com/?'+new URLSearchParams({stone:stone.id,source:'qr'});}
 function qrFor(stone){
   if(!qrCache.has(stone.id)){
-    const qr=qrcode(0,'H');qr.addData('https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id),'Byte');qr.make();qrCache.set(stone.id,qr);
+    const qr=qrcode(0,'H');qr.addData(qrStoryURL(stone),'Byte');qr.make();qrCache.set(stone.id,qr);
   }
   return qrCache.get(stone.id);
 }
 function labelCode(stone){return stone.demo?stone.code:qrLabelCodes.get(stone.id)||'';}
 function qrPanel(stone){
-  const code=labelCode(stone),url='https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id);
+  const code=labelCode(stone),url=qrStoryURL(stone);
   return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="stone-qr" data-error-correction="H" data-quiet-zone="4" role="img" aria-label="${escapeHTML('Story QR for '+stone.name+(code?', Find Code '+code:''))}">${qrLabelSVG(stone)}</div>${code?'':`<form class="qr-code-form" id="qr-code-form"><label>Find Code<input name="code" autocomplete="off" required maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label><p class="form-hint">Enter the existing code to add it to the label. It is kept only for this signed-in session.</p><button type="submit">Show Find Code</button></form>`}<a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
 }
 function qrLabelSVG(stone){
