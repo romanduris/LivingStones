@@ -101,23 +101,24 @@ function qrFor(stone){
 }
 function labelCode(stone){return stone.demo?stone.code:qrLabelCodes.get(stone.id)||'';}
 function qrPanel(stone){
-  const code=labelCode(stone),qr=qrFor(stone),url='https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id);
-  return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="stone-qr" data-error-correction="H" data-quiet-zone="4">${qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name})}</div>${code?`<p class="qr-find-code"><span>Find Code</span><strong>${escapeHTML(code)}</strong></p>`:`<form class="qr-code-form" id="qr-code-form"><label>Find Code<input name="code" autocomplete="off" required maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label><p class="form-hint">Enter the existing code to add it to the label. It is kept only for this signed-in session.</p><button type="submit">Show Find Code</button></form>`}<a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
+  const code=labelCode(stone),url='https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id);
+  return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="stone-qr" data-error-correction="H" data-quiet-zone="4" role="img" aria-label="${escapeHTML('Story QR for '+stone.name+(code?', Find Code '+code:''))}">${qrLabelSVG(stone)}</div>${code?'':`<form class="qr-code-form" id="qr-code-form"><label>Find Code<input name="code" autocomplete="off" required maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label><p class="form-hint">Enter the existing code to add it to the label. It is kept only for this signed-in session.</p><button type="submit">Show Find Code</button></form>`}<a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
 }
 function qrLabelSVG(stone){
   const qr=qrFor(stone),code=labelCode(stone),size=(qr.getModuleCount()+8)*4;
   const svg=qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name});
   if(!code)return svg;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size+32}"><rect width="100%" height="100%" fill="white"/>${svg.replace('<svg ','<svg width="'+size+'" height="'+size+'" ')}<text x="${size/2}" y="${size+18}" text-anchor="middle" font-family="sans-serif" font-size="${Math.min(12,size/(code.length+11)*1.5)}" fill="black">Find Code: ${escapeHTML(code)}</text></svg>`;
+  const fontSize=Math.min(40,(size-32)/(code.length*.66));
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size+80}"><rect width="100%" height="100%" fill="white"/>${svg.replace('<svg ','<svg width="'+size+'" height="'+size+'" ')}<text x="${size/2}" y="${size+14}" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#555">Find Code</text><text class="qr-code-value" x="${size/2}" y="${size+57}" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="${fontSize}" fill="black">${escapeHTML(code)}</text></svg>`;
 }
 async function downloadQR(format){
   const stone=stones.find(s=>s.id===selected),qr=qrFor(stone);let blob;
   if(format==='svg')blob=new Blob([qrLabelSVG(stone)],{type:'image/svg+xml'});
   else{
-    const scale=24,count=qr.getModuleCount(),canvas=document.createElement('canvas');const code=labelCode(stone);canvas.width=(count+8)*scale;canvas.height=canvas.width+(code?192:0);
+    const scale=24,count=qr.getModuleCount(),canvas=document.createElement('canvas');const code=labelCode(stone);canvas.width=(count+8)*scale;canvas.height=canvas.width+(code?480:0);
     const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.fillStyle='#000';
     for(let row=0;row<count;row++)for(let col=0;col<count;col++)if(qr.isDark(row,col))context.fillRect((col+4)*scale,(row+4)*scale,scale,scale);
-    if(code){context.font='bold '+Math.min(72,Math.floor(canvas.width/(code.length+11)*1.5))+'px sans-serif';context.textAlign='center';context.fillText('Find Code: '+code,canvas.width/2,canvas.width+110);}
+    if(code){context.textAlign='center';context.fillStyle='#555';context.font='60px sans-serif';context.fillText('Find Code',canvas.width/2,canvas.width+84);context.fillStyle='#000';context.font='bold '+Math.min(240,(canvas.width-192)/(code.length*.66))+'px sans-serif';context.fillText(code,canvas.width/2,canvas.width+342);}
     blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
   }
   if(!blob)throw new Error('Could not prepare the QR download.');
