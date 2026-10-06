@@ -740,7 +740,7 @@ process.on("exit", () => server?.kill());
       }));
       assert.doesNotMatch(await page.locator(".overview-location time").first().innerText(), /\d{1,2}:\d{2}/);
       assert.match(await page.locator(".overview-location time").first().innerText(), /(Today|\d+d ago) \(\d{1,2} [A-Za-z]+\)/);
-      assert.match(await page.locator(".overview-age").first().innerText(), /^\d+d$/);
+      assert.match(await page.locator(".overview-age").first().innerText(), /^\d+ d$/);
       assert.match(await page.locator(".stone-table th").first().innerText(), /Name \/ Born/);
       assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Date \/ Place/);
       assert.ok(await page.locator('.stone-table').evaluate(table=>[...table.querySelectorAll('th small')].filter(el=>el.offsetWidth).every(el=>parseFloat(getComputedStyle(el).fontSize)<parseFloat(getComputedStyle(el.closest('th')).fontSize))), 'Header subtitles are smaller than column names');
