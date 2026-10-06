@@ -191,11 +191,7 @@ process.on("exit", () => server?.kill());
     );
     assert.equal(await page.locator("#total-finds").innerText(), "45");
     assert.equal(await page.locator(".intro-copy p").count(), 1);
-    assert.equal(await page.locator("#hello-count").innerText(), "45");
-    assert.match(
-      await page.locator("#explore-title").innerText(),
-      /9 stones. 9 little adventures/,
-    );
+    assert.equal(await page.locator("#explore-title, #hello-count, #hello-label").count(), 0);
     assert.equal(await page.locator("#total-countries").innerText(), "3");
     assert.equal(
       await page.evaluate(() => document.querySelector("main>section").id),
@@ -493,7 +489,6 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator("#total-finds").innerText(), "46");
     assert.equal(await phone.locator(".stone-row").first().getAttribute("data-stone"), "A1");
     assert.equal(await phone.locator(rows).first().locator(".entry-address .manual-badge").innerText(), "Manual");
-    assert.equal(await phone.locator("#hello-count").innerText(), "46");
     assert.match(
       await phone
         .locator('.stone-row[data-stone="A1"] .overview-latest')

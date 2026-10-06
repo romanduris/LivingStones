@@ -23,7 +23,7 @@ process.on('exit', () => server.kill());
       await page.goto('http://127.0.0.1:8139');
       await page.locator('.journey-card').first().waitFor();
       assert.equal(await page.locator('.journey-card').count(), 9);
-      assert.equal(await page.locator('.card-actions, [data-map-path]').count(), 0);
+      assert.equal(await page.locator('.card-actions, [data-map-path], #explore .section-heading').count(), 0);
       assert.equal(await page.locator('#stone-list').isVisible(), false);
       assert.equal(await page.locator('#total-stones').textContent(), '9');
       assert.equal(await page.locator('.stone-card-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), columns, `Columns at ${width}`);

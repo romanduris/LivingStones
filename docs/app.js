@@ -154,7 +154,7 @@ function sortStonesByLastFound(stones) {
   };
   return [...stones].sort((a, b) => latest(b) - latest(a) || a.id.localeCompare(b.id));
 }
-// Sum each recorded leg, rather than the distance from birthplace to last find.
+// Estimate travel as 1.5 times each straight-line leg, then sum the route.
 function journeyDistance(stone) {
   const rad = (n) => n * Math.PI / 180;
   return stone.finds.reduce((total, point, index, points) => {
@@ -162,7 +162,7 @@ function journeyDistance(stone) {
     if (!previous || !validCoordinates(point.lat, point.lon) || !validCoordinates(previous.lat, previous.lon)) return total;
     const a = Math.sin(rad(point.lat - previous.lat) / 2) ** 2 +
       Math.cos(rad(previous.lat)) * Math.cos(rad(point.lat)) * Math.sin(rad(point.lon - previous.lon) / 2) ** 2;
-    return total + 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+    return total + 1.5 * 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
   }, 0);
 }
 // This repository is the only data boundary. The API is the source of truth.
@@ -319,11 +319,6 @@ function renderOverview() {
   $("#total-active").textContent = stats.alive;
   $("#total-finds").textContent = stats.finds;
   $("#total-countries").textContent = stats.countries;
-  $("#explore-title").innerHTML =
-    `<span class="story-count">${stats.created}</span> ${stats.created === 1 ? "stone" : "stones"}. <span class="adventure-count">${stats.created}</span> little ${stats.created === 1 ? "adventure" : "adventures"}.`;
-  $("#hello-count").textContent = stats.finds;
-  $("#hello-label").textContent =
-    stats.finds === 1 ? "little hello shared" : "little hellos shared";
   renderMap($("#world-map"), stones);
 }
 

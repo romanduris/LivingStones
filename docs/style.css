@@ -1299,36 +1299,6 @@ body:has(dialog[open]) {
   border-radius: 1px;
   box-shadow: 0 0 0 1px #ffffff20;
 }
-.story-count {
-  color: var(--purple);
-}
-.adventure-count {
-  color: var(--coral);
-}
-.hello-stat {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-.hello-stat strong {
-  color: var(--yellow);
-  font-weight: 600;
-}
-@media (max-width: 700px) {
-  .stones-section .section-heading {
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  .stones-section .section-heading h2 {
-    width: 100%;
-  }
-  .hello-stat {
-    font-size: 11px;
-  }
-}
 /* Saved moments use the existing compact, accessible layout. */
 .real-badge {
   color: var(--teal, #62d7cb);

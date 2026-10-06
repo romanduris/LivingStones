@@ -248,10 +248,10 @@ test("stone table sorts newest finds first using times, with stable ties and unc
   assert.equal(context.sortStonesByLastFound(stones)[0].id,"A");
 });
 
-test("route distance sums legs, handles a round trip and keeps recorded coordinates intact", () => {
+test("route estimate applies a 1.5 coefficient to every leg, handles a round trip and keeps recorded coordinates intact", () => {
   const route = { finds: [{lat:0,lon:0}, {lat:0,lon:1}, {lat:0,lon:0}] };
   const original = JSON.stringify(route);
-  assert.ok(Math.abs(context.journeyDistance(route) - 222.39) < 0.01);
+  assert.ok(Math.abs(context.journeyDistance(route) - 333.585) < 0.01);
   assert.equal(context.journeyDistance({finds:[]}), 0);
   assert.equal(context.journeyDistance({finds:[{lat:0,lon:0}]}), 0);
   assert.equal(JSON.stringify(route), original);
