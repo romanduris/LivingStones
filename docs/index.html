@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=54" />
+    <link rel="stylesheet" href="style.css?v=55" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="config.js?v=1" defer></script>
-    <script src="app.js?v=54" defer></script>
+    <script src="app.js?v=55" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -111,20 +111,19 @@
       >
         <div class="stone-toolbar" aria-label="Explore stones">
           <label class="stone-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search stones</span><input id="stone-search" type="search" placeholder="Search stones…" autocomplete="off"></label>
-          <div class="stone-filters" role="group" aria-label="Filter and sort stones">
-            <button type="button" id="active-stones" aria-pressed="false" title="Found within the last 90 days">#Active</button>
+          <div class="stone-filters" role="group" aria-label="Sort stones">
+            <button type="button" data-stone-sort="age" aria-pressed="false" title="Oldest stones first">#Age</button>
             <button type="button" data-stone-sort="distance" aria-pressed="false">#Most Traveled</button>
             <button type="button" data-stone-sort="recent" aria-pressed="true">#Recently Found</button>
           </div>
           <div class="stone-view-switch" role="group" aria-label="Stone view">
             <button type="button" data-stone-view="cards" aria-pressed="true" aria-controls="stone-cards">Cards</button>
-            <a href="#world" aria-label="View stones on the map">Map</a>
             <button type="button" data-stone-view="list" aria-pressed="false" aria-controls="stone-list">List</button>
           </div>
         </div>
         <p id="stone-results" class="sr-only" role="status" aria-live="polite"></p>
         <div id="stone-cards" class="stone-card-grid" aria-label="Stone journeys"></div>
-        <p id="stone-empty" class="stone-empty" hidden>No stones match just yet. Try another name or place, or turn off #Active.</p>
+        <p id="stone-empty" class="stone-empty" hidden>No stones match just yet. Try another name or place.</p>
         <div
           id="stone-list" class="stone-table-frame" hidden
           role="region"

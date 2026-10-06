@@ -252,19 +252,18 @@ function disposeMap(id) {
   instance.map.remove();
   mapInstances.delete(id);
 }
-const collectionState = { view: "cards", sort: "recent", active: false, search: "" };
+const collectionState = { view: "cards", sort: "recent", search: "" };
 function renderCollection() {
   const query = collectionState.search.trim().toLocaleLowerCase();
-  const now = Date.now();
   const visible = stoneRepository.list().filter(stone => {
     const last = stone.finds.at(-1);
-    const lastSeen = Date.parse(last?.date);
-    return (!collectionState.active || (lastSeen >= now - 90 * 86400000 && lastSeen <= now)) &&
-      (!query || [stone.name, stone.id, last?.city, last?.country].some(value => String(value || "").toLocaleLowerCase().includes(query)));
+    return (!query || [stone.name, stone.id, last?.city, last?.country].some(value => String(value || "").toLocaleLowerCase().includes(query)));
   });
   const stones = collectionState.sort === "distance"
     ? [...visible].sort((a, b) => journeyDistance(b) - journeyDistance(a) || a.id.localeCompare(b.id))
-    : sortStonesByLastFound(visible);
+    : collectionState.sort === "age"
+      ? [...visible].sort((a, b) => Date.parse(a.started) - Date.parse(b.started) || a.id.localeCompare(b.id))
+      : sortStonesByLastFound(visible);
   $("#stone-cards").innerHTML = stones.map(stone => {
     const last = stone.finds.at(-1);
     const recency = last ? findRecency(last.date) : null;
@@ -285,10 +284,12 @@ function renderCollection() {
   $("#stone-results").textContent = `${stones.length} ${stones.length === 1 ? "stone" : "stones"} shown`;
   document.querySelectorAll("[data-stone-sort]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneSort === collectionState.sort)));
   document.querySelectorAll("[data-stone-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneView === collectionState.view)));
-  $("#active-stones").setAttribute("aria-pressed", String(collectionState.active));
-  const heading = $('.stone-table th[aria-sort]');
+  const heading = $('.stone-table th:nth-child(6)');
+  const ageHeading = $('.stone-table th:nth-child(3)');
+  if (collectionState.sort === "age") ageHeading.setAttribute("aria-sort", "descending");
+  else ageHeading.removeAttribute("aria-sort");
   heading.setAttribute("aria-sort", collectionState.sort === "recent" ? "descending" : "none");
-  heading.title = collectionState.sort === "recent" ? "Newest finds first" : "Stones sorted by distance traveled";
+  heading.title = collectionState.sort === "recent" ? "Newest finds first" : collectionState.sort === "age" ? "Oldest stones first" : "Stones sorted by distance traveled";
   heading.querySelector(".sort-indicator").hidden = collectionState.sort !== "recent";
   $("#stone-rows").innerHTML = stones
     .map((stone) => {
@@ -404,7 +405,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       dashArray: "4 7",
       interactive: false,
     }).addTo(map);
-  const symbols = { sun: "☀", moon: "☾", leaf: "♧", heart: "♡", wave: "≈" };
+  const symbols = { sun: "☀", moon: "☾", leaf: "♧", heart: "♡", wave: "≈", hello: "✉", clover: "♧", flame: "♨", cloud: "☁" };
   const markers = points.map((find, index) => {
     const stone = journey || previewPlace ? stones[0] : stones[index];
     const latest = journey && index === points.length - 1;
@@ -420,7 +421,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       alt: label,
       icon: L.divIcon({
         className: `stone-pin${local ? " is-new" : ""}`,
-        html: `<span class="pin-core" style="--stone-color:${color}">${local ? "✦" : journey ? index + 1 : symbols[stone.theme]}</span>`,
+        html: `<span class="pin-core" style="--stone-color:${color}">${local ? "✦" : journey ? index + 1 : (symbols[stone.theme] || "●")}</span>`,
         iconSize: [34, 34],
         iconAnchor: [17, 17],
         popupAnchor: [0, -12],
@@ -432,14 +433,6 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       )
       .addTo(map);
     marker.getElement().setAttribute("aria-label", label);
-    if (!journey && !previewPlace) {
-      marker.bindTooltip(escapeHTML(stone.name), {
-        permanent: !supportsPreciseLocation(),
-        direction: "top",
-        offset: [0, -15],
-        className: "stone-tooltip",
-      });
-    }
     if (latest && local)
       marker.bindTooltip("Your new find", {
         permanent: true,
@@ -1060,7 +1053,6 @@ document.querySelector(".stone-toolbar").addEventListener("click", event => {
   if (!button) return;
   if (button.dataset.stoneView) collectionState.view = button.dataset.stoneView;
   if (button.dataset.stoneSort) collectionState.sort = button.dataset.stoneSort;
-  if (button.id === "active-stones") collectionState.active = !collectionState.active;
   renderCollection();
 });
 document.addEventListener("click", (event) => {
