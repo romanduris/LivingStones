@@ -270,15 +270,14 @@ function renderCollection() {
     const recency = last ? findRecency(last.date) : null;
     const place = last ? `${last.city}, ${last.country}` : "Waiting for a first find";
     const id = escapeHTML(stone.id);
-    return `<article class="journey-card" style="--stone-color:${escapeHTML(/^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be")}">
+    return `<a class="journey-card" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" aria-label="Explore ${escapeHTML(stone.name)}" style="--stone-color:${escapeHTML(/^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be")}">
       <span class="card-kind">${stone.demo ? "Demo" : "Real"}</span>
       <span class="card-age" aria-label="${daysTravelling(stone)} days alive"><span>Age</span><strong>${daysTravelling(stone)} d</strong></span>
-      <a class="card-portrait" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" aria-label="Explore ${escapeHTML(stone.name)}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" width="340" height="280"><time class="card-born" datetime="${escapeHTML(stone.started)}" title="Born: ${formatDate(stone.started)}">${formatDate(stone.started)}</time></a>
-      <h3><a href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}">${escapeHTML(stone.name)}</a></h3>
-      <dl class="card-facts"><div><dt>Distance</dt><dd><span aria-hidden="true">⌁</span> ${Math.round(journeyDistance(stone)).toLocaleString("en-GB")} km</dd></div><div><dt>Finds</dt><dd>${stone.finds.length} ${stone.finds.length === 1 ? "find" : "finds"}</dd></div></dl>
-      <div class="card-actions"><a href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" class="card-details">View Details <span aria-hidden="true">↗</span></a><a href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" data-map-path="true" aria-label="Map path for ${escapeHTML(stone.name)}">Map Path</a></div>
+      <span class="card-portrait"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" width="340" height="280"><time class="card-born" datetime="${escapeHTML(stone.started)}" title="Born: ${formatDate(stone.started)}">${formatDate(stone.started)}</time></span>
+      <h3>${escapeHTML(stone.name)}</h3>
+      <dl class="card-facts"><div><dt>Distance</dt><dd><span aria-hidden="true">⌁</span> ${Math.round(journeyDistance(stone)).toLocaleString("en-GB")} km</dd></div><div><dt>Finds</dt><dd aria-label="${stone.finds.length} ${stone.finds.length === 1 ? "find" : "finds"}">${stone.finds.length}<span class="card-find-unit"> ${stone.finds.length === 1 ? "find" : "finds"}</span></dd></div></dl>
       <div class="card-location" title="${escapeHTML(place)}"><span>${last ? countryFlagHTML(last.country) : ""}<span class="card-city">${escapeHTML(last?.city || "Awaiting a find")}</span></span>${last ? `<time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)} ${recency.label}">${recency.days === 0 ? "Today" : `${recency.days}d ago`}</time>` : ""}</div>
-    </article>`;
+    </a>`;
   }).join("");
   $("#stone-cards").hidden = collectionState.view !== "cards";
   $("#stone-list").hidden = collectionState.view !== "list" || !stones.length;
@@ -482,7 +481,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
   });
 }
 function countryFlagHTML(country) {
-  const code = { Slovakia: "sk", Austria: "at", Hungary: "hu" }[country];
+  const code = { Slovakia: "sk", Austria: "at", Hungary: "hu", Czechia: "cz", "Czech Republic": "cz", Česko: "cz" }[country];
   return code
     ? `<img class="country-flag" src="${new URL(`flags/${code}.svg`, assetBase).href}" alt="${escapeHTML(country)}" width="15" height="10">`
     : "";
@@ -591,7 +590,7 @@ function renderDetail() {
 function showOtherStones() {
   const show = () => {
     $("#explore").scrollIntoView({ behavior: "smooth", block: "start" });
-    $(collectionState.view === "cards" ? ".card-details" : ".stone-link")?.focus({ preventScroll: true });
+    $(collectionState.view === "cards" ? ".journey-card" : ".stone-link")?.focus({ preventScroll: true });
   };
   if (history.state?.livingstonesDetail) {
     window.addEventListener("popstate", show, { once: true });
@@ -1094,7 +1093,6 @@ document.addEventListener("click", (event) => {
     return;
   event.preventDefault();
   openStone(link.dataset.stone);
-  if (link.dataset.mapPath) $("#journey-map").scrollIntoView({ block: "center", behavior: "smooth" });
 });
 $("#stone-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
