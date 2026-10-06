@@ -703,7 +703,7 @@ process.on("exit", () => server?.kill());
         .evaluate((row) =>
           [
             ...row.querySelectorAll(
-              ".stone-identity > strong, .overview-age > strong, .overview-finds > strong, .overview-location > time",
+              ".stone-identity > strong, .overview-age > strong, .overview-finds > strong, .overview-countries > strong, .overview-location > time",
             ),
           ].map((el) => el.getBoundingClientRect().top),
         );
@@ -720,6 +720,15 @@ process.on("exit", () => server?.kill());
         "table-row",
       );
       assert.equal(await page.locator(".stone-table thead").isVisible(), true);
+      assert.equal(await page.locator(".stone-tagline").count(), 0);
+      assert.ok(await page.locator(".stone-row").first().evaluate(row=>{
+        const primary=[...row.querySelectorAll(".stone-identity > strong, .overview-start > time, .overview-age > strong, .overview-finds > strong, .overview-countries > strong, .overview-location > time, .overview-latest > strong")].filter(el=>el.offsetWidth);
+        const styles=primary.map(el=>getComputedStyle(el));
+        return styles.every(s=>s.fontSize===styles[0].fontSize && s.fontWeight==="700");
+      }));
+      assert.doesNotMatch(await page.locator(".overview-location time").first().innerText(), /\d{1,2}:\d{2}/);
+      assert.match(await page.locator(".overview-location time").first().innerText(), /\d{1,2} [A-Za-z]+ \d{4}/);
+      assert.match(await page.locator(".overview-age").first().innerText(), /^\d+$/);
       assert.equal(
         await page
           .locator(".stone-table-frame")
@@ -756,6 +765,7 @@ process.on("exit", () => server?.kill());
         [".overview-location", width > 1100 ? "center" : "right"],
         [".overview-age", "center"],
         [".overview-finds", "center"],
+        [".overview-countries", "center"],
       ])
         assert.equal(
           await page
@@ -766,7 +776,7 @@ process.on("exit", () => server?.kill());
         );
 
       assert.equal(
-        await page.locator(".find-countries").first().isVisible(),
+        await page.locator(".overview-countries").first().isVisible(),
         true,
       );
       assert.ok(

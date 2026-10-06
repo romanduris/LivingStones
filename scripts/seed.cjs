@@ -25,7 +25,6 @@ for (const s of sandbox.stones) {
     insert("stones", {
       id: s.id,
       name: s.name,
-      tagline: s.tagline,
       story: s.story,
       born: s.started,
       creator: s.finds[0].nickname,

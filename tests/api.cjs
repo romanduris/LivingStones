@@ -96,6 +96,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       25,
     );
     assert.ok(!JSON.stringify(result.body).includes("code_hash"));
+    assert.ok(result.body.stones.every(stone => !("tagline" in stone)));
     assert.equal((await call("/stones/unknown")).status, 404);
     assert.equal(
       (await call("/stones/A1/verify", { code: "WRONG" })).status,
