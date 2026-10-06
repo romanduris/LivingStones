@@ -429,7 +429,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
     })
       .bindPopup(
         !journey && !previewPlace ? overviewPopupHTML(stone, find) : `<strong>${escapeHTML(find.city)}</strong><br>${escapeHTML(find.address || find.city + ", " + find.country)}<br><span class="map-popup-note">${previewPlace ? "Location preview — not submitted" : formatDate(find.date)}${find.local ? " · Saved find" : ""}</span>`,
-        !journey && !previewPlace ? { maxWidth: 260, autoPanPaddingTopLeft: [16, 80], autoPanPaddingBottomRight: [16, 12], className: "stone-overview-popup" } : {},
+        !journey && !previewPlace ? { maxWidth: 220, autoPanPaddingTopLeft: [16, 80], autoPanPaddingBottomRight: [16, 12], className: "stone-overview-popup" } : {},
       )
       .addTo(map);
     marker.getElement().setAttribute("aria-label", label);
