@@ -336,6 +336,254 @@ const DEMO_STONES = [
       },
     ],
   },
+  {
+    "id": "F6",
+    "demo": true,
+    "name": "Hello Pebble",
+    "color": "#ac9fba",
+    "theme": "hello",
+    "image": "stone-6.svg",
+    "code": "8456",
+    "started": "2025-05-18",
+    "finds": [
+      {
+        "date": "2025-05-18",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Nina",
+        "message": "A little hello painted for whoever needs a smile."
+      },
+      {
+        "date": "2025-09-07",
+        "city": "Hainburg",
+        "country": "Austria",
+        "lat": 48.1463,
+        "lon": 16.944,
+        "address": "Donaulände, riverside promenade, Hainburg an der Donau",
+        "nickname": "Oliver",
+        "message": "Found our chatty pebble beside the river."
+      },
+      {
+        "date": "2026-02-15",
+        "city": "Vienna",
+        "country": "Austria",
+        "lat": 48.2035,
+        "lon": 16.38,
+        "address": "Stadtpark, Parkring, Vienna",
+        "nickname": "Hana",
+        "message": "Taking a tiny greeting on a day trip."
+      },
+      {
+        "date": "2026-07-20",
+        "city": "Senec",
+        "country": "Slovakia",
+        "lat": 48.2194,
+        "lon": 17.4204,
+        "address": "Slnečné jazerá, lakeside path, Senec",
+        "nickname": "Marek",
+        "message": "A lovely surprise in the park. Passing it on."
+      },
+      {
+        "date": "2026-10-03",
+        "city": "Čunovo",
+        "country": "Slovakia",
+        "lat": 48.032,
+        "lon": 17.2307,
+        "address": "Danube riverside path, Čunovo, Bratislava",
+        "nickname": "Eva",
+        "message": "Hello from the Danube! Left it by the walking path."
+      }
+    ]
+  },
+  {
+    "id": "G7",
+    "demo": true,
+    "name": "Lucky Clover",
+    "color": "#7caa81",
+    "theme": "clover",
+    "image": "stone-7.svg",
+    "code": "8457",
+    "started": "2025-08-10",
+    "finds": [
+      {
+        "date": "2025-08-10",
+        "city": "Hainburg",
+        "country": "Austria",
+        "lat": 48.1463,
+        "lon": 16.944,
+        "address": "Donaulände, riverside promenade, Hainburg an der Donau",
+        "nickname": "Zuzana",
+        "message": "Four leaves and a little wish for a happy journey."
+      },
+      {
+        "date": "2025-11-16",
+        "city": "Čunovo",
+        "country": "Slovakia",
+        "lat": 48.032,
+        "lon": 17.2307,
+        "address": "Danube riverside path, Čunovo, Bratislava",
+        "nickname": "Leo",
+        "message": "A lucky find on our Sunday walk."
+      },
+      {
+        "date": "2026-03-29",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Kata",
+        "message": "This clover came along for a family picnic."
+      },
+      {
+        "date": "2026-08-01",
+        "city": "Vienna",
+        "country": "Austria",
+        "lat": 48.2035,
+        "lon": 16.38,
+        "address": "Stadtpark, Parkring, Vienna",
+        "nickname": "Anna",
+        "message": "Sending a little luck to the next friend."
+      },
+      {
+        "date": "2026-10-02",
+        "city": "Pezinok",
+        "country": "Slovakia",
+        "lat": 48.2884,
+        "lon": 17.267,
+        "address": "Zámocký park, Mladoboleslavská, Pezinok",
+        "nickname": "Filip",
+        "message": "Found a green friend in the castle park today."
+      }
+    ]
+  },
+  {
+    "id": "H8",
+    "demo": true,
+    "name": "Little Ember",
+    "color": "#d69564",
+    "theme": "flame",
+    "image": "stone-8.svg",
+    "code": "8458",
+    "started": "2025-10-04",
+    "finds": [
+      {
+        "date": "2025-10-04",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Peter",
+        "message": "Painted a small flame to warm someone’s day."
+      },
+      {
+        "date": "2025-12-21",
+        "city": "Pezinok",
+        "country": "Slovakia",
+        "lat": 48.2884,
+        "lon": 17.267,
+        "address": "Zámocký park, Mladoboleslavská, Pezinok",
+        "nickname": "Sofia",
+        "message": "A warm little companion for a winter walk."
+      },
+      {
+        "date": "2026-04-11",
+        "city": "Vienna",
+        "country": "Austria",
+        "lat": 48.2035,
+        "lon": 16.38,
+        "address": "Stadtpark, Parkring, Vienna",
+        "nickname": "Ben",
+        "message": "Taking Ember to see another town."
+      },
+      {
+        "date": "2026-08-23",
+        "city": "Čunovo",
+        "country": "Slovakia",
+        "lat": 48.032,
+        "lon": 17.2307,
+        "address": "Danube riverside path, Čunovo, Bratislava",
+        "nickname": "Jana",
+        "message": "A tiny campfire without the smoke."
+      },
+      {
+        "date": "2026-10-01",
+        "city": "Senec",
+        "country": "Slovakia",
+        "lat": 48.2194,
+        "lon": 17.4204,
+        "address": "Slnečné jazerá, lakeside path, Senec",
+        "nickname": "Max",
+        "message": "Left this little flame by the lakeside path."
+      }
+    ]
+  },
+  {
+    "id": "I9",
+    "demo": true,
+    "name": "Cloud Nine",
+    "color": "#8eb4cb",
+    "theme": "cloud",
+    "image": "stone-9.svg",
+    "code": "8459",
+    "started": "2025-06-22",
+    "finds": [
+      {
+        "date": "2025-06-22",
+        "city": "Senec",
+        "country": "Slovakia",
+        "lat": 48.2194,
+        "lon": 17.4204,
+        "address": "Slnečné jazerá, lakeside path, Senec",
+        "nickname": "Lenka",
+        "message": "A fluffy cloud for a bright new adventure."
+      },
+      {
+        "date": "2025-10-19",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Sam",
+        "message": "This cloud travelled in my pocket all afternoon."
+      },
+      {
+        "date": "2026-03-08",
+        "city": "Pezinok",
+        "country": "Slovakia",
+        "lat": 48.2884,
+        "lon": 17.267,
+        "address": "Zámocký park, Mladoboleslavská, Pezinok",
+        "nickname": "Mia",
+        "message": "A calm little find after a busy week."
+      },
+      {
+        "date": "2026-06-28",
+        "city": "Hainburg",
+        "country": "Austria",
+        "lat": 48.1463,
+        "lon": 16.944,
+        "address": "Donaulände, riverside promenade, Hainburg an der Donau",
+        "nickname": "David",
+        "message": "Showing our cloud the riverside."
+      },
+      {
+        "date": "2026-09-30",
+        "city": "Vienna",
+        "country": "Austria",
+        "lat": 48.2035,
+        "lon": 16.38,
+        "address": "Stadtpark, Parkring, Vienna",
+        "nickname": "Elena",
+        "message": "Left a piece of sky for the next passer-by."
+      }
+    ]
+  },
 ];
 const DEMO_PLACES = [
   {

@@ -116,9 +116,10 @@ process.on("exit", () => server?.kill());
           const result = await original(...args);
           await page.waitForFunction(
             () =>
-              stoneRepository.list().length === 5 &&
+              stoneRepository.list().length === 9 &&
               document.querySelector("#data-status").hidden,
           );
+          if (!(await page.locator("dialog[open]").count())) await page.locator('[data-stone-view="list"]').click();
           return result;
         };
       }
@@ -154,8 +155,8 @@ process.on("exit", () => server?.kill());
     await page.goto(base);
     await page.waitForTimeout(100);
     assert.equal(desktop.homepageViews,1,"The initial overview counts one homepage opening");
-    assert.equal(await page.locator(".stone-row").count(), 5);
-    assert.deepEqual(await page.locator(".stone-row").evaluateAll(rows=>rows.map(row=>row.dataset.stone)), ["C3","E5","A1","D4","B2"]);
+    assert.equal(await page.locator(".stone-row").count(), 9);
+    assert.deepEqual(await page.locator(".stone-row").evaluateAll(rows=>rows.map(row=>row.dataset.stone)), ["F6","G7","H8","I9","C3","E5","A1","D4","B2"]);
     assert.equal(await page.locator('th[aria-sort="descending"]').count(), 1);
     assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Last Found[\s\S]*↓/i);
     assert.equal(await page.locator('#main-language-menu .language-flag').count(), 4);
@@ -174,7 +175,7 @@ process.on("exit", () => server?.kill());
     await page.locator('#main-language-menu:popover-open').waitFor();
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#main-language-menu:popover-open').count(), 0);
-    assert.equal(await page.locator(".stone-thumbnail img").count(), 5);
+    assert.equal(await page.locator(".stone-thumbnail img").count(), 9);
     assert.equal(await page.locator("#map-legend").count(), 0);
     assert.match(
       await page.locator(".intro-copy").innerText(),
@@ -186,14 +187,14 @@ process.on("exit", () => server?.kill());
     );
     assert.equal(
       await page.locator("#world-map .leaflet-marker-icon").count(),
-      5,
+      9,
     );
-    assert.equal(await page.locator("#total-finds").innerText(), "25");
+    assert.equal(await page.locator("#total-finds").innerText(), "45");
     assert.equal(await page.locator(".intro-copy p").count(), 1);
-    assert.equal(await page.locator("#hello-count").innerText(), "25");
+    assert.equal(await page.locator("#hello-count").innerText(), "45");
     assert.match(
       await page.locator("#explore-title").innerText(),
-      /5 stones. 5 little adventures/,
+      /9 stones. 9 little adventures/,
     );
     assert.equal(await page.locator("#total-countries").innerText(), "3");
     assert.equal(
@@ -489,10 +490,10 @@ process.on("exit", () => server?.kill());
     );
     assert.equal(await phone.locator(".story-feed script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
-    assert.equal(await phone.locator("#total-finds").innerText(), "26");
+    assert.equal(await phone.locator("#total-finds").innerText(), "46");
     assert.equal(await phone.locator(".stone-row").first().getAttribute("data-stone"), "A1");
     assert.equal(await phone.locator(rows).first().locator(".entry-address .manual-badge").innerText(), "Manual");
-    assert.equal(await phone.locator("#hello-count").innerText(), "26");
+    assert.equal(await phone.locator("#hello-count").innerText(), "46");
     assert.match(
       await phone
         .locator('.stone-row[data-stone="A1"] .overview-latest')
@@ -502,6 +503,7 @@ process.on("exit", () => server?.kill());
     await phone.locator("#finish-find").click();
     await phone.locator("#other-stones").click();
     assert.equal(new URL(phone.url()).searchParams.get("source"), null, "Returning to the list clears QR access");
+    await phone.locator('[data-stone-view="list"]').click();
     await phone.locator('.stone-link[data-stone="A1"]').click();
     assert.equal(await phone.locator("#start-find, .find-help").count(), 0, "List navigation does not inherit QR access");
     assert.equal(
@@ -716,7 +718,7 @@ process.on("exit", () => server?.kill());
       );
       assert.equal(
         await page.locator("#world-map .leaflet-marker-icon").count(),
-        5,
+        9,
       );
       assert.equal(await page.locator("#start-find").count(), 0);
       const mapLayout = await page.evaluate(() => {
@@ -806,8 +808,8 @@ process.on("exit", () => server?.kill());
         ".overview-location",
       ])
         assert.equal(await page.locator(cell).first().isVisible(), true);
-      assert.equal(await page.locator(".demo-badge").count(), 5);
-      assert.equal(await page.locator(".country-flag").count(), 5);
+      assert.equal(await page.locator(".demo-badge").count(), 9);
+      assert.equal(await page.locator(".stone-table .country-flag").count(), 9);
       assert.equal(await page.locator('.country-key').count(),0);
       assert.equal(await page.locator('.last-date').count(),0);
       assert.ok(await page.locator('.heading-copy').evaluate(el=>{const text=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);const range=document.createRange();range.selectNodeContents(text);return range.getClientRects().length===1&&el.closest('th').scrollWidth<=el.closest('th').clientWidth;}), `Last Found fits on one line at ${width}`);
@@ -894,9 +896,10 @@ process.on("exit", () => server?.kill());
     const securePage=await secureContext.newPage();
     await securePage.goto("http://livingstones.rodulab.com/");
     await securePage.waitForURL("https://livingstones.rodulab.com/");
-    await securePage.locator(".stone-row").first().waitFor();
+    await securePage.locator(".journey-card").first().waitFor();
     assert.deepEqual(apiOrigins,["https://livingstones.rodulab.com"],"HTTP visits redirect before requesting data");
     await securePage.waitForLoadState("networkidle");
+    await secureContext.unrouteAll({ behavior: "wait" });
     await secureContext.close();
     console.log(
       "Passed: intro-first stone details, newest-first story feed, other-stone navigation, map-first overview, Leaflet controls/pins, mobile-only finds, automatic GPS, addresses, safe notes, canceled GPS, persistent API-backed data and standalone comments, URLs/history/sharing and responsive layouts.",

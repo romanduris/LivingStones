@@ -154,6 +154,17 @@ function sortStonesByLastFound(stones) {
   };
   return [...stones].sort((a, b) => latest(b) - latest(a) || a.id.localeCompare(b.id));
 }
+// Sum each recorded leg, rather than the distance from birthplace to last find.
+function journeyDistance(stone) {
+  const rad = (n) => n * Math.PI / 180;
+  return stone.finds.reduce((total, point, index, points) => {
+    const previous = points[index - 1];
+    if (!previous || !validCoordinates(point.lat, point.lon) || !validCoordinates(previous.lat, previous.lon)) return total;
+    const a = Math.sin(rad(point.lat - previous.lat) / 2) ** 2 +
+      Math.cos(rad(previous.lat)) * Math.cos(rad(point.lat)) * Math.sin(rad(point.lon - previous.lon) / 2) ** 2;
+    return total + 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+  }, 0);
+}
 // This repository is the only data boundary. The API is the source of truth.
 const stoneRepository = (() => {
   let stones = [];
@@ -241,9 +252,46 @@ function disposeMap(id) {
   instance.map.remove();
   mapInstances.delete(id);
 }
-function renderOverview() {
-  const stones = stoneRepository.list();
-  $("#stone-rows").innerHTML = sortStonesByLastFound(stones)
+const collectionState = { view: "cards", sort: "recent", active: false, search: "" };
+function renderCollection() {
+  const query = collectionState.search.trim().toLocaleLowerCase();
+  const now = Date.now();
+  const visible = stoneRepository.list().filter(stone => {
+    const last = stone.finds.at(-1);
+    const lastSeen = Date.parse(last?.date);
+    return (!collectionState.active || (lastSeen >= now - 90 * 86400000 && lastSeen <= now)) &&
+      (!query || [stone.name, stone.id, last?.city, last?.country].some(value => String(value || "").toLocaleLowerCase().includes(query)));
+  });
+  const stones = collectionState.sort === "distance"
+    ? [...visible].sort((a, b) => journeyDistance(b) - journeyDistance(a) || a.id.localeCompare(b.id))
+    : sortStonesByLastFound(visible);
+  $("#stone-cards").innerHTML = stones.map(stone => {
+    const last = stone.finds.at(-1);
+    const recency = last ? findRecency(last.date) : null;
+    const place = last ? `${last.city}, ${last.country}` : "Waiting for a first find";
+    const id = escapeHTML(stone.id);
+    return `<article class="journey-card" style="--stone-color:${escapeHTML(/^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be")}">
+      <span class="card-kind">${stone.demo ? "Demo" : "Real"}</span>
+      <span class="card-age" aria-label="${daysTravelling(stone)} days alive"><span>Age</span><strong>${daysTravelling(stone)} d</strong></span>
+      <a class="card-portrait" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" aria-label="Explore ${escapeHTML(stone.name)}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" width="340" height="280"><time class="card-born" datetime="${escapeHTML(stone.started)}" title="Born: ${formatDate(stone.started)}">${formatDate(stone.started)}</time></a>
+      <h3><a href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}">${escapeHTML(stone.name)}</a></h3>
+      <dl class="card-facts"><div><dt>Distance</dt><dd><span aria-hidden="true">⌁</span> ${Math.round(journeyDistance(stone)).toLocaleString("en-GB")} km</dd></div><div><dt>Finds</dt><dd>${stone.finds.length} ${stone.finds.length === 1 ? "find" : "finds"}</dd></div></dl>
+      <div class="card-actions"><a href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" class="card-details">View Details <span aria-hidden="true">↗</span></a><a href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" data-map-path="true" aria-label="Map path for ${escapeHTML(stone.name)}">Map Path</a></div>
+      <div class="card-location" title="${escapeHTML(place)}"><span>${last ? countryFlagHTML(last.country) : ""}<span class="card-city">${escapeHTML(last?.city || "Awaiting a find")}</span></span>${last ? `<time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)} ${recency.label}">${recency.days === 0 ? "Today" : `${recency.days}d ago`}</time>` : ""}</div>
+    </article>`;
+  }).join("");
+  $("#stone-cards").hidden = collectionState.view !== "cards";
+  $("#stone-list").hidden = collectionState.view !== "list" || !stones.length;
+  $("#stone-empty").hidden = stones.length !== 0;
+  $("#stone-results").textContent = `${stones.length} ${stones.length === 1 ? "stone" : "stones"} shown`;
+  document.querySelectorAll("[data-stone-sort]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneSort === collectionState.sort)));
+  document.querySelectorAll("[data-stone-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneView === collectionState.view)));
+  $("#active-stones").setAttribute("aria-pressed", String(collectionState.active));
+  const heading = $('.stone-table th[aria-sort]');
+  heading.setAttribute("aria-sort", collectionState.sort === "recent" ? "descending" : "none");
+  heading.title = collectionState.sort === "recent" ? "Newest finds first" : "Stones sorted by distance traveled";
+  heading.querySelector(".sort-indicator").hidden = collectionState.sort !== "recent";
+  $("#stone-rows").innerHTML = stones
     .map((stone) => {
       const last = stone.finds.at(-1),
         birth = stone.finds[0],
@@ -263,6 +311,10 @@ function renderOverview() {
       </tr>`;
     })
     .join("");
+}
+function renderOverview() {
+  const stones = stoneRepository.list();
+  renderCollection();
   const stats = journeyStatistics(stones);
   $("#total-stones").textContent = stats.created;
   $("#total-active").textContent = stats.alive;
@@ -539,7 +591,7 @@ function renderDetail() {
 function showOtherStones() {
   const show = () => {
     $("#explore").scrollIntoView({ behavior: "smooth", block: "start" });
-    $(".stone-link")?.focus({ preventScroll: true });
+    $(collectionState.view === "cards" ? ".card-details" : ".stone-link")?.focus({ preventScroll: true });
   };
   if (history.state?.livingstonesDetail) {
     window.addEventListener("popstate", show, { once: true });
@@ -1005,6 +1057,18 @@ document.addEventListener("beforetoggle", (event) => {
 const repositionLanguages = () => document.querySelectorAll(".language-menu:popover-open").forEach(positionLanguageMenu);
 window.addEventListener("resize", repositionLanguages);
 document.addEventListener("scroll", repositionLanguages, true);
+$("#stone-search").addEventListener("input", event => {
+  collectionState.search = event.target.value;
+  renderCollection();
+});
+document.querySelector(".stone-toolbar").addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  if (button.dataset.stoneView) collectionState.view = button.dataset.stoneView;
+  if (button.dataset.stoneSort) collectionState.sort = button.dataset.stoneSort;
+  if (button.id === "active-stones") collectionState.active = !collectionState.active;
+  renderCollection();
+});
 document.addEventListener("click", (event) => {
   const choice = event.target.closest("[data-language]");
   if (choice) {
@@ -1030,6 +1094,7 @@ document.addEventListener("click", (event) => {
     return;
   event.preventDefault();
   openStone(link.dataset.stone);
+  if (link.dataset.mapPath) $("#journey-map").scrollIntoView({ block: "center", behavior: "smooth" });
 });
 $("#stone-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();

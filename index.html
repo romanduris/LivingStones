@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#202930" />
     <meta
       name="description"
-      content="Follow five painted stones around Bratislava. Explore their journeys, meet their finders, and add your own little moment."
+      content="Follow nine painted stones around Bratislava. Explore their journeys, meet their finders, and add your own little moment."
     />
     <title>Living Stones — Small stones. Big stories.</title>
     <link rel="icon" href="docs/assets/brand-stone.svg?v=17" type="image/svg+xml" />
@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="docs/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="docs/style.css?v=50" />
+    <link rel="stylesheet" href="docs/style.css?v=52" />
     <script src="docs/vendor/leaflet/leaflet.js" defer></script>
     <script src="docs/config.js?v=1" defer></script>
-    <script src="docs/app.js?v=51" defer></script>
+    <script src="docs/app.js?v=52" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -111,16 +111,32 @@
       >
         <div class="section-heading">
           <h2 id="explore-title">
-            <span class="story-count">5</span> stones.
-            <span class="adventure-count">5</span> little adventures.
+            <span class="story-count">9</span> stones.
+            <span class="adventure-count">9</span> little adventures.
           </h2>
           <span class="hello-stat"
-            ><strong id="hello-count">25</strong>
+            ><strong id="hello-count">45</strong>
             <span id="hello-label">little hellos shared</span></span
           >
         </div>
+        <div class="stone-toolbar" aria-label="Explore stones">
+          <label class="stone-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search stones</span><input id="stone-search" type="search" placeholder="Search stones…" autocomplete="off"></label>
+          <div class="stone-filters" role="group" aria-label="Filter and sort stones">
+            <button type="button" id="active-stones" aria-pressed="false" title="Found within the last 90 days">#Active</button>
+            <button type="button" data-stone-sort="distance" aria-pressed="false">#Most Traveled</button>
+            <button type="button" data-stone-sort="recent" aria-pressed="true">#Recently Found</button>
+          </div>
+          <div class="stone-view-switch" role="group" aria-label="Stone view">
+            <button type="button" data-stone-view="cards" aria-pressed="true" aria-controls="stone-cards">Cards</button>
+            <a href="#world" aria-label="View stones on the map">Map</a>
+            <button type="button" data-stone-view="list" aria-pressed="false" aria-controls="stone-list">List</button>
+          </div>
+        </div>
+        <p id="stone-results" class="sr-only" role="status" aria-live="polite"></p>
+        <div id="stone-cards" class="stone-card-grid" aria-label="Stone journeys"></div>
+        <p id="stone-empty" class="stone-empty" hidden>No stones match just yet. Try another name or place, or turn off #Active.</p>
         <div
-          class="stone-table-frame"
+          id="stone-list" class="stone-table-frame" hidden
           role="region"
           aria-label="Stone journeys table"
           tabindex="0"

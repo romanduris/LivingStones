@@ -15,13 +15,13 @@ vm.runInContext(
     ";globalThis.stones=DEMO_STONES;",
   data,
 );
-test("five distinct demo stones have realistic chronological journeys and valid locations", () => {
-  assert.equal(data.stones.length, 5);
-  assert.equal(new Set(data.stones.map((s) => s.id)).size, 5);
-  assert.equal(new Set(data.stones.map((s) => s.image)).size, 5);
+test("nine distinct demo stones have realistic chronological journeys and valid locations", () => {
+  assert.equal(data.stones.length, 9);
+  assert.equal(new Set(data.stones.map((s) => s.id)).size, 9);
+  assert.equal(new Set(data.stones.map((s) => s.image)).size, 9);
   assert.equal(
     data.stones.reduce((n, s) => n + s.finds.length, 0),
-    25,
+    45,
   );
   for (const stone of data.stones) {
     assert.equal(stone.started, stone.finds[0].date);
@@ -246,4 +246,13 @@ test("stone table sorts newest finds first using times, with stable ties and unc
   assert.equal(JSON.stringify(stones),before);
   stones[0].finds.push({date:"2026-10-06T09:00:00Z"});
   assert.equal(context.sortStonesByLastFound(stones)[0].id,"A");
+});
+
+test("route distance sums legs, handles a round trip and keeps recorded coordinates intact", () => {
+  const route = { finds: [{lat:0,lon:0}, {lat:0,lon:1}, {lat:0,lon:0}] };
+  const original = JSON.stringify(route);
+  assert.ok(Math.abs(context.journeyDistance(route) - 222.39) < 0.01);
+  assert.equal(context.journeyDistance({finds:[]}), 0);
+  assert.equal(context.journeyDistance({finds:[{lat:0,lon:0}]}), 0);
+  assert.equal(JSON.stringify(route), original);
 });

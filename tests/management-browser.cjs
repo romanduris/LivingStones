@@ -42,11 +42,11 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.goto('http://127.0.0.1:8137/management/');
    assert.equal(await page.locator('#login').isVisible(),true);assert.equal(await page.locator('.admin-stone-card').count(),0);
    await page.locator('#password').fill('wrong');await page.locator('#login-form button').click();await page.locator('#notice.error').waitFor();assert.equal(await page.locator('#login').isVisible(),true);
-   await page.locator('#password').fill('test-only-password');await page.locator('#login-form button').click();await page.locator('.admin-stone-card').first().waitFor();assert.equal(await page.locator('.admin-stone-card').count(),5);
-   assert.match(await page.locator('#summary').innerText(),/30\s+Story views/);
+   await page.locator('#password').fill('test-only-password');await page.locator('#login-form button').click();await page.locator('.admin-stone-card').first().waitFor();assert.equal(await page.locator('.admin-stone-card').count(),9);
+   assert.match(await page.locator('#summary').innerText(),/72\s+Story views/);
    await page.locator('#search').fill('Sunny');assert.equal(await page.locator('.admin-stone-card').count(),1);await page.locator('#search').fill('');
    await page.locator('#type-filter').selectOption('real');assert.equal(await page.locator('.admin-stone-card').count(),0);await page.locator('#type-filter').selectOption('all');
-   await page.locator('#sort').selectOption('views');assert.match(await page.locator('.admin-stone-card').first().innerText(),/Ocean Echo/);
+   await page.locator('#sort').selectOption('views');assert.match(await page.locator('.admin-stone-card').first().innerText(),/Cloud Nine/);
    await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
    assert.equal(await page.locator('[name=story]').count(),0);
    assert.equal(await page.locator('.qr-link').getAttribute('href'),'https://livingstones.rodulab.com/?stone=A1&source=qr');
@@ -72,7 +72,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#qr-code-form input').fill('PRIVATE9876');await page.locator('#qr-code-form button').click();await page.locator('.stone-qr .qr-code-value').waitFor();assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'PRIVATE9876');assert.equal(await page.evaluate(()=>Object.values(sessionStorage).join(' ').includes('PRIVATE9876')),false);
    realLabel.demo=true;realLabel.code='8451';await page.reload();await page.locator('#stone-form').waitFor();
    await page.locator('[data-section=stats]').click();await page.locator('#traffic-summary strong').first().waitFor();
-   assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'40');
+   assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'82');
    await page.locator('#stats-target').selectOption('home');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'10');
    await page.locator('#stats-target').selectOption('stone:A1');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'4');
    await page.locator('[data-period="7"]').click();await page.waitForFunction(()=>document.querySelector('[data-period="7"]').getAttribute('aria-pressed')==='true');
@@ -95,7 +95,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('[data-tab="finds"]').click();assert.equal(await page.locator('.admin-record').count(),5);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`Management fits at ${width}`);
    await page.locator('#admin-main').screenshot({path:`/tmp/livingstones-management-${width}.png`});
-   page.once('dialog',d=>d.accept());await page.locator('[data-action="delete-stone"]').click();await page.locator('#dashboard').waitFor();assert.equal(await page.locator('.admin-stone-card').count(),4);
+   page.once('dialog',d=>d.accept());await page.locator('[data-action="delete-stone"]').click();await page.locator('#dashboard').waitFor();assert.equal(await page.locator('.admin-stone-card').count(),8);
    await page.locator('#logout').click();await page.locator('#login').waitFor();assert.equal(await page.evaluate(()=>sessionStorage.getItem('livingstones-management-session')),null);
    await page.reload();assert.equal(await page.locator('#login').isVisible(),true);assert.deepEqual(errors,[]);
    await context.close();
