@@ -78,3 +78,17 @@ button:hover { border-color:var(--purple); } button:disabled { opacity:.55; curs
 .traffic-table button { padding:0; border:0; background:none; text-align:left; color:var(--ink); overflow-wrap:anywhere; }
 .traffic-table button:hover { color:var(--purple); }
 @media(max-width:700px) { .stats-toolbar { align-items:stretch; flex-direction:column; gap:14px; } .stats-toolbar label { width:100%; } .period-picker button { flex:1; padding:9px 7px; } .chart-panel { padding:18px 10px; } .traffic-chart { min-height:150px; } .chart-label { font-size:17px; } .chart-legend { font-size:10px; } .traffic-table { font-size:12px; } .traffic-table td,.traffic-table th { padding:10px 4px; } }
+
+.admin-brand { display: flex; align-items: center; gap: 12px; }
+.admin-logo { width: 46px; height: 46px; flex: none; }
+.admin-brand .admin-brand-name { margin: 0; color: var(--ink); font-size: 20px; }
+.qr-find-code { display: flex; flex-direction: column; gap: 3px; margin: 16px 0; color: var(--muted); font-size: 12px; }
+.qr-find-code strong { color: var(--yellow); font-size: 22px; letter-spacing: 2px; overflow-wrap: anywhere; }
+.qr-code-form { text-align: left; margin: 16px 0; }
+.qr-code-form button { margin-top: 10px; }
+@media (max-width: 600px) {
+ .admin-brand { gap: 8px; }
+ .admin-logo { width: 38px; height: 38px; }
+ .admin-brand .admin-brand-name { font-size: 17px; }
+ .admin-brand .admin-brand-name > span { display: block; margin: 0; font-size: 11px; }
+}

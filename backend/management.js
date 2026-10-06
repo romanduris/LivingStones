@@ -47,6 +47,15 @@ export async function handleManagement(request, env, listStones) {
   if (path === 'stats' && request.method === 'GET') return trafficStatistics(request, env);
   if (path === 'session' && request.method === 'GET') return { ok: true };
   if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true) };
+  const labelMatch=path.match(/^stones\/([A-Za-z0-9_-]{1,32})\/label-code$/);
+  if(labelMatch && request.method==='POST') {
+    const stone=await env.DB.prepare('SELECT code_hash FROM stones WHERE id=?').bind(labelMatch[1]).first();
+    if(!stone)fail(404,'This stone could not be found.');
+    await limit(request,env,'admin-label-code',40);
+    const body=await jsonBody(request),code=text(body.code,32,true).toUpperCase();
+    if(!constantEqual(await sha256(code),stone.code_hash))fail(403,'That Find Code does not match this stone.');
+    return {code};
+  }
   const match = path.match(/^stones\/([A-Za-z0-9_-]{1,32})(?:\/(finds|comments)\/([A-Za-z0-9_-]{1,80}))?$/);
   if (!match) fail(404, 'Management page not found.');
   const [, id, kind, recordId] = match;

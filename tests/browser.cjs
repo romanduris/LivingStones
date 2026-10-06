@@ -157,7 +157,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator(".stone-row").count(), 5);
     assert.deepEqual(await page.locator(".stone-row").evaluateAll(rows=>rows.map(row=>row.dataset.stone)), ["C3","E5","A1","D4","B2"]);
     assert.equal(await page.locator('th[aria-sort="descending"]').count(), 1);
-    assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Last Found.*↓/i);
+    assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Last Found[\s\S]*↓/i);
     assert.equal(await page.locator('#main-language-menu .language-flag').count(), 4);
     assert.deepEqual(await page.locator('#main-language-menu .language-code').allTextContents(), ["EN","SK","HU","DE"]);
     for (const code of ["en", "sk", "hu", "de"]) {
@@ -729,6 +729,9 @@ process.on("exit", () => server?.kill());
         "table-row",
       );
       assert.equal(await page.locator(".stone-table thead").isVisible(), true);
+      const numericWidths=await page.locator('.stone-row').first().evaluate(row=>[...row.querySelectorAll('.overview-age,.overview-finds,.overview-countries')].map(el=>el.getBoundingClientRect().width));
+      assert.ok(Math.max(...numericWidths)-Math.min(...numericWidths)<1,'Numeric columns have equal widths');
+      if(width>1100)assert.equal(await page.locator('.overview-latest strong').first().evaluate(el=>getComputedStyle(el).color),await page.locator('.overview-latest strong').first().evaluate(el=>{const probe=document.createElement('span');probe.style.color='var(--yellow)';el.append(probe);const color=getComputedStyle(probe).color;probe.remove();return color;}));
       assert.equal(await page.locator(".stone-tagline").count(), 0);
       assert.ok(await page.locator(".stone-row").first().evaluate(row=>{
         const primary=[...row.querySelectorAll(".stone-identity > strong, .overview-start > time, .overview-age > strong, .overview-finds > strong, .overview-countries > strong, .overview-location > time, .overview-latest > strong")].filter(el=>el.offsetWidth);
@@ -736,12 +739,12 @@ process.on("exit", () => server?.kill());
         return styles.every(s=>s.fontSize===styles[0].fontSize && s.fontWeight==="700");
       }));
       assert.doesNotMatch(await page.locator(".overview-location time").first().innerText(), /\d{1,2}:\d{2}/);
-      assert.match(await page.locator(".overview-location time").first().innerText(), /(Today|\d+ days? ago) \(\d{1,2} [A-Za-z]+\)/);
-      assert.match(await page.locator(".overview-age").first().innerText(), /^\d+$/);
+      assert.match(await page.locator(".overview-location time").first().innerText(), /(Today|\d+d ago) \(\d{1,2} [A-Za-z]+\)/);
+      assert.match(await page.locator(".overview-age").first().innerText(), /^\d+d$/);
       assert.match(await page.locator(".stone-table th").first().innerText(), /Name \/ Born/);
       assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Date \/ Place/);
       const countryHeading = page.locator(".stone-table th").nth(4);
-      assert.equal(await countryHeading.innerText(), "Countries");
+      assert.match(await countryHeading.innerText(), /Countries\s+Visited/);
       assert.ok(await countryHeading.evaluate(el => el.scrollWidth <= el.clientWidth), `Countries fits at ${width}`);
       assert.ok(await page.locator(".stone-table").evaluate(table => {
         const samples = [...table.querySelectorAll("th, th small, td strong, td time, td small, .last-date")].filter(el => el.offsetWidth);

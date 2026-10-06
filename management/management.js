@@ -4,7 +4,7 @@ const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&am
 const sessionKey = 'livingstones-management-session';
 let auth = null, stones = [], selected = null, record = null, tab = 'finds', noticeTimer;
 let section='management',statsPeriod='30',statsTarget='all',statsData=null,statsRun=0;
-const qrCache=new Map();
+const qrCache=new Map(),qrLabelCodes=new Map();
 if (location.protocol === 'http:' && !['localhost','127.0.0.1'].includes(location.hostname)) location.replace('https:'+location.href.slice(5));
 try { auth = JSON.parse(sessionStorage.getItem(sessionKey)); } catch {}
 function notice(message, error=false) {
@@ -12,7 +12,7 @@ function notice(message, error=false) {
   clearTimeout(noticeTimer); noticeTimer=setTimeout(()=>el.hidden=true,7000);
 }
 function signedOut() {
-  auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
+  qrLabelCodes.clear();auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
   statsRun++;statsData=null;$('#admin-tabs').hidden=true;$('#management-panel').hidden=true;$('#statistics').hidden=true;
   $('#login').hidden=false;$('#dashboard').hidden=true;$('#editor').hidden=true;$('#logout').hidden=true;
   if ($('#record-dialog').open) $('#record-dialog').close();
@@ -99,17 +99,25 @@ function qrFor(stone){
   }
   return qrCache.get(stone.id);
 }
+function labelCode(stone){return stone.demo?stone.code:qrLabelCodes.get(stone.id)||'';}
 function qrPanel(stone){
-  const qr=qrFor(stone),url='https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id);
-  return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="stone-qr" data-error-correction="H" data-quiet-zone="4">${qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name})}</div><a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
+  const code=labelCode(stone),qr=qrFor(stone),url='https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id);
+  return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="stone-qr" data-error-correction="H" data-quiet-zone="4">${qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name})}</div>${code?`<p class="qr-find-code"><span>Find Code</span><strong>${escapeHTML(code)}</strong></p>`:`<form class="qr-code-form" id="qr-code-form"><label>Find Code<input name="code" autocomplete="off" required maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label><p class="form-hint">Enter the existing code to add it to the label. It is kept only for this signed-in session.</p><button type="submit">Show Find Code</button></form>`}<a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
+}
+function qrLabelSVG(stone){
+  const qr=qrFor(stone),code=labelCode(stone),size=(qr.getModuleCount()+8)*4;
+  const svg=qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name});
+  if(!code)return svg;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size+32}"><rect width="100%" height="100%" fill="white"/>${svg.replace('<svg ','<svg width="'+size+'" height="'+size+'" ')}<text x="${size/2}" y="${size+18}" text-anchor="middle" font-family="sans-serif" font-size="${Math.min(12,size/(code.length+11)*1.5)}" fill="black">Find Code: ${escapeHTML(code)}</text></svg>`;
 }
 async function downloadQR(format){
   const stone=stones.find(s=>s.id===selected),qr=qrFor(stone);let blob;
-  if(format==='svg')blob=new Blob([qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name})],{type:'image/svg+xml'});
+  if(format==='svg')blob=new Blob([qrLabelSVG(stone)],{type:'image/svg+xml'});
   else{
-    const scale=24,count=qr.getModuleCount(),canvas=document.createElement('canvas');canvas.width=canvas.height=(count+8)*scale;
+    const scale=24,count=qr.getModuleCount(),canvas=document.createElement('canvas');const code=labelCode(stone);canvas.width=(count+8)*scale;canvas.height=canvas.width+(code?192:0);
     const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.fillStyle='#000';
     for(let row=0;row<count;row++)for(let col=0;col<count;col++)if(qr.isDark(row,col))context.fillRect((col+4)*scale,(row+4)*scale,scale,scale);
+    if(code){context.font='bold '+Math.min(72,Math.floor(canvas.width/(code.length+11)*1.5))+'px sans-serif';context.textAlign='center';context.fillText('Find Code: '+code,canvas.width/2,canvas.width+110);}
     blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
   }
   if(!blob)throw new Error('Could not prepare the QR download.');
@@ -177,7 +185,10 @@ $('#record-form').addEventListener('submit',async event=>{
   try {const data=await api(`stones/${selected}/${record.kind}/${record.id}`,'PATCH',body);$('#record-dialog').close();updateStone(data);notice('Changes saved.');}catch(e){$('#record-error').textContent=e.message;$('#record-error').hidden=false;}finally{button.disabled=false;}
 });
 $('#editor').addEventListener('submit',event=>{
-  if(event.target.id!=='stone-form')return;event.preventDefault();const body=Object.fromEntries(new FormData(event.target));body.demo=body.demo==='demo';withButton(event.submitter,async()=>{const data=await api('stones/'+selected,'PATCH',body);updateStone(data);notice('Stone saved.');});
+  if(event.target.id==='qr-code-form'){
+    event.preventDefault();withButton(event.submitter,async()=>{const code=new FormData(event.target).get('code');const data=await api('stones/'+selected+'/label-code','POST',{code});qrLabelCodes.set(selected,data.code);renderEditor();});return;
+  }
+  if(event.target.id!=='stone-form')return;event.preventDefault();const body=Object.fromEntries(new FormData(event.target));body.demo=body.demo==='demo';withButton(event.submitter,async()=>{const data=await api('stones/'+selected,'PATCH',body);if(body.code)qrLabelCodes.set(selected,body.code.toUpperCase());updateStone(data);notice('Stone saved.');});
 });
 document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;

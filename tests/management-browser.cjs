@@ -23,6 +23,10 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
      result={period,since:today,timezone:'UTC',range:{from:period==='all'?today:new Date(Date.parse(today)-(Number(period)-1)*86400000).toISOString().slice(0,10),to:today},targets:[{key:'home',name:'Homepage',kind:'home',totalViews:10,beforeRange:0},...stones.map(s=>({key:'stone:'+s.id,name:s.name,kind:'stone',totalViews:s.views,beforeRange:0}))],days:[{day:today,target:'home',views:10},...stones.map(s=>({day:today,target:'stone:'+s.id,views:s.views}))]};
     }else if(parts[4]){
      const s=stones.find(s=>s.id===parts[4]);
+     if(parts[5]==='label-code'){
+      if(req.postDataJSON().code==='PRIVATE9876')result={code:'PRIVATE9876'};else{status=403;result={error:'That Find Code does not match this stone.'};}
+      return route.fulfill({status,contentType:'application/json',body:JSON.stringify(result)});
+     }
      if(method==='PATCH'&&parts[5]){
       const body=req.postDataJSON(),item=s[parts[5]].find(r=>r.id===parts[6]);Object.assign(item,body);
       if(parts[5]==='comments')Object.assign(s.finds.find(f=>f.id===item.findId),{nickname:item.nickname,message:item.message});
@@ -45,12 +49,22 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#sort').selectOption('views');assert.match(await page.locator('.admin-stone-card').first().innerText(),/Ocean Echo/);
    await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
    assert.equal(await page.locator('[name=story]').count(),0);
+   assert.equal(await page.locator('.qr-find-code strong').innerText(),'8451');
+   assert.equal(await page.locator('.admin-logo').evaluate(el=>el.complete&&el.naturalWidth>0),true);
    assert.equal(await page.locator('.stone-qr').getAttribute('data-error-correction'),'H');
+   const svgEvent=page.waitForEvent('download');await page.locator('[data-download-qr=svg]').click();const svgDownload=await svgEvent;assert.match(fs.readFileSync(await svgDownload.path(),'utf8'),/Find Code: 8451/);
    const downloadPromise=page.waitForEvent('download');await page.locator('[data-download-qr=png]').click();
    const download=await downloadPromise;const bytes=fs.readFileSync(await download.path());
    const decoder=await context.newPage();await decoder.route('http://127.0.0.1:8137/qr-decoder',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><html></html>'}));await decoder.goto('http://127.0.0.1:8137/qr-decoder');
-   const pixels=await decoder.evaluate(async base64=>{const image=new Image();image.src='data:image/png;base64,'+base64;await image.decode();const canvas=document.createElement('canvas');canvas.width=canvas.height=image.width/6;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.drawImage(image,0,0,canvas.width,canvas.height);return {width:canvas.width,height:canvas.height,data:Array.from(c.getImageData(0,0,canvas.width,canvas.height).data)};},bytes.toString('base64'));
-   const decoded=require('jsqr')(new Uint8ClampedArray(pixels.data),pixels.width,pixels.height);assert.equal(decoded.data,'https://livingstones.rodulab.com/?stone=A1');await decoder.close();
+   const pixels=await decoder.evaluate(async base64=>{const image=new Image();image.src='data:image/png;base64,'+base64;await image.decode();const canvas=document.createElement('canvas');canvas.width=image.width/6;canvas.height=image.height/6;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.drawImage(image,0,0,canvas.width,canvas.height);return {width:canvas.width,height:canvas.height,data:Array.from(c.getImageData(0,0,canvas.width,canvas.height).data)};},bytes.toString('base64'));
+   const decoded=require('jsqr')(new Uint8ClampedArray(pixels.data),pixels.width,pixels.height);assert.equal(decoded.data,'https://livingstones.rodulab.com/?stone=A1');const svgPixels=await decoder.evaluate(async base64=>{const image=new Image();image.src='data:image/svg+xml;base64,'+base64;await image.decode();const canvas=document.createElement('canvas');canvas.width=392;canvas.height=456;const c=canvas.getContext('2d');c.drawImage(image,0,0,canvas.width,canvas.height);return {width:canvas.width,height:canvas.height,data:Array.from(c.getImageData(0,0,canvas.width,canvas.height).data)};},fs.readFileSync(await svgDownload.path()).toString('base64'));
+   assert.equal(require('jsqr')(new Uint8ClampedArray(svgPixels.data),svgPixels.width,svgPixels.height).data,'https://livingstones.rodulab.com/?stone=A1');
+   await decoder.close();
+   const realLabel=stones.find(s=>s.id==='A1');realLabel.demo=false;delete realLabel.code;
+   await page.reload();await page.locator('#qr-code-form').waitFor();
+   await page.locator('#qr-code-form input').fill('WRONG');await page.locator('#qr-code-form button').click();await page.waitForFunction(()=>document.querySelector('#notice').textContent==='That Find Code does not match this stone.');assert.equal(await page.locator('.qr-find-code').count(),0);
+   await page.locator('#qr-code-form input').fill('PRIVATE9876');await page.locator('#qr-code-form button').click();await page.locator('.qr-find-code strong').waitFor();assert.equal(await page.locator('.qr-find-code strong').innerText(),'PRIVATE9876');assert.equal(await page.evaluate(()=>Object.values(sessionStorage).join(' ').includes('PRIVATE9876')),false);
+   realLabel.demo=true;realLabel.code='8451';await page.reload();await page.locator('#stone-form').waitFor();
    await page.locator('[data-section=stats]').click();await page.locator('#traffic-summary strong').first().waitFor();
    assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'40');
    await page.locator('#stats-target').selectOption('home');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'10');

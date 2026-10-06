@@ -322,6 +322,9 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal((await admin("stones/A1","PATCH",{...managed,demo:false})).status,400);
     assert.equal((await admin("stones/A1","PATCH",{...managed,demo:false,code:"8451"})).status,400);
     assert.equal((await admin("stones/A1","PATCH",{...managed,demo:false,code:"PRIVATE9876"})).status,200);
+    assert.equal((await admin('stones/A1/label-code','POST',{code:'WRONG'})).status,403);
+    const label=await admin('stones/A1/label-code','POST',{code:'PRIVATE9876'});assert.equal(label.status,200);assert.equal(label.body.code,'PRIVATE9876');
+    assert.equal((await call('/admin/stones/A1/label-code',{code:'PRIVATE9876'})).status,401);
     const realAdmin=(await call("/stones/A1")).body.stone;assert.equal(realAdmin.demo,false);assert.ok(!('code' in realAdmin));
     assert.equal((await call("/stones/A1/verify",{code:"PRIVATE9876"})).status,200);
     assert.equal((await admin("stones/A1","PATCH",{...managed,name:originalName,demo:true,code:"8451"})).status,200);

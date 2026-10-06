@@ -1054,19 +1054,18 @@ body:has(dialog[open]) {
   background: #303944;
   border-bottom: 1px solid var(--line);
   padding: 10px 12px;
-  font-size: var(--table-secondary);
+  font-size: var(--table-primary);
   font-weight: 700;
   text-transform: none;
   letter-spacing: .25px;
   color: var(--muted);
 }
+/* Equal numeric columns; the last visible information column aligns right. */
 .stone-table th:nth-child(1) { width: 22%; }
 .stone-table th:nth-child(2) { width: 14%; }
-.stone-table th:nth-child(3) { width: 9%; }
-.stone-table th:nth-child(4) { width: 7%; }
-.stone-table th:nth-child(5) { width: 9%; }
-.stone-table th:nth-child(6) { width: 23%; }
-.stone-table th:nth-child(7) { width: 14%; }
+.stone-table th:nth-child(3), .stone-table th:nth-child(4), .stone-table th:nth-child(5) { width: 10%; }
+.stone-table th:nth-child(6) { width: 17%; }
+.stone-table th:nth-child(7) { width: 15%; }
 .stone-table th:nth-child(8) { width: 2%; }
 .stone-row { cursor: pointer; transition: background .15s; }
 .stone-row:hover, .stone-row:focus-within { background: #343c4b; }
@@ -1113,39 +1112,41 @@ body:has(dialog[open]) {
 .stone-table .last-date { color: var(--muted); font-size: var(--table-secondary); font-weight: 400; white-space: nowrap; }
 .stone-table .overview-location time { white-space: normal; }
 .stone-table th small { display: block; font-size: var(--table-secondary); font-weight: 400; line-height: 1.5; margin-top: 2px; }
+.stone-table .overview-latest strong { color: var(--yellow); }
+.sorted-heading { display: inline-flex; align-items: center; gap: 6px; }
+.heading-copy { display: block; }
+.sorted-heading .sort-indicator { margin: 0; flex: none; }
 .stone-table .overview-arrow { padding-inline: 0; color: var(--purple); text-align: right; }
 @media (max-width: 1100px) {
   .stone-table th:nth-child(7), .overview-latest { display: none; }
-  .stone-table th:nth-child(1) { width: 25%; }
-  .stone-table th:nth-child(2) { width: 16%; }
+  .stone-table th:nth-child(1) { width: 28%; }
+  .stone-table th:nth-child(2) { width: 18%; }
   .stone-table th:nth-child(3) { width: 10%; }
-  .stone-table th:nth-child(4) { width: 8%; }
+  .stone-table th:nth-child(4) { width: 10%; }
   .stone-table th:nth-child(5) { width: 10%; }
-  .stone-table th:nth-child(6) { width: 29%; text-align: right; }
+  .stone-table th:nth-child(6) { width: 22%; text-align: right; }
   .stone-table .overview-location { text-align: right; }
   .stone-table .last-place { justify-content: flex-end; }
 }
 @media (max-width: 800px) {
   .stone-table th:nth-child(2), .overview-start { display: none; }
   .stone-table .stone-born { display: block; }
-  .stone-table th:nth-child(1) { width: 34%; }
+  .stone-table th:nth-child(1) { width: 36%; }
   .stone-table th:nth-child(3) { width: 12%; }
-  .stone-table th:nth-child(4) { width: 9%; }
-  .stone-table th:nth-child(5) { width: 10%; }
-  .stone-table th:nth-child(6) { width: 33%; }
+  .stone-table th:nth-child(4) { width: 12%; }
+  .stone-table th:nth-child(5) { width: 12%; }
+  .stone-table th:nth-child(6) { width: 26%; }
   .stone-table th, .stone-table td { padding-inline: 8px; }
 }
 @media (max-width: 600px) {
   .intro-copy p { max-width: none; font-size: 14px; }
   .stone-table th:nth-child(8), .overview-arrow { display: none; }
   .stone-table { --table-primary: 12px; --table-secondary: 10px; }
-  .stone-table th:nth-child(1) { width: 35%; }
-  .stone-table th:nth-child(3) { width: 10%; }
-  .stone-table th:nth-child(4) { width: 9%; }
-  .stone-table th:nth-child(5) { width: 17%; }
-  .stone-table th:nth-child(6) { width: 29%; }
-  .stone-table th { font-size: var(--table-secondary); letter-spacing: 0; line-height: 1.5; padding: 9px 3px; }
-  .stone-table td { padding-inline: 3px; }
+  .stone-table th:nth-child(1) { width: 32%; }
+  .stone-table th:nth-child(3), .stone-table th:nth-child(4), .stone-table th:nth-child(5) { width: 16%; }
+  .stone-table th:nth-child(6) { width: 20%; }
+  .stone-table th { font-size: var(--table-primary); letter-spacing: 0; line-height: 1.5; padding: 9px 2px; }
+  .stone-table td { padding-inline: 2px; }
   .stone-table .overview-location { padding-inline: 2px; }
   .stone-link { gap: 5px; }
   .stone-table .stone-identity > strong { white-space: normal; }
@@ -1967,4 +1968,12 @@ body:has(dialog[open]) {
   height: auto;
   overflow: visible;
   clip-path: none;
+}
+@media (max-width: 360px) {
+ .stone-table { --table-primary: 11px; --table-secondary: 9px; }
+ .stone-table th:nth-child(1) { width: 30%; }
+ .stone-table th:nth-child(3), .stone-table th:nth-child(4), .stone-table th:nth-child(5) { width: 16%; padding-inline: 0; }
+ .stone-table th:nth-child(6) { width: 22%; }
+ .sorted-heading { gap: 3px; max-width: 100%; }
+ .heading-copy { min-width: 0; }
 }
