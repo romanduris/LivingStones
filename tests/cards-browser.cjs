@@ -33,6 +33,18 @@ process.on('exit', () => server.kill());
       await page.waitForFunction(() => [...document.querySelectorAll('.card-portrait img')].every(img => img.complete && img.naturalWidth > 0));
       if ([1440, 1098, 375, 320].includes(width)) await page.locator('#explore').screenshot({ style: ".site-header, .skip-link { visibility: hidden !important; }", path: `/tmp/livingstones-cards-${width}.png` });
     }
+    // Rotate the same viewport back and forth to exercise live media query changes.
+    for (const [width, height, columns] of [[375, 812, 3], [812, 375, 5], [844, 390, 5], [932, 430, 5], [568, 320, 5], [320, 568, 3]]) {
+      await page.setViewportSize({ width, height });
+      assert.equal(await page.locator('.stone-card-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), columns, `Columns at ${width} × ${height}`);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `No overflow at ${width} × ${height}`);
+      assert.ok(await page.locator('.journey-card').evaluateAll(cards => cards.every(card => card.scrollWidth <= card.clientWidth)), 'Rotated cards fit');
+      assert.ok(await page.locator('.journey-totals').evaluate(el => el.scrollWidth <= el.clientWidth), 'Larger statistics fit');
+      assert.ok(await page.locator('.journey-totals dd').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize) >= 28), 'Statistic values are larger');
+      assert.ok(await page.locator('.journey-totals dt').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize) >= 14), 'Statistic labels are larger');
+      if (width === 812) await page.locator('#explore').screenshot({ style: ".site-header, .skip-link { visibility: hidden !important; }", path: '/tmp/livingstones-cards-landscape.png' });
+      if (width === 320) await page.locator('.journey-totals').screenshot({ path: '/tmp/livingstones-larger-statistics.png' });
+    }
     await page.locator('#stone-search').fill('Luna');
     assert.equal(await page.locator('.journey-card').count(), 1);
     assert.equal(await page.locator('.journey-card h3').textContent(), 'Little Luna');
@@ -95,6 +107,6 @@ process.on('exit', () => server.kill());
     await page.locator('#world-map .leaflet-marker-icon').first().click();
     await page.locator('.stone-overview-popup').waitFor();
     assert.deepEqual(errors, []);
-    console.log('Card grid, search, age/distance/recency sorting, map without name labels, view switches and whole-card mouse/keyboard navigation and Czech flags passed at eight widths.');
+    console.log('Card grid, search, age/distance/recency sorting, map without name labels, view switches and whole-card mouse/keyboard navigation and Czech flags passed at eight widths, with phone rotation and enlarged statistics.');
   } finally { await browser.close(); server.kill(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

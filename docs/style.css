@@ -1157,10 +1157,11 @@ body:has(dialog[open]) {
   .born-compact { display: inline; }
 }
 
-/* Compact totals lead the map; all values come from the repository. */
+/* Prominent totals lead the map; all values come from the repository. */
 .map-overview {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 24px;
   margin-block: 0 17px;
@@ -1178,14 +1179,14 @@ body:has(dialog[open]) {
 .journey-totals dt {
   order: 2;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 16px;
 }
 .journey-totals dd {
   margin: 0;
   color: var(--ink);
   font-family: var(--heading-font);
   font-weight: 600;
-  font-size: 22px;
+  font-size: 32px;
   line-height: 1;
 }
 .journey-totals > div:nth-child(2) dd {
@@ -1259,15 +1260,15 @@ body:has(dialog[open]) {
   }
   .journey-totals > div {
     display: flex;
-    flex-direction: row;
-    align-items: baseline;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 4px;
   }
   .journey-totals dt {
-    font-size: 11px;
+    font-size: 14px;
   }
   .journey-totals dd {
-    font-size: 18px;
+    font-size: 28px;
   }
   .map-hint {
     display: none;
@@ -1983,7 +1984,7 @@ body:has(dialog[open]) {
   .stone-filters button { flex: 1; padding-inline: 6px; }
   .stone-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 }
-@media (max-width: 480px) {
+@media (max-width: 480px), (orientation: landscape) and (max-height: 500px) and (max-width: 1000px) {
   .stone-search { min-width: 120px; }
   .stone-toolbar button, .stone-view-switch a { padding-inline: 8px; }
   .stone-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
@@ -2002,6 +2003,10 @@ body:has(dialog[open]) {
   .card-location > span { gap: 3px; max-width: 100%; }
   .card-location .country-flag { width: 12px; height: 8px; }
   .card-location time { font-size: 9px; }
+}
+/* Five compact cards when a phone turns sideways. */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1000px) {
+  .stone-card-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .journey-card, .card-portrait img { transition: none; }
