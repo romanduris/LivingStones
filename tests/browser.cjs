@@ -739,16 +739,16 @@ process.on("exit", () => server?.kill());
         return styles.every(s=>s.fontSize===styles[0].fontSize && s.fontWeight==="700");
       }));
       assert.doesNotMatch(await page.locator(".overview-location time").first().innerText(), /\d{1,2}:\d{2}/);
-      assert.match(await page.locator(".overview-location time").first().innerText(), /(Today|\d+d ago) \(\d{1,2} [A-Za-z]+\)/);
+      assert.match(await page.locator(".overview-location time").first().innerText(), /^(Today|\d+d ago)$/);
       assert.match(await page.locator(".overview-age").first().innerText(), /^\d+ d$/);
       assert.match(await page.locator(".stone-table th").first().innerText(), /Name \/ Born/);
-      assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Date \/ Place/);
+      assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Days \/ Place/);
       assert.ok(await page.locator('.stone-table').evaluate(table=>[...table.querySelectorAll('th small')].filter(el=>el.offsetWidth).every(el=>parseFloat(getComputedStyle(el).fontSize)<parseFloat(getComputedStyle(el.closest('th')).fontSize))), 'Header subtitles are smaller than column names');
       const countryHeading = page.locator(".stone-table th").nth(4);
       assert.match(await countryHeading.innerText(), /Countries\s+Visited/);
       assert.ok(await countryHeading.evaluate(el => el.scrollWidth <= el.clientWidth), `Countries fits at ${width}`);
       assert.ok(await page.locator(".stone-table").evaluate(table => {
-        const samples = [...table.querySelectorAll("th, td strong, td time, td small, .last-date")].filter(el => el.offsetWidth);
+        const samples = [...table.querySelectorAll("th, td strong, td time, td small")].filter(el => el.offsetWidth);
         return new Set(samples.map(el => getComputedStyle(el).fontSize)).size === 2;
       }), "Primary headings and table values keep their two font sizes");
       if (width === 320 || width === 1440) await page.locator(".stone-table-frame").screenshot({path: `/tmp/livingstones-table-refined-${width}.png`});
@@ -779,10 +779,9 @@ process.on("exit", () => server?.kill());
         assert.equal(await page.locator(cell).first().isVisible(), true);
       assert.equal(await page.locator(".demo-badge").count(), 5);
       assert.equal(await page.locator(".country-flag").count(), 5);
-      assert.match(
-        await page.locator(".country-key").innerText(),
-        /Countries visited by this stone/,
-      );
+      assert.equal(await page.locator('.country-key').count(),0);
+      assert.equal(await page.locator('.last-date').count(),0);
+      assert.ok(await page.locator('.heading-copy').evaluate(el=>{const text=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);const range=document.createRange();range.selectNodeContents(text);return range.getClientRects().length===1&&el.closest('th').scrollWidth<=el.closest('th').clientWidth;}), `Last Found fits on one line at ${width}`);
       for (const [selector, alignment] of [
         [".overview-stone", "left"],
         [".overview-location", width > 1100 ? "center" : "right"],

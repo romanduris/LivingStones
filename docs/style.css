@@ -1109,12 +1109,11 @@ body:has(dialog[open]) {
 .stone-table .stone-born, .born-compact { display: none; }
 .stone-table .last-place { display: flex; justify-content: center; align-items: center; gap: 4px; }
 .stone-table .last-recency { white-space: nowrap; color: var(--purple); }
-.stone-table .last-date { color: var(--muted); font-size: var(--table-secondary); font-weight: 400; white-space: nowrap; }
 .stone-table .overview-location time { white-space: normal; }
 .stone-table th small { display: block; font-size: max(8px, calc(var(--table-secondary) - 2px)); font-weight: 400; line-height: 1.5; margin-top: 2px; }
 .stone-table .overview-latest strong { color: var(--yellow); }
 .sorted-heading { display: inline-flex; align-items: center; gap: 6px; }
-.heading-copy { display: block; }
+.heading-copy { display: block; white-space: nowrap; }
 .sorted-heading .sort-indicator { margin: 0; flex: none; }
 .stone-table .overview-arrow { padding-inline: 0; color: var(--purple); text-align: right; }
 @media (max-width: 1100px) {
@@ -1142,9 +1141,10 @@ body:has(dialog[open]) {
   .intro-copy p { max-width: none; font-size: 14px; }
   .stone-table th:nth-child(8), .overview-arrow { display: none; }
   .stone-table { --table-primary: 12px; --table-secondary: 10px; }
-  .stone-table th:nth-child(1) { width: 32%; }
-  .stone-table th:nth-child(3), .stone-table th:nth-child(4), .stone-table th:nth-child(5) { width: 16%; }
-  .stone-table th:nth-child(6) { width: 20%; }
+  .stone-table th:nth-child(1) { width: 30%; }
+  .stone-table th:nth-child(3), .stone-table th:nth-child(4), .stone-table th:nth-child(5) { width: 16%; padding-inline: 0; }
+  .stone-table th:nth-child(6) { width: 22%; padding-inline: 1px; }
+  .sorted-heading { gap: 1px; }
   .stone-table th { font-size: var(--table-primary); letter-spacing: 0; line-height: 1.5; padding: 9px 2px; }
   .stone-table td { padding-inline: 2px; }
   .stone-table .overview-location { padding-inline: 2px; }
@@ -1299,18 +1299,6 @@ body:has(dialog[open]) {
   border-radius: 1px;
   box-shadow: 0 0 0 1px #ffffff20;
 }
-.country-key {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
-  margin-top: 13px;
-  line-height: 1.5;
-}
-.country-key + .demo-note {
-  margin-top: 5px;
-}
 .story-count {
   color: var(--purple);
 }
@@ -1339,9 +1327,6 @@ body:has(dialog[open]) {
   }
   .hello-stat {
     font-size: 11px;
-  }
-  .country-key {
-    font-size: 10px;
   }
 }
 /* Saved moments use the existing compact, accessible layout. */
@@ -1973,7 +1958,7 @@ body:has(dialog[open]) {
  .stone-table { --table-primary: 11px; --table-secondary: 9px; }
  .stone-table th:nth-child(1) { width: 30%; }
  .stone-table th:nth-child(3), .stone-table th:nth-child(4), .stone-table th:nth-child(5) { width: 16%; padding-inline: 0; }
- .stone-table th:nth-child(6) { width: 22%; }
- .sorted-heading { gap: 3px; max-width: 100%; }
+ .stone-table th:nth-child(6) { width: 22%; padding-inline: 1px; }
+ .sorted-heading { gap: 1px; max-width: 100%; }
  .heading-copy { min-width: 0; }
 }
