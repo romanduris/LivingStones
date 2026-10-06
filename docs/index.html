@@ -25,7 +25,7 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=60" />
+    <link rel="stylesheet" href="style.css?v=61" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="config.js?v=1" defer></script>
     <script src="app.js?v=60" defer></script>
@@ -88,7 +88,10 @@
           </dl>
         </div>
         <div class="map-disclosure">
-          <button id="map-toggle" class="map-toggle" type="button" aria-expanded="true" aria-controls="world-map-body" aria-label="Hide map" title="Hide map"><span aria-hidden="true">▧</span> Map <span class="map-toggle-chevron" aria-hidden="true">⌃</span></button>
+          <button id="map-toggle" class="map-toggle" type="button" aria-expanded="true" aria-controls="world-map-body" aria-label="Hide map" title="Hide map">
+            <svg class="map-toggle-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Map</span>
+          </button>
           <div id="world-map-body">
             <div class="map-frame">
               <div

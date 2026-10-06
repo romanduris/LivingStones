@@ -198,12 +198,13 @@ nav a:hover {
   background: var(--teal);
   flex-shrink: 0;
 }
-.map-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; margin-bottom: 8px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font-size: 13px; }
-.map-toggle:hover { background: #354750; }
-.map-toggle > span:first-child { color: var(--teal); }
-.map-toggle-chevron { color: var(--muted); }
-.map-toggle[aria-expanded="false"] { margin-bottom: 0; }
-.map-toggle[aria-expanded="false"] .map-toggle-chevron { transform: rotate(180deg); }
+.map-disclosure { border: 1px solid var(--line); border-radius: 7px; }
+.map-toggle { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 7px 11px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-align: left; }
+.map-toggle:hover { background: #ffffff06; color: var(--ink); }
+.map-toggle[aria-expanded="true"] { border-bottom: 1px solid var(--line); border-radius: 6px 6px 0 0; }
+.map-toggle-chevron { flex-shrink: 0; }
+.map-toggle[aria-expanded="false"] .map-toggle-chevron { transform: rotate(-90deg); }
+.map-disclosure .map-frame { border: 0; border-radius: 0 0 6px 6px; }
 .map-frame {
   position: relative;
   border: 1px solid var(--line);
