@@ -703,20 +703,9 @@ process.on("exit", () => server?.kill());
         mapLayout.height,
         width <= 360 ? 284 : width <= 700 ? 304 : width <= 1000 ? 420 : 460,
       );
-      const contentTops = await page
-        .locator(".stone-row")
-        .first()
-        .evaluate((row) =>
-          [
-            ...row.querySelectorAll(
-              ".stone-identity > strong, .overview-age > strong, .overview-finds > strong, .overview-countries > strong, .overview-location > time",
-            ),
-          ].map((el) => el.getBoundingClientRect().top),
-        );
-      assert.ok(
-        Math.max(...contentTops) - Math.min(...contentTops) <= 1,
-        "First text lines align across columns",
-      );
+      assert.ok(await page.locator(".stone-row").first().evaluate(row =>
+        [...row.cells].filter(el => el.offsetWidth).every(el => getComputedStyle(el).verticalAlign === "middle")
+      ), "Cells align vertically in the middle");
 
       assert.equal(
         await page
@@ -733,8 +722,18 @@ process.on("exit", () => server?.kill());
         return styles.every(s=>s.fontSize===styles[0].fontSize && s.fontWeight==="700");
       }));
       assert.doesNotMatch(await page.locator(".overview-location time").first().innerText(), /\d{1,2}:\d{2}/);
-      assert.match(await page.locator(".overview-location time").first().innerText(), /\d{1,2} [A-Za-z]+ \d{4}/);
+      assert.match(await page.locator(".overview-location time").first().innerText(), /(Today|\d+ days? ago) \(\d{1,2} [A-Za-z]+\)/);
       assert.match(await page.locator(".overview-age").first().innerText(), /^\d+$/);
+      assert.match(await page.locator(".stone-table th").first().innerText(), /Name \/ Born/);
+      assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Date \/ Place/);
+      const countryHeading = page.locator(".stone-table th").nth(4);
+      assert.equal(await countryHeading.innerText(), "Countries");
+      assert.ok(await countryHeading.evaluate(el => el.scrollWidth <= el.clientWidth), `Countries fits at ${width}`);
+      assert.ok(await page.locator(".stone-table").evaluate(table => {
+        const samples = [...table.querySelectorAll("th, th small, td strong, td time, td small, .last-date")].filter(el => el.offsetWidth);
+        return new Set(samples.map(el => getComputedStyle(el).fontSize)).size === 2;
+      }), "Table headings and values use exactly two font sizes");
+      if (width === 320 || width === 1440) await page.locator(".stone-table-frame").screenshot({path: `/tmp/livingstones-table-refined-${width}.png`});
       assert.equal(
         await page
           .locator(".stone-table-frame")

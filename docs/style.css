@@ -1042,19 +1042,21 @@ body:has(dialog[open]) {
   overflow: hidden;
 }
 .stone-table {
+  --table-primary: 14px;
+  --table-secondary: 12px;
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   table-layout: fixed;
-  font-size: 13px;
+  font-size: var(--table-primary);
 }
 .stone-table th {
   background: #303944;
   border-bottom: 1px solid var(--line);
   padding: 10px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
+  font-size: var(--table-secondary);
+  font-weight: 700;
+  text-transform: none;
   letter-spacing: .25px;
   color: var(--muted);
 }
@@ -1071,7 +1073,7 @@ body:has(dialog[open]) {
 .stone-table td {
   padding: 15px 12px;
   border-bottom: 1px solid var(--line);
-  vertical-align: top;
+  vertical-align: middle;
   text-align: center;
   line-height: 1.5;
 }
@@ -1082,7 +1084,7 @@ body:has(dialog[open]) {
 .stone-table td strong, .stone-table td time {
   display: block;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--table-primary);
   font-weight: 700;
   line-height: 20px;
   white-space: nowrap;
@@ -1092,7 +1094,7 @@ body:has(dialog[open]) {
 .stone-table td small {
   display: block;
   margin-top: 2px;
-  font-size: 11px;
+  font-size: var(--table-secondary);
   font-weight: 400;
   color: var(--muted);
   line-height: 17px;
@@ -1100,14 +1102,17 @@ body:has(dialog[open]) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.stone-link { display: flex; gap: 10px; align-items: flex-start; width: 100%; }
+.stone-link { display: flex; gap: 10px; align-items: center; width: 100%; }
 .stone-visual { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
 .stone-thumbnail { display: block; width: 38px; height: 38px; border-radius: 5px; overflow: hidden; }
 .stone-thumbnail img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .stone-identity { min-width: 0; }
-.stone-table .stone-born, .born-compact, .ago-compact, .countries-heading-compact { display: none; }
+.stone-table .stone-born, .born-compact { display: none; }
 .stone-table .last-place { display: flex; justify-content: center; align-items: center; gap: 4px; }
-.last-ago { color: var(--purple); font-size: 11px; font-weight: 400; }
+.stone-table .last-recency { white-space: nowrap; }
+.stone-table .last-date { color: var(--muted); font-size: var(--table-secondary); font-weight: 400; white-space: nowrap; }
+.stone-table .overview-location time { white-space: normal; }
+.stone-table th small { display: block; font-size: var(--table-secondary); font-weight: 400; line-height: 1.5; margin-top: 2px; }
 .stone-table .overview-arrow { padding-inline: 0; color: var(--purple); text-align: right; }
 @media (max-width: 1100px) {
   .stone-table th:nth-child(7), .overview-latest { display: none; }
@@ -1133,23 +1138,22 @@ body:has(dialog[open]) {
 @media (max-width: 600px) {
   .intro-copy p { max-width: none; font-size: 14px; }
   .stone-table th:nth-child(8), .overview-arrow { display: none; }
-  .stone-table th:nth-child(1) { width: 34%; }
+  .stone-table { --table-primary: 12px; --table-secondary: 10px; }
+  .stone-table th:nth-child(1) { width: 35%; }
   .stone-table th:nth-child(3) { width: 10%; }
-  .stone-table th:nth-child(4) { width: 8%; }
-  .stone-table th:nth-child(5) { width: 8%; }
-  .stone-table th:nth-child(6) { width: 40%; }
-  .stone-table th { font-size: 8px; letter-spacing: 0; line-height: 1.5; padding: 9px 3px; }
-  .age-heading-unit { display: block; }
+  .stone-table th:nth-child(4) { width: 9%; }
+  .stone-table th:nth-child(5) { width: 17%; }
+  .stone-table th:nth-child(6) { width: 29%; }
+  .stone-table th { font-size: var(--table-secondary); letter-spacing: 0; line-height: 1.5; padding: 9px 3px; }
   .stone-table td { padding-inline: 3px; }
   .stone-table .overview-location { padding-inline: 2px; }
   .stone-link { gap: 5px; }
+  .stone-table .stone-identity > strong { white-space: normal; }
   .stone-thumbnail { width: 27px; height: 27px; border-radius: 4px; }
-  .stone-table td strong, .stone-table td time { font-size: 11px; line-height: 18px; }
-  .stone-table td small { font-size: 9px; line-height: 14px; }
-  .last-ago { font-size: 9px; }
-  .born-full, .ago-full, .countries-heading-full { display: none; }
-  .born-compact, .ago-compact, .countries-heading-compact { display: inline; }
-  .stone-table .countries-heading-compact.sr-only { display: block; }
+  .stone-table td strong, .stone-table td time { font-size: var(--table-primary); line-height: 18px; }
+  .stone-table td small { font-size: var(--table-secondary); line-height: 14px; }
+  .born-full { display: none; }
+  .born-compact { display: inline; }
 }
 
 /* Compact totals lead the map; all values come from the repository. */
