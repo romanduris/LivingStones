@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#202930" />
     <meta
       name="description"
-      content="Follow nine painted stones around Bratislava. Explore their journeys, meet their finders, and add your own little moment."
+      content="Follow fourteen painted stones around Bratislava. Explore their journeys, meet their finders, and add your own little moment."
     />
     <title>Living Stones — Small stones. Big stories.</title>
     <link rel="icon" href="docs/assets/brand-stone.svg?v=17" type="image/svg+xml" />
@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="docs/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="docs/style.css?v=59" />
+    <link rel="stylesheet" href="docs/style.css?v=60" />
     <script src="docs/vendor/leaflet/leaflet.js" defer></script>
     <script src="docs/config.js?v=1" defer></script>
-    <script src="docs/app.js?v=59" defer></script>
+    <script src="docs/app.js?v=60" defer></script>
   </head>
   <body>
     <svg class="map-tone-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="map-petrol-tone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 0 0 0 1 0" result="inverted"/><feComponentTransfer in="inverted" result="petrol"><feFuncR type="table" tableValues=".075 .18 .5 .76 .94"/><feFuncG type="table" tableValues=".155 .28 .56 .76 .90"/><feFuncB type="table" tableValues=".17 .29 .46 .60 .72"/></feComponentTransfer><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 .82 0 0 0 0 .70 0 0 0 0 .43 0 -6 6 0 -.25" result="border-colors"/><feComponentTransfer in="border-colors" result="borders"><feFuncA type="discrete" tableValues="0 0 0 0 .75"/></feComponentTransfer><feMerge><feMergeNode in="petrol"/><feMergeNode in="borders"/></feMerge></filter></defs></svg>
@@ -126,7 +126,6 @@
             <button type="button" data-stone-view="list" aria-pressed="false" aria-controls="stone-list">List</button>
           </div>
         </div>
-        <p id="stone-results" class="sr-only" role="status" aria-live="polite"></p>
         <div id="stone-cards" class="stone-card-grid" aria-label="Stone journeys"></div>
         <p id="stone-empty" class="stone-empty" hidden>No stones match just yet. Try another name or place.</p>
         <div
@@ -153,6 +152,10 @@
             </thead>
             <tbody id="stone-rows"></tbody>
           </table>
+        </div>
+        <div id="stone-pagination" class="stone-pagination" hidden>
+          <p id="stone-count" role="status" aria-live="polite"></p>
+          <button id="show-more-stones" class="button secondary" type="button" aria-controls="stone-cards" hidden>Show more stones <span aria-hidden="true">↓</span></button>
         </div>
 
       </section>

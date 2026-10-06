@@ -15,13 +15,13 @@ vm.runInContext(
     ";globalThis.stones=DEMO_STONES;",
   data,
 );
-test("nine distinct demo stones have realistic chronological journeys and valid locations", () => {
-  assert.equal(data.stones.length, 9);
-  assert.equal(new Set(data.stones.map((s) => s.id)).size, 9);
-  assert.equal(new Set(data.stones.map((s) => s.image)).size, 9);
+test("fourteen distinct demo stones have realistic chronological journeys and valid locations", () => {
+  assert.equal(data.stones.length, 14);
+  assert.equal(new Set(data.stones.map((s) => s.id)).size, 14);
+  assert.equal(new Set(data.stones.map((s) => s.image)).size, 14);
   assert.equal(
     data.stones.reduce((n, s) => n + s.finds.length, 0),
-    45,
+    70,
   );
   for (const stone of data.stones) {
     assert.equal(stone.started, stone.finds[0].date);

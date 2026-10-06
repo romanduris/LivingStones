@@ -90,14 +90,14 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.ok(ready, logs);
     let result = await call("/stones");
     assert.equal(result.status, 200);
-    assert.equal(result.body.stones.length, 9);
+    assert.equal(result.body.stones.length, 14);
     assert.equal(
       result.body.stones.reduce((n, s) => n + s.finds.length, 0),
-      45,
+      70,
     );
     assert.equal(
       result.body.stones.reduce((n, s) => n + s.comments.length, 0),
-      45,
+      70,
     );
     assert.ok(!JSON.stringify(result.body).includes("code_hash"));
     assert.ok(result.body.stones.every(stone => !("tagline" in stone) && !("story" in stone)));
@@ -294,7 +294,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       const response=await fetch(`http://127.0.0.1:${port}/api/admin/`+path,{method,headers:{Origin:origin,...bearer,...headers,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
       return {status:response.status,body:await response.json()};
     }
-    assert.equal((await admin("stones")).body.stones.length,9);
+    assert.equal((await admin("stones")).body.stones.length,14);
     const beforeViews=(await call("/stones/A1")).body.stone;
     const event=randomUUID();
     const counted=await Promise.all(Array.from({length:4},()=>call("/stones/A1/views",{viewId:event})));

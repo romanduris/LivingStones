@@ -7,7 +7,7 @@ const assetBase = new URL(
 // Image paths can later be replaced by local JPGs or full photo URLs.
 const stoneImageURL = (stone) => {
   const url = new URL(stone.image, assetBase);
-  if (url.origin === new URL(assetBase).origin) url.searchParams.set("v", "58");
+  if (url.origin === new URL(assetBase).origin) url.searchParams.set("v", "60");
   return url.href;
 };
 const escapeHTML = (value) =>
@@ -256,7 +256,17 @@ function disposeMap(id) {
   instance.map.remove();
   mapInstances.delete(id);
 }
-const collectionState = { view: "cards", sort: "recent", search: "" };
+const collectionState = { view: "cards", sort: "recent", search: "", visibleRows: 3 };
+function updateCardPagination() {
+  const cards = [...document.querySelectorAll("#stone-cards .journey-card")];
+  const isCards = collectionState.view === "cards";
+  const columns = isCards ? getComputedStyle($("#stone-cards")).gridTemplateColumns.split(" ").length : 1;
+  const shown = isCards ? Math.min(cards.length, columns * collectionState.visibleRows) : cards.length;
+  cards.forEach((card, index) => { card.hidden = isCards && index >= shown; });
+  $("#stone-pagination").hidden = false;
+  $("#stone-count").textContent = `Showing ${shown} of ${cards.length} ${cards.length === 1 ? "stone" : "stones"}`;
+  $("#show-more-stones").hidden = !isCards || shown >= cards.length;
+}
 function renderCollection() {
   const query = collectionState.search.trim().toLocaleLowerCase();
   const visible = stoneRepository.list().filter(stone => {
@@ -285,7 +295,7 @@ function renderCollection() {
   $("#stone-cards").hidden = collectionState.view !== "cards";
   $("#stone-list").hidden = collectionState.view !== "list" || !stones.length;
   $("#stone-empty").hidden = stones.length !== 0;
-  $("#stone-results").textContent = `${stones.length} ${stones.length === 1 ? "stone" : "stones"} shown`;
+  updateCardPagination();
   document.querySelectorAll("[data-stone-sort]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneSort === collectionState.sort)));
   document.querySelectorAll("[data-stone-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneView === collectionState.view)));
   const heading = $('.stone-table th:nth-child(6)');
@@ -1074,14 +1084,33 @@ $("#map-toggle").addEventListener("click", () => {
 });
 $("#stone-search").addEventListener("input", event => {
   collectionState.search = event.target.value;
+  collectionState.visibleRows = 3;
   renderCollection();
 });
 document.querySelector(".stone-toolbar").addEventListener("click", event => {
   const button = event.target.closest("button");
   if (!button) return;
-  if (button.dataset.stoneView) collectionState.view = button.dataset.stoneView;
-  if (button.dataset.stoneSort) collectionState.sort = button.dataset.stoneSort;
+  if (button.dataset.stoneView && button.dataset.stoneView !== collectionState.view) {
+    collectionState.view = button.dataset.stoneView;
+    collectionState.visibleRows = 3;
+  }
+  if (button.dataset.stoneSort && button.dataset.stoneSort !== collectionState.sort) {
+    collectionState.sort = button.dataset.stoneSort;
+    collectionState.visibleRows = 3;
+  }
   renderCollection();
+});
+$("#show-more-stones").addEventListener("click", () => {
+  const next = document.querySelector("#stone-cards .journey-card[hidden]");
+  collectionState.visibleRows += 3;
+  updateCardPagination();
+  next?.focus({ preventScroll: true });
+  next?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+let paginationResize;
+window.addEventListener("resize", () => {
+  cancelAnimationFrame(paginationResize);
+  paginationResize = requestAnimationFrame(updateCardPagination);
 });
 document.addEventListener("click", (event) => {
   const choice = event.target.closest("[data-language]");

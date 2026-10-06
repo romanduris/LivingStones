@@ -116,7 +116,7 @@ process.on("exit", () => server?.kill());
           const result = await original(...args);
           await page.waitForFunction(
             () =>
-              stoneRepository.list().length === 9 &&
+              stoneRepository.list().length === 14 &&
               document.querySelector("#data-status").hidden,
           );
           if (!(await page.locator("dialog[open]").count())) await page.locator('[data-stone-view="list"]').click();
@@ -155,8 +155,8 @@ process.on("exit", () => server?.kill());
     await page.goto(base);
     await page.waitForTimeout(100);
     assert.equal(desktop.homepageViews,1,"The initial overview counts one homepage opening");
-    assert.equal(await page.locator(".stone-row").count(), 9);
-    assert.deepEqual(await page.locator(".stone-row").evaluateAll(rows=>rows.map(row=>row.dataset.stone)), ["F6","G7","H8","I9","C3","E5","A1","D4","B2"]);
+    assert.equal(await page.locator(".stone-row").count(), 14);
+    assert.deepEqual(await page.locator(".stone-row").evaluateAll(rows=>rows.map(row=>row.dataset.stone)), ["J10","F6","G7","K11","H8","L12","I9","M13","C3","N14","E5","A1","D4","B2"]);
     assert.equal(await page.locator('th[aria-sort="descending"]').count(), 1);
     assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Last Found[\s\S]*↓/i);
     assert.equal(await page.locator('#main-language-menu .language-flag').count(), 4);
@@ -175,7 +175,7 @@ process.on("exit", () => server?.kill());
     await page.locator('#main-language-menu:popover-open').waitFor();
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#main-language-menu:popover-open').count(), 0);
-    assert.equal(await page.locator(".stone-thumbnail img").count(), 9);
+    assert.equal(await page.locator(".stone-thumbnail img").count(), 14);
     assert.equal(await page.locator("#map-legend").count(), 0);
     assert.match(
       await page.locator(".intro-copy").innerText(),
@@ -187,9 +187,9 @@ process.on("exit", () => server?.kill());
     );
     assert.equal(
       await page.locator("#world-map .leaflet-marker-icon").count(),
-      9,
+      14,
     );
-    assert.equal(await page.locator("#total-finds").innerText(), "45");
+    assert.equal(await page.locator("#total-finds").innerText(), "70");
     assert.equal(await page.locator(".intro-copy p").count(), 1);
     assert.equal(await page.locator("#explore-title, #hello-count, #hello-label").count(), 0);
     assert.equal(await page.locator("#total-countries").innerText(), "3");
@@ -220,7 +220,8 @@ process.on("exit", () => server?.kill());
     await page.locator('[data-reset-map="world-map"]').click();
     await page
       .locator('#world-map .leaflet-marker-icon[title^="Sunny Side"]')
-      .click();
+      .focus();
+    await page.keyboard.press('Enter');
     await page.locator(".stone-overview-popup").waitFor();
     assert.equal(await page.locator("dialog[open]").count(), 0);
     assert.equal(await page.evaluate(() => stoneRepository.list().reduce((n,s)=>n+(s.views||0),0)),0,"Opening the map popup does not count a story view");
@@ -486,7 +487,7 @@ process.on("exit", () => server?.kill());
     );
     assert.equal(await phone.locator(".story-feed script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
-    assert.equal(await phone.locator("#total-finds").innerText(), "46");
+    assert.equal(await phone.locator("#total-finds").innerText(), "71");
     assert.equal(await phone.locator(".stone-row").first().getAttribute("data-stone"), "A1");
     assert.equal(await phone.locator(rows).first().locator(".entry-address .manual-badge").innerText(), "Manual");
     assert.match(
@@ -713,7 +714,7 @@ process.on("exit", () => server?.kill());
       );
       assert.equal(
         await page.locator("#world-map .leaflet-marker-icon").count(),
-        9,
+        14,
       );
       assert.equal(await page.locator("#start-find").count(), 0);
       const mapLayout = await page.evaluate(() => {
@@ -803,8 +804,8 @@ process.on("exit", () => server?.kill());
         ".overview-location",
       ])
         assert.equal(await page.locator(cell).first().isVisible(), true);
-      assert.equal(await page.locator(".demo-badge").count(), 9);
-      assert.equal(await page.locator(".stone-table .country-flag").count(), 9);
+      assert.equal(await page.locator(".demo-badge").count(), 14);
+      assert.equal(await page.locator(".stone-table .country-flag").count(), 14);
       assert.equal(await page.locator('.country-key').count(),0);
       assert.equal(await page.locator('.last-date').count(),0);
       assert.ok(await page.locator('.heading-copy').evaluate(el=>{const text=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);const range=document.createRange();range.selectNodeContents(text);return range.getClientRects().length===1&&el.closest('th').scrollWidth<=el.closest('th').clientWidth;}), `Last Found fits on one line at ${width}`);

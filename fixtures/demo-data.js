@@ -584,6 +584,316 @@ const DEMO_STONES = [
       }
     ]
   },
+  {
+    "id": "J10",
+    "demo": true,
+    "name": "Mountain Whisper",
+    "color": "#8d9da8",
+    "theme": "mountain",
+    "image": "stone-10.svg",
+    "code": "8460",
+    "started": "2025-03-15",
+    "finds": [
+      {
+        "date": "2025-03-15",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Daniel",
+        "message": "A tiny mountain for anyone dreaming of the next walk."
+      },
+      {
+        "date": "2025-08-17",
+        "city": "Pezinok",
+        "country": "Slovakia",
+        "lat": 48.2884,
+        "lon": 17.267,
+        "address": "Zámocký park, Mladoboleslavská, Pezinok",
+        "nickname": "Eva",
+        "message": "Found our mountain beside the castle park path."
+      },
+      {
+        "date": "2026-02-22",
+        "city": "Modra",
+        "country": "Slovakia",
+        "lat": 48.3344,
+        "lon": 17.3075,
+        "address": "Town garden, Modra",
+        "nickname": "Milan",
+        "message": "Taking a quiet friend to the foot of the Little Carpathians."
+      },
+      {
+        "date": "2026-07-12",
+        "city": "Devín",
+        "country": "Slovakia",
+        "lat": 48.1735,
+        "lon": 16.9783,
+        "address": "Castle riverside path, Devín, Bratislava",
+        "nickname": "Sára",
+        "message": "A little peak with a lovely view of the Danube."
+      },
+      {
+        "date": "2026-10-04",
+        "city": "Hainburg",
+        "country": "Austria",
+        "lat": 48.1463,
+        "lon": 16.944,
+        "address": "Donaulände, riverside promenade, Hainburg an der Donau",
+        "nickname": "Ben",
+        "message": "Left it by the riverside, ready for another adventure."
+      }
+    ]
+  },
+  {
+    "id": "K11",
+    "demo": true,
+    "name": "Star Scout",
+    "color": "#c3ad78",
+    "theme": "star",
+    "image": "stone-11.svg",
+    "code": "8461",
+    "started": "2025-11-09",
+    "finds": [
+      {
+        "date": "2025-11-09",
+        "city": "Devín",
+        "country": "Slovakia",
+        "lat": 48.1735,
+        "lon": 16.9783,
+        "address": "Castle riverside path, Devín, Bratislava",
+        "nickname": "Nora",
+        "message": "Painted a small star to guide the next traveller home."
+      },
+      {
+        "date": "2026-01-18",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Tom",
+        "message": "This star made our winter walk a bit brighter."
+      },
+      {
+        "date": "2026-04-19",
+        "city": "Hainburg",
+        "country": "Austria",
+        "lat": 48.1463,
+        "lon": 16.944,
+        "address": "Donaulände, riverside promenade, Hainburg an der Donau",
+        "nickname": "Lili",
+        "message": "A pocket-sized explorer on the way to Austria."
+      },
+      {
+        "date": "2026-08-16",
+        "city": "Vienna",
+        "country": "Austria",
+        "lat": 48.2035,
+        "lon": 16.38,
+        "address": "Stadtpark, Parkring, Vienna",
+        "nickname": "David",
+        "message": "Our little star came along for a day in the city."
+      },
+      {
+        "date": "2026-10-02",
+        "city": "Pezinok",
+        "country": "Slovakia",
+        "lat": 48.2884,
+        "lon": 17.267,
+        "address": "Zámocký park, Mladoboleslavská, Pezinok",
+        "nickname": "Maja",
+        "message": "Left it in the park for a new friend to discover."
+      }
+    ]
+  },
+  {
+    "id": "L12",
+    "demo": true,
+    "name": "Tiny Turtle",
+    "color": "#97b09a",
+    "theme": "turtle",
+    "image": "stone-12.svg",
+    "code": "8462",
+    "started": "2025-09-14",
+    "finds": [
+      {
+        "date": "2025-09-14",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Kata",
+        "message": "A slow little turtle: there is always time to enjoy the journey."
+      },
+      {
+        "date": "2025-12-07",
+        "city": "Rajka",
+        "country": "Hungary",
+        "lat": 47.9985,
+        "lon": 17.1981,
+        "address": "Village park, Rajka",
+        "nickname": "Áron",
+        "message": "Taking our turtle on a visit across the border."
+      },
+      {
+        "date": "2026-03-15",
+        "city": "Hainburg",
+        "country": "Austria",
+        "lat": 48.1463,
+        "lon": 16.944,
+        "address": "Donaulände, riverside promenade, Hainburg an der Donau",
+        "nickname": "Anna",
+        "message": "A gentle companion for a riverside picnic."
+      },
+      {
+        "date": "2026-07-26",
+        "city": "Devín",
+        "country": "Slovakia",
+        "lat": 48.1735,
+        "lon": 16.9783,
+        "address": "Castle riverside path, Devín, Bratislava",
+        "nickname": "Leo",
+        "message": "Found it enjoying the view beneath the castle."
+      },
+      {
+        "date": "2026-10-01",
+        "city": "Trnava",
+        "country": "Slovakia",
+        "lat": 48.3774,
+        "lon": 17.587,
+        "address": "Bernolákov sad, Trnava",
+        "nickname": "Nina",
+        "message": "Left it beside a garden bench for its next slow adventure."
+      }
+    ]
+  },
+  {
+    "id": "M13",
+    "demo": true,
+    "name": "Honey Trail",
+    "color": "#c4a365",
+    "theme": "bee",
+    "image": "stone-13.svg",
+    "code": "8463",
+    "started": "2025-12-06",
+    "finds": [
+      {
+        "date": "2025-12-06",
+        "city": "Pezinok",
+        "country": "Slovakia",
+        "lat": 48.2884,
+        "lon": 17.267,
+        "address": "Zámocký park, Mladoboleslavská, Pezinok",
+        "nickname": "Lucia",
+        "message": "A tiny bee for sharing a little sweetness along the way."
+      },
+      {
+        "date": "2026-02-08",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Oliver",
+        "message": "This bee escaped the winter and travelled in my coat pocket."
+      },
+      {
+        "date": "2026-05-10",
+        "city": "Trnava",
+        "country": "Slovakia",
+        "lat": 48.3774,
+        "lon": 17.587,
+        "address": "Bernolákov sad, Trnava",
+        "nickname": "Filip",
+        "message": "A cheerful find on the walk through the garden."
+      },
+      {
+        "date": "2026-08-30",
+        "city": "Modra",
+        "country": "Slovakia",
+        "lat": 48.3344,
+        "lon": 17.3075,
+        "address": "Town garden, Modra",
+        "nickname": "Jana",
+        "message": "Showing our little bee another lovely town."
+      },
+      {
+        "date": "2026-09-30",
+        "city": "Vienna",
+        "country": "Austria",
+        "lat": 48.2035,
+        "lon": 16.38,
+        "address": "Stadtpark, Parkring, Vienna",
+        "nickname": "Sofia",
+        "message": "Left it near the flowers in Stadtpark for the next passer-by."
+      }
+    ]
+  },
+  {
+    "id": "N14",
+    "demo": true,
+    "name": "Forest Friend",
+    "color": "#87a58a",
+    "theme": "forest",
+    "image": "stone-14.svg",
+    "code": "8464",
+    "started": "2025-04-27",
+    "finds": [
+      {
+        "date": "2025-04-27",
+        "city": "Devín",
+        "country": "Slovakia",
+        "lat": 48.1735,
+        "lon": 16.9783,
+        "address": "Castle riverside path, Devín, Bratislava",
+        "nickname": "Peter",
+        "message": "A small painted forest to remind us to slow down and look around."
+      },
+      {
+        "date": "2025-10-12",
+        "city": "Bratislava",
+        "country": "Slovakia",
+        "lat": 48.1346,
+        "lon": 17.1129,
+        "address": "Sad Janka Kráľa, Petržalka, Bratislava",
+        "nickname": "Hana",
+        "message": "A quiet friend on our autumn walk by the river."
+      },
+      {
+        "date": "2026-03-29",
+        "city": "Pezinok",
+        "country": "Slovakia",
+        "lat": 48.2884,
+        "lon": 17.267,
+        "address": "Zámocký park, Mladoboleslavská, Pezinok",
+        "nickname": "Max",
+        "message": "Taking our little forest to see the castle garden."
+      },
+      {
+        "date": "2026-07-05",
+        "city": "Hainburg",
+        "country": "Austria",
+        "lat": 48.1463,
+        "lon": 16.944,
+        "address": "Donaulände, riverside promenade, Hainburg an der Donau",
+        "nickname": "Lenka",
+        "message": "Found a green surprise during our weekend trip."
+      },
+      {
+        "date": "2026-09-29",
+        "city": "Modra",
+        "country": "Slovakia",
+        "lat": 48.3344,
+        "lon": 17.3075,
+        "address": "Town garden, Modra",
+        "nickname": "Adam",
+        "message": "Left it along the garden path for the next nature lover."
+      }
+    ]
+  },
 ];
 const DEMO_PLACES = [
   {
