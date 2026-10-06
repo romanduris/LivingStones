@@ -233,3 +233,17 @@ test("story addresses omit header locations while preserving streets, neighbourh
   assert.equal(context.storyAddress({ ...entry, address: "Slovakia, District of Bratislava V" }), "Exact address unavailable");
   assert.equal(context.storyAddress({ lat: 0, lon: 0 }), "Address unavailable — 0.00000, 0.00000");
 });
+
+test("stone table sorts newest finds first using times, with stable ties and unchanged journey data", () => {
+  const stones = [
+    {id:"A",finds:[{date:"2026-10-05T14:04:00Z"}]},
+    {id:"C",finds:[{date:"2026-10-04"},{date:"2026-10-05T14:35:00Z"}]},
+    {id:"B",finds:[{date:"2026-10-05T14:35:00Z"}]},
+    {id:"D",finds:[]},
+  ];
+  const before=JSON.stringify(stones);
+  assert.deepEqual(Array.from(context.sortStonesByLastFound(stones),s=>s.id),["B","C","A","D"]);
+  assert.equal(JSON.stringify(stones),before);
+  stones[0].finds.push({date:"2026-10-06T09:00:00Z"});
+  assert.equal(context.sortStonesByLastFound(stones)[0].id,"A");
+});

@@ -1930,3 +1930,37 @@ body:has(dialog[open]) {
 .success-heading h3 {
   min-width: 0;
 }
+
+.sort-indicator {
+  color: var(--purple);
+  font-weight: 700;
+  margin-left: 3px;
+}
+.language-flag {
+  width: 18px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #ffffff20;
+}
+.language-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.language-code {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 10px;
+}
+.language-switch {
+  width: auto;
+  padding-inline: 8px;
+}
+.language-label {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+}

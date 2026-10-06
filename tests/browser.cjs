@@ -148,6 +148,11 @@ process.on("exit", () => server?.kill());
     });
     await page.goto(base);
     assert.equal(await page.locator(".stone-row").count(), 5);
+    assert.deepEqual(await page.locator(".stone-row").evaluateAll(rows=>rows.map(row=>row.dataset.stone)), ["C3","E5","A1","D4","B2"]);
+    assert.equal(await page.locator('th[aria-sort="descending"]').count(), 1);
+    assert.match(await page.locator('th[aria-sort="descending"]').innerText(), /Last Found.*↓/i);
+    assert.equal(await page.locator('#main-language-menu .language-flag').count(), 4);
+    assert.deepEqual(await page.locator('#main-language-menu .language-code').allTextContents(), ["EN","SK","HU","DE"]);
     for (const code of ["en", "sk", "hu", "de"]) {
       await page.locator('.site-header .language-switch').click();
       await page.locator('#main-language-menu:popover-open').waitFor();
@@ -169,7 +174,7 @@ process.on("exit", () => server?.kill());
       /another country/,
     );
     assert.match(
-      await page.locator(".stone-row").first().innerText(),
+      await page.locator('.stone-row[data-stone="A1"]').innerText(),
       /Bernolákov sad/,
     );
     assert.equal(
@@ -445,6 +450,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(".story-feed script").count(), 0);
     assert.equal(await phone.locator("#journey-map .is-new").count(), 1);
     assert.equal(await phone.locator("#total-finds").innerText(), "26");
+    assert.equal(await phone.locator(".stone-row").first().getAttribute("data-stone"), "A1");
     assert.equal(await phone.locator(rows).first().locator(".entry-address .manual-badge").innerText(), "Manual");
     assert.equal(await phone.locator("#hello-count").innerText(), "26");
     assert.match(

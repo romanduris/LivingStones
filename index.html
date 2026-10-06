@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="docs/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="docs/style.css?v=41" />
+    <link rel="stylesheet" href="docs/style.css?v=42" />
     <script src="docs/vendor/leaflet/leaflet.js" defer></script>
     <script src="docs/config.js?v=1" defer></script>
-    <script src="docs/app.js?v=41" defer></script>
+    <script src="docs/app.js?v=42" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#world">Skip to the map</a>
@@ -46,7 +46,7 @@
       <nav aria-label="Main navigation">
         <a href="#world">Map</a><a href="#explore">Stones</a
         ><a href="#how-it-works">About</a>
-        <div class="language-picker"><button class="language-switch" type="button" popovertarget="main-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><span aria-hidden="true">🌐</span><span class="language-label">EN</span></button><div id="main-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus>English <span aria-hidden="true">✓</span></button><button type="button" data-language="sk">Slovenčina</button><button type="button" data-language="hu">Magyar</button><button type="button" data-language="de">Deutsch</button></div></div>
+        <div class="language-picker"><button class="language-switch" type="button" popovertarget="main-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><img class="language-flag" src="docs/assets/flags/gb.svg" alt="" width="18" height="12"><span class="language-label">EN</span></button><div id="main-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus><span class="language-name"><img class="language-flag" src="docs/assets/flags/gb.svg" alt="" width="18" height="12">English</span><span class="language-code">EN</span></button><button type="button" data-language="sk"><span class="language-name"><img class="language-flag" src="docs/assets/flags/sk.svg" alt="" width="18" height="12">Slovenčina</span><span class="language-code">SK</span></button><button type="button" data-language="hu"><span class="language-name"><img class="language-flag" src="docs/assets/flags/hu.svg" alt="" width="18" height="12">Magyar</span><span class="language-code">HU</span></button><button type="button" data-language="de"><span class="language-name"><img class="language-flag" src="docs/assets/flags/de.svg" alt="" width="18" height="12">Deutsch</span><span class="language-code">DE</span></button></div></div>
       </nav>
     </header>
     <main class="wrap">
@@ -136,7 +136,7 @@
                 <th scope="col">Age <span class="age-heading-unit">(days)</span></th>
                 <th scope="col">Finds</th>
                 <th scope="col"><span class="countries-heading-full">Countries</span><span class="countries-heading-compact" aria-hidden="true">🌍</span><span class="sr-only countries-heading-compact">Countries</span></th>
-                <th scope="col">Last Found</th>
+                <th scope="col" aria-sort="descending" title="Newest finds first">Last Found <span class="sort-indicator" aria-hidden="true">↓</span></th>
                 <th scope="col">Last Comment</th>
                 <th scope="col"><span class="sr-only">Open story</span></th>
               </tr>

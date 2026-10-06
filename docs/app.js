@@ -146,6 +146,14 @@ function storyEntries(stone) {
       String(b.id).localeCompare(String(a.id)),
   );
 }
+// Sort a copy so table ordering never changes route or map marker ordering.
+function sortStonesByLastFound(stones) {
+  const latest = (stone) => {
+    const date = Date.parse(stone.finds?.at(-1)?.date);
+    return Number.isFinite(date) ? date : -Infinity;
+  };
+  return [...stones].sort((a, b) => latest(b) - latest(a) || a.id.localeCompare(b.id));
+}
 // This repository is the only data boundary. The API is the source of truth.
 const stoneRepository = (() => {
   let stones = [];
@@ -227,7 +235,7 @@ function disposeMap(id) {
 }
 function renderOverview() {
   const stones = stoneRepository.list();
-  $("#stone-rows").innerHTML = stones
+  $("#stone-rows").innerHTML = sortStonesByLastFound(stones)
     .map((stone) => {
       const last = stone.finds.at(-1),
         birth = stone.finds[0],
@@ -473,7 +481,7 @@ function renderDetail() {
   const shareIcon =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
   $("#stone-detail").innerHTML = `
-    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span><small>(Alive · ${days} ${days === 1 ? "day" : "days"})</small></span></h2><div class="detail-header-actions"><div class="language-picker"><button class="language-switch" type="button" popovertarget="detail-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><span aria-hidden="true">🌐</span><span class="language-label">EN</span></button><div id="detail-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus>English <span aria-hidden="true">✓</span></button><button type="button" data-language="sk">Slovenčina</button><button type="button" data-language="hu">Magyar</button><button type="button" data-language="de">Deutsch</button></div></div><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
+    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span><small>(Alive · ${days} ${days === 1 ? "day" : "days"})</small></span></h2><div class="detail-header-actions"><div class="language-picker"><button class="language-switch" type="button" popovertarget="detail-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12"><span class="language-label">EN</span></button><div id="detail-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus><span class="language-name"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12">English</span><span class="language-code">EN</span></button><button type="button" data-language="sk"><span class="language-name"><img class="language-flag" src="${assetBase}flags/sk.svg" alt="" width="18" height="12">Slovenčina</span><span class="language-code">SK</span></button><button type="button" data-language="hu"><span class="language-name"><img class="language-flag" src="${assetBase}flags/hu.svg" alt="" width="18" height="12">Magyar</span><span class="language-code">HU</span></button><button type="button" data-language="de"><span class="language-name"><img class="language-flag" src="${assetBase}flags/de.svg" alt="" width="18" height="12">Deutsch</span><span class="language-code">DE</span></button></div></div><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
     <div class="detail-body">
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
