@@ -1,8 +1,8 @@
 # Living Stones
 
-Painted stones, shared journeys. English, map-first website: https://romanduris.github.io/LivingStones/.
+Painted stones, shared journeys. English, map-first website: https://livingstones.rodulab.com/. The original https://romanduris.github.io/LivingStones/ address redirects to the custom domain.
 
-GitHub Pages publishes the root of `main`. The root `index.html` uses assets from `docs/`; `docs/index.html` serves the same UI with relative asset paths. Keep both entry points in sync.
+Cloudflare DNS points `livingstones.rodulab.com` to `romanduris.github.io` with a DNS-only CNAME. GitHub Pages serves the site and its HTTPS certificate; the root `CNAME` file preserves the custom domain on each publication. GitHub Pages publishes the root of `main`. The root `index.html` uses assets from `docs/`; `docs/index.html` serves the same UI with relative asset paths. Keep both entry points in sync.
 
 ## Live data
 
