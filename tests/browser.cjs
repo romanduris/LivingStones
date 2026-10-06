@@ -56,7 +56,9 @@ process.on("exit", () => server?.kill());
         status = 200;
       if (req.method() === "POST") {
         const body = req.postDataJSON();
-        if (kind === "views") {
+        if (parts[2] === "page-views") {
+          context.homepageViews = (context.homepageViews || 0) + 1; result = {ok:true};
+        } else if (kind === "views") {
           stone.views = (stone.views || 0) + 1;
           result = {views: stone.views};
         } else if (body.code !== stone?.code) {
@@ -150,6 +152,8 @@ process.on("exit", () => server?.kill());
       });
     });
     await page.goto(base);
+    await page.waitForTimeout(100);
+    assert.equal(desktop.homepageViews,1,"The initial overview counts one homepage opening");
     assert.equal(await page.locator(".stone-row").count(), 5);
     assert.deepEqual(await page.locator(".stone-row").evaluateAll(rows=>rows.map(row=>row.dataset.stone)), ["C3","E5","A1","D4","B2"]);
     assert.equal(await page.locator('th[aria-sort="descending"]').count(), 1);
@@ -328,6 +332,7 @@ process.on("exit", () => server?.kill());
       });
     });
     await phone.goto(base + "/?stone=A1");
+    assert.equal(mobile.homepageViews || 0,0,"A direct story link does not count a homepage visit");
     for (const width of [320, 375, 390]) {
       await phone.setViewportSize({ width, height: 844 });
       const actions = await phone
@@ -349,6 +354,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
     assert.equal(lookups, 0);
     await phone.waitForFunction(() => Number(document.querySelector(".stone-views strong").textContent)>0);
+    assert.equal(mobile.homepageViews || 0,0,"Resizing a story does not count homepage visits");
     const viewsBeforeForm=await phone.locator(".stone-views").innerText();
     await phone.locator("#start-find").click();
     assert.equal(await phone.locator(".stone-views").innerText(),viewsBeforeForm,"Opening a find form does not add another story view");
@@ -847,6 +853,7 @@ process.on("exit", () => server?.kill());
       const response=await route.fetch({url:"http://127.0.0.1:8137"+url.pathname+url.search});
       await route.fulfill({response});
     });
+    await secureContext.route("https://livingstones-api.livingstones-romanduris.workers.dev/api/page-views",r=>r.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'https://livingstones.rodulab.com'},body:'{"ok":true}'}));
     const apiOrigins=[];
     await secureContext.route("https://livingstones-api.livingstones-romanduris.workers.dev/api/stones",route=>{
       apiOrigins.push(route.request().headers().origin);
@@ -857,6 +864,7 @@ process.on("exit", () => server?.kill());
     await securePage.waitForURL("https://livingstones.rodulab.com/");
     await securePage.locator(".stone-row").first().waitFor();
     assert.deepEqual(apiOrigins,["https://livingstones.rodulab.com"],"HTTP visits redirect before requesting data");
+    await securePage.waitForLoadState("networkidle");
     await secureContext.close();
     console.log(
       "Passed: intro-first stone details, newest-first story feed, other-stone navigation, map-first overview, Leaflet controls/pins, mobile-only finds, automatic GPS, addresses, safe notes, canceled GPS, persistent API-backed data and standalone comments, URLs/history/sharing and responsive layouts.",

@@ -7,9 +7,11 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https:; connect-src 'self' https://livingstones-api.livingstones-romanduris.workers.dev http://127.0.0.1:8787 http://localhost:8787; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Management · Living Stones</title>
   <link rel="stylesheet" href="../docs/style.css?v=44">
-  <link rel="stylesheet" href="management.css?v=1">
+  <link rel="stylesheet" href="management.css?v=2">
   <script src="../docs/config.js?v=1" defer></script>
-  <script src="management.js?v=1" defer></script>
+  <script src="vendor/qrcode.js?v=2.0.4" defer></script>
+  <script src="statistics.js?v=1" defer></script>
+  <script src="management.js?v=2" defer></script>
 </head>
 <body>
   <header class="admin-header"><a class="admin-brand" href="../">🪨 Living Stones <span>Management</span></a><div><a href="../">Visit website ↗</a><button id="logout" hidden>Sign out</button></div></header>
@@ -20,6 +22,8 @@
       <form id="login-form"><label for="password">Management password</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128"><button type="submit" class="primary">Sign in</button></form>
       <p class="login-hint">Your session lasts up to four hours. Never share this password with finders.</p>
     </section>
+    <nav id="admin-tabs" class="admin-tabs" role="tablist" aria-label="Administration sections" hidden><button id="management-tab" role="tab" aria-selected="true" aria-controls="management-panel" data-section="management">Management</button><button id="stats-tab" role="tab" aria-selected="false" aria-controls="statistics" tabindex="-1" data-section="stats">Stats</button></nav>
+    <div id="management-panel" role="tabpanel" aria-labelledby="management-tab" hidden>
     <section id="dashboard" hidden>
       <div class="page-heading"><div><p class="eyebrow">LIVING STONES MANAGEMENT</p><h1>Every stone. Every little hello.</h1></div><button id="refresh">Refresh</button></div>
       <div id="summary" class="admin-stats"></div>
@@ -28,6 +32,17 @@
       <p class="admin-footnote">Views count story openings since tracking began. They are not a count of unique people.</p>
     </section>
     <section id="editor" hidden></section>
+    </div>
+    <section id="statistics" role="tabpanel" aria-labelledby="stats-tab" hidden>
+      <div class="page-heading"><div><p class="eyebrow">A LITTLE WORLD, OPENED</p><h1>Who’s stopping by?</h1><p class="form-hint">Homepage visits and stone story openings.</p></div><button id="refresh-stats">Refresh</button></div>
+      <div class="stats-toolbar"><div class="period-picker" role="group" aria-label="Statistics period"><button data-period="7">7 d</button><button data-period="30" aria-pressed="true">30 d</button><button data-period="90">90 d</button><button data-period="all">All time</button></div><label>Show visits to<select id="stats-target"><option value="all">All visits</option></select></label></div>
+      <p id="stats-status" role="status" hidden></p>
+      <div id="traffic-summary" class="admin-stats"></div>
+      <section class="panel chart-panel"><div class="chart-heading"><h2>Opens over time</h2><span class="chart-legend"><span class="legend-home">● Homepage</span><span class="legend-stories">● Stone stories</span></span></div><div id="daily-chart"></div><p id="daily-chart-detail" class="chart-detail" aria-live="polite">Hover, tap or focus a point to see its count.</p></section>
+      <section class="panel chart-panel"><h2>Cumulative opens</h2><p class="form-hint">All-time total up to each date, including earlier opens.</p><div id="cumulative-chart"></div><p id="cumulative-chart-detail" class="chart-detail" aria-live="polite">Hover, tap or focus a point to see its count.</p></section>
+      <section class="panel"><h2>Where they go</h2><div id="traffic-ranking"></div></section>
+      <p id="tracking-note" class="admin-footnote"></p>
+    </section>
     <p id="notice" role="status" aria-live="polite" hidden></p>
   </main>
   <dialog id="record-dialog"><div class="record-dialog-top"><h2 id="record-title">Edit record</h2><button id="close-record" aria-label="Close editor">×</button></div><form id="record-form"></form><p id="record-error" role="alert" hidden></p></dialog>

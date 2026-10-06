@@ -11,8 +11,6 @@ const DEMO_STONES = [
     image: "stone-1.svg",
     code: "8451",
     started: "2025-04-12",
-    story:
-      "Nina painted my smile in Petržalka and left me in Sad Janka Kráľa. I’ve been collecting happy moments ever since. Could you take me somewhere sunny?",
     finds: [
       {
         date: "2025-04-12",
@@ -80,8 +78,6 @@ const DEMO_STONES = [
     image: "stone-2.svg",
     code: "8452",
     started: "2025-07-20",
-    story:
-      "Tereza gave me my moon in Rača, near the vineyards. I love quiet walks and new friends. Will you show me your favourite corner of the world?",
     finds: [
       {
         date: "2025-07-20",
@@ -149,8 +145,6 @@ const DEMO_STONES = [
     image: "stone-3.svg",
     code: "8453",
     started: "2026-02-14",
-    story:
-      "Ana painted my sprout near Bratislava’s botanical garden. I’m growing a story, one kind stranger at a time. Take the scenic route with me?",
     finds: [
       {
         date: "2026-02-14",
@@ -217,8 +211,6 @@ const DEMO_STONES = [
     image: "stone-4.svg",
     code: "8454",
     started: "2025-05-01",
-    story:
-      "Ema gave me a heart in Devín, where two rivers meet. I’m a pocket-sized hug, looking for my next friend. Could I come on your next adventure?",
     finds: [
       {
         date: "2025-05-01",
@@ -286,8 +278,6 @@ const DEMO_STONES = [
     image: "stone-5.svg",
     code: "8455",
     started: "2025-09-06",
-    story:
-      "Hana painted my wave after a bike ride to Čunovo. I was born by the Danube, but I dream of the sea. Will you take me a little farther?",
     finds: [
       {
         date: "2025-09-06",

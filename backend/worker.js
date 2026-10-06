@@ -1,10 +1,11 @@
 import { fail, sha256, text, requireOrigin, jsonBody, limit } from "./common.js";
+import { recordTraffic } from "./traffic.js";
 import { handleManagement } from "./management.js";
 async function listStones(db, id, admin = false) {
   const where = id ? " WHERE id = ?" : "";
   const statements = [
     db.prepare(
-      "SELECT id,name,story,born,image,theme,color,is_demo,demo_code,creator,views FROM stones" +
+      "SELECT id,name,born,image,theme,color,is_demo,demo_code,creator,views FROM stones" +
         where +
         (id ? "" : " ORDER BY id"),
     ),
@@ -23,7 +24,6 @@ async function listStones(db, id, admin = false) {
   return stones.results.map((s) => ({
     id: s.id,
     name: s.name,
-    story: s.story,
     started: s.born,
     creator: s.creator,
     image: s.image,
@@ -69,6 +69,10 @@ async function handle(request, env) {
   }
   if (request.method === "GET" && path === "/api/stones")
     return { stones: await listStones(env.DB) };
+  if (path === "/api/page-views" && request.method === "POST") {
+    requireOrigin(request, env);
+    return recordTraffic(request, env, await jsonBody(request));
+  }
   const match = path.match(
     /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views))?$/,
   );
@@ -82,18 +86,7 @@ async function handle(request, env) {
   if (request.method !== "POST" || !kind) fail(405, "Method not allowed.");
   requireOrigin(request, env);
   const body = await jsonBody(request);
-  if (kind === "views") {
-    const viewId = text(body.viewId, 80, true);
-    if (!/^[a-zA-Z0-9-]{16,80}$/.test(viewId)) fail(400, "Invalid view event.");
-    if (!await env.DB.prepare("SELECT id FROM stones WHERE id=?").bind(id).first()) fail(404, "This stone could not be found.");
-    await limit(request, env, "views", 120);
-    await env.DB.batch([
-      env.DB.prepare("UPDATE stones SET views=views+1 WHERE id=? AND NOT EXISTS(SELECT 1 FROM stone_views WHERE id=?)").bind(id, viewId),
-      env.DB.prepare("INSERT INTO stone_views(id,stone_id,created_at) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING").bind(viewId, id, new Date().toISOString()),
-      env.DB.prepare("DELETE FROM stone_views WHERE created_at < ?").bind(new Date(Date.now()-30*86400000).toISOString()),
-    ]);
-    return { views: (await env.DB.prepare("SELECT views FROM stones WHERE id=?").bind(id).first()).views };
-  }
+  if (kind === "views") return recordTraffic(request, env, body, id);
   await limit(request, env, "public", 40);
   const stone = await env.DB.prepare(
     "SELECT code_hash,is_demo FROM stones WHERE id = ?",

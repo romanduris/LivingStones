@@ -4,7 +4,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const fixture=vm.createContext({});vm.runInContext(fs.readFileSync('fixtures/demo-data.js','utf8')+';globalThis.stones=DEMO_STONES',fixture);
 const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit',()=>server.kill());
 (async()=>{
- await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject)});
+ await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(new Error('Test server exited: '+code)))});
  const browser=await chromium.launch();
  try{
   for(const width of [375,1440]){
@@ -18,7 +18,10 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
      if(req.postDataJSON().password==='test-only-password'){valid=true;result={token,expiresAt:Math.floor(Date.now()/1000)+14400};}else{status=401;result={error:'That password is not correct.'};}
     }else if(!valid||req.headers().authorization!=='Bearer '+token){status=401;result={error:'Please sign in to management.'};}
     else if(parts[3]==='logout'){valid=false;result={ok:true};}
-    else if(parts[4]){
+    else if(parts[3]==='stats'){
+     const period=new URL(req.url()).searchParams.get('period')||'30',today=new Date().toISOString().slice(0,10);
+     result={period,since:today,timezone:'UTC',range:{from:period==='all'?today:new Date(Date.parse(today)-(Number(period)-1)*86400000).toISOString().slice(0,10),to:today},targets:[{key:'home',name:'Homepage',kind:'home',totalViews:10,beforeRange:0},...stones.map(s=>({key:'stone:'+s.id,name:s.name,kind:'stone',totalViews:s.views,beforeRange:0}))],days:[{day:today,target:'home',views:10},...stones.map(s=>({day:today,target:'stone:'+s.id,views:s.views}))]};
+    }else if(parts[4]){
      const s=stones.find(s=>s.id===parts[4]);
      if(method==='PATCH'&&parts[5]){
       const body=req.postDataJSON(),item=s[parts[5]].find(r=>r.id===parts[6]);Object.assign(item,body);
@@ -41,6 +44,24 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#type-filter').selectOption('real');assert.equal(await page.locator('.admin-stone-card').count(),0);await page.locator('#type-filter').selectOption('all');
    await page.locator('#sort').selectOption('views');assert.match(await page.locator('.admin-stone-card').first().innerText(),/Ocean Echo/);
    await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
+   assert.equal(await page.locator('[name=story]').count(),0);
+   assert.equal(await page.locator('.stone-qr').getAttribute('data-error-correction'),'H');
+   const downloadPromise=page.waitForEvent('download');await page.locator('[data-download-qr=png]').click();
+   const download=await downloadPromise;const bytes=fs.readFileSync(await download.path());
+   const decoder=await context.newPage();await decoder.route('http://127.0.0.1:8137/qr-decoder',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><html></html>'}));await decoder.goto('http://127.0.0.1:8137/qr-decoder');
+   const pixels=await decoder.evaluate(async base64=>{const image=new Image();image.src='data:image/png;base64,'+base64;await image.decode();const canvas=document.createElement('canvas');canvas.width=canvas.height=image.width/6;const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;c.drawImage(image,0,0,canvas.width,canvas.height);return {width:canvas.width,height:canvas.height,data:Array.from(c.getImageData(0,0,canvas.width,canvas.height).data)};},bytes.toString('base64'));
+   const decoded=require('jsqr')(new Uint8ClampedArray(pixels.data),pixels.width,pixels.height);assert.equal(decoded.data,'https://livingstones.rodulab.com/?stone=A1');await decoder.close();
+   await page.locator('[data-section=stats]').click();await page.locator('#traffic-summary strong').first().waitFor();
+   assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'40');
+   await page.locator('#stats-target').selectOption('home');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'10');
+   await page.locator('#stats-target').selectOption('stone:A1');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'4');
+   await page.locator('[data-period="7"]').click();await page.waitForFunction(()=>document.querySelector('[data-period="7"]').getAttribute('aria-pressed')==='true');
+   assert.equal(await page.locator('#daily-chart [data-chart-label]').count(),7);
+   await page.locator('#daily-chart [data-chart-label]').last().focus();assert.match(await page.locator('#daily-chart-detail').innerText(),/4 opens/);
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   await page.locator('#admin-main').screenshot({path:`/tmp/livingstones-stats-${width}.png`});
+   await page.reload();await page.locator('#traffic-summary strong').first().waitFor();assert.equal(await page.locator('#stats-target').inputValue(),'stone:A1');
+   await page.locator('[data-section=management]').click();await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
    await page.locator('#stone-form input[name="name"]').fill('Sunny Updated');await page.locator('#stone-form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('#editor h1').textContent==='Sunny Updated');
    await page.reload();await page.locator('#stone-form').waitFor();assert.equal(await page.locator('#editor h1').innerText(),'Sunny Updated');
    await page.locator('[data-tab="comments"]').click();await page.locator('[data-edit-comment]').first().click();

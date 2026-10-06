@@ -3,6 +3,8 @@ const $ = s => document.querySelector(s);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sessionKey = 'livingstones-management-session';
 let auth = null, stones = [], selected = null, record = null, tab = 'finds', noticeTimer;
+let section='management',statsPeriod='30',statsTarget='all',statsData=null,statsRun=0;
+const qrCache=new Map();
 if (location.protocol === 'http:' && !['localhost','127.0.0.1'].includes(location.hostname)) location.replace('https:'+location.href.slice(5));
 try { auth = JSON.parse(sessionStorage.getItem(sessionKey)); } catch {}
 function notice(message, error=false) {
@@ -11,6 +13,7 @@ function notice(message, error=false) {
 }
 function signedOut() {
   auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
+  statsRun++;statsData=null;$('#admin-tabs').hidden=true;$('#management-panel').hidden=true;$('#statistics').hidden=true;
   $('#login').hidden=false;$('#dashboard').hidden=true;$('#editor').hidden=true;$('#logout').hidden=true;
   if ($('#record-dialog').open) $('#record-dialog').close();
 }
@@ -57,9 +60,8 @@ function renderEditor() {
     ${field('name','Name',s.name,'text','required maxlength="80"')}${field('creator','Painted by',s.creator,'text','required maxlength="80"')}${field('started','Born',s.started,'date','required')}${selectField('demo','Type',[['demo','Demo'],['real','Real']],s.demo?'demo':'real')}
     <label class="wide">Image path or HTTPS URL<input name="image" value="${escapeHTML(s.image)}" required maxlength="300"></label>
     ${selectField('theme','Theme',[['sun','Sun'],['moon','Moon'],['leaf','Leaf'],['heart','Heart'],['wave','Wave']],s.theme)}${field('color','Map pin colour',s.color,'color')}
-    <label class="wide">Story (optional)<textarea name="story" maxlength="1000">${escapeHTML(s.story)}</textarea></label>
     <label class="wide">${s.demo?'Find Code':'New private Find Code (optional)'}<input name="code" type="text" value="${s.demo?escapeHTML(s.code):''}" autocomplete="off" maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label>
-    </div><p class="form-hint">A blank code keeps the current one. Demo codes are public. When changing Demo to Real, enter a new private code.</p><div class="form-actions"><button type="submit" class="primary">Save stone</button></div></form></section><section class="panel"><h2>The journey in numbers</h2><div class="admin-stats">${statsHTML([[Math.max(0,Math.floor((Date.now()-Date.parse(s.started))/86400000)),'Days alive'],[s.finds.length,'Finds'],[new Set(s.finds.map(f=>f.country)).size,'Countries'],[s.views||0,'Views']])}</div><p class="form-hint">Views count story openings, including repeat visits. Existing example counts were not imported.</p></section></div>
+    </div><p class="form-hint">A blank code keeps the current one. Demo codes are public. When changing Demo to Real, enter a new private code.</p><div class="form-actions"><button type="submit" class="primary">Save stone</button></div></form></section>${qrPanel(s)}<section class="panel"><h2>The journey in numbers</h2><div class="admin-stats">${statsHTML([[Math.max(0,Math.floor((Date.now()-Date.parse(s.started))/86400000)),'Days alive'],[s.finds.length,'Finds'],[new Set(s.finds.map(f=>f.country)).size,'Countries'],[s.views||0,'Views']])}</div><p class="form-hint">Views count story openings, including repeat visits. Existing example counts were not imported.</p></section></div>
     <section class="panel"><h2>Their memories</h2><div class="record-buttons"><button data-tab="finds" ${tab==='finds'?'class="primary"':''}>Finds (${s.finds.length})</button><button data-tab="comments" ${tab==='comments'?'class="primary"':''}>Comments (${s.comments.length})</button></div><div id="records">${recordsHTML(s)}</div></section></div>`;
 }
 function recordsHTML(s) {
@@ -72,12 +74,72 @@ function recordsHTML(s) {
 function showList() {
   selected=null;history.replaceState(null,'',location.pathname);$('#editor').hidden=true;$('#dashboard').hidden=false;renderList();
 }
+function updateSection() {
+  $('#management-panel').hidden=section!=='management';$('#statistics').hidden=section!=='stats';
+  for(const button of document.querySelectorAll('[data-section]')){
+    const active=button.dataset.section===section;button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+  }
+}
 async function load() {
   const data=await api('stones');stones=data.stones;
-  $('#login').hidden=true;$('#logout').hidden=false;
-  const requested=new URLSearchParams(location.hash.slice(1)).get('stone');
-  selected=selected||requested;
-  if(selected&&stones.some(s=>s.id===selected)) renderEditor();else showList();
+  $('#login').hidden=true;$('#logout').hidden=false;$('#admin-tabs').hidden=false;
+  const params=new URLSearchParams(location.hash.slice(1));
+  section=params.get('tab')==='stats'?'stats':'management';
+  selected=selected||params.get('stone');
+  if(selected&&stones.some(s=>s.id===selected))renderEditor();else{selected=null;$('#editor').hidden=true;$('#dashboard').hidden=false;renderList();}
+  updateSection();
+  if(section==='stats'){
+    statsPeriod=['7','30','90','all'].includes(params.get('period'))?params.get('period'):statsPeriod;
+    statsTarget=params.get('target')||statsTarget;await loadStats();
+  }
+}
+function qrFor(stone){
+  if(!qrCache.has(stone.id)){
+    const qr=qrcode(0,'H');qr.addData('https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id),'Byte');qr.make();qrCache.set(stone.id,qr);
+  }
+  return qrCache.get(stone.id);
+}
+function qrPanel(stone){
+  const qr=qrFor(stone),url='https://livingstones.rodulab.com/?stone='+encodeURIComponent(stone.id);
+  return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="stone-qr" data-error-correction="H" data-quiet-zone="4">${qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name})}</div><a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
+}
+async function downloadQR(format){
+  const stone=stones.find(s=>s.id===selected),qr=qrFor(stone);let blob;
+  if(format==='svg')blob=new Blob([qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name})],{type:'image/svg+xml'});
+  else{
+    const scale=24,count=qr.getModuleCount(),canvas=document.createElement('canvas');canvas.width=canvas.height=(count+8)*scale;
+    const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.fillStyle='#000';
+    for(let row=0;row<count;row++)for(let col=0;col<count;col++)if(qr.isDark(row,col))context.fillRect((col+4)*scale,(row+4)*scale,scale,scale);
+    blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  }
+  if(!blob)throw new Error('Could not prepare the QR download.');
+  const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=stone.id+'-qr-H.'+format;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+async function loadStats(){
+  const run=++statsRun;$('#stats-status').hidden=false;$('#stats-status').textContent='Loading visits…';
+  for(const id of ['traffic-summary','daily-chart','cumulative-chart','traffic-ranking'])$('#'+id).replaceChildren();
+  try{
+    const data=await api('stats?period='+statsPeriod);
+    if(run!==statsRun||!auth)return;statsData=data;
+    if(section==='stats')renderStats();
+  }catch(error){if(run===statsRun){$('#stats-status').textContent=error.message;$('#stats-status').hidden=false;}}
+}
+function renderStats(){
+  if(!statsData)return;$('#stats-status').hidden=true;
+  const options=[['all','All visits'],['home','Homepage'],['stories','All stone stories'],...statsData.targets.filter(t=>t.kind==='stone').map(t=>[t.key,t.name+(t.deleted?' (deleted)':'')])];
+  if(!options.some(([key])=>key===statsTarget))statsTarget='all';
+  $('#stats-target').innerHTML=options.map(([key,name])=>`<option value="${escapeHTML(key)}" ${statsTarget===key?'selected':''}>${escapeHTML(name)}</option>`).join('');
+  for(const button of document.querySelectorAll('[data-period]'))button.setAttribute('aria-pressed',String(button.dataset.period===statsPeriod));
+  const result=StoneStats.series(statsData,statsTarget),format=n=>n.toLocaleString('en-GB');
+  $('#traffic-summary').innerHTML=statsHTML([[format(result.total),'All-time opens'],[format(result.inRange),'Opens in this period'],[format(result.today),'Today'],[(result.inRange/Math.max(1,result.days.length)).toFixed(1),'Daily average']]);
+  const width=matchMedia('(max-width:700px)').matches?600:1000;
+  $('#daily-chart').innerHTML=StoneStats.chart(result.days,'daily',width);$('#cumulative-chart').innerHTML=StoneStats.chart(result.days,'cumulative',width);
+  $('#daily-chart-detail').textContent=result.inRange?'Hover, tap or focus a point to see its count.':'No recorded opens in this period yet.';
+  $('#cumulative-chart-detail').textContent='Hover, tap or focus a point to see its count.';
+  const rangeCounts=new Map();for(const row of statsData.days)rangeCounts.set(row.target,(rangeCounts.get(row.target)||0)+row.views);
+  $('#traffic-ranking').innerHTML=`<table class="traffic-table"><thead><tr><th scope="col">Page / stone</th><th scope="col">This period</th><th scope="col">All time</th></tr></thead><tbody>${[...statsData.targets].sort((a,b)=>(rangeCounts.get(b.key)||0)-(rangeCounts.get(a.key)||0)||a.name.localeCompare(b.name)).map(t=>`<tr><td><button data-stats-target="${escapeHTML(t.key)}">${escapeHTML(t.name)}${t.deleted?' <span class="stone-type">Deleted</span>':''}</button></td><td>${format(rangeCounts.get(t.key)||0)}</td><td>${format(t.totalViews)}</td></tr>`).join('')}</tbody></table>`;
+  $('#tracking-note').textContent='Homepage tracking started '+formatDate(statsData.since)+'. Counts are opens, not unique people. Days use UTC. Stone totals retain earlier recorded views.';
+  history.replaceState(null,'','#'+new URLSearchParams({tab:'stats',period:statsPeriod,target:statsTarget}));
 }
 function updateStone(data) {if(data.stone)stones=stones.map(s=>s.id===data.stone.id?data.stone:s);renderEditor();}
 async function withButton(button,action) {
@@ -99,6 +161,14 @@ $('#login-form').addEventListener('submit',event=>{
 $('#logout').addEventListener('click',event=>withButton(event.currentTarget,async()=>{try {await api('logout','POST',{});} finally {signedOut();}notice('Signed out.');}));
 $('#refresh').addEventListener('click',event=>withButton(event.currentTarget,async()=>{await load();notice('Latest stories loaded.');}));
 for(const selector of ['#search','#type-filter','#sort'])$(selector).addEventListener(selector==='#search'?'input':'change',renderList);
+$('#refresh-stats').addEventListener('click',event=>withButton(event.currentTarget,loadStats));
+$('#stats-target').addEventListener('change',event=>{statsTarget=event.target.value;renderStats();});
+$('#statistics').addEventListener('focusin',showChartDetail);
+$('#statistics').addEventListener('pointerover',showChartDetail);
+$('#statistics').addEventListener('click',showChartDetail);
+function showChartDetail(event){const point=event.target.closest('[data-chart-label]');if(point)point.closest('.chart-panel').querySelector('.chart-detail').textContent=point.dataset.chartLabel;}
+$('#admin-tabs').addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const buttons=[...document.querySelectorAll('[data-section]')];const next=event.key==='Home'?buttons[0]:event.key==='End'?buttons.at(-1):buttons.find(button=>button!==document.activeElement);next?.focus();next?.click();});
+window.addEventListener('resize',()=>{if(section==='stats'&&statsData)renderStats();});
 $('#close-record').addEventListener('click',()=>$('#record-dialog').close());
 $('#record-form').addEventListener('submit',async event=>{
   event.preventDefault();const button=event.submitter;button.disabled=true;$('#record-error').hidden=true;
@@ -111,6 +181,15 @@ $('#editor').addEventListener('submit',event=>{
 });
 document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;
+  if(button.dataset.downloadQr){withButton(button,()=>downloadQR(button.dataset.downloadQr));return;}
+  if(button.dataset.section){
+    section=button.dataset.section;updateSection();
+    if(section==='stats'){history.replaceState(null,'','#'+new URLSearchParams({tab:'stats',period:statsPeriod,target:statsTarget}));loadStats();}
+    else{history.replaceState(null,'',selected?'#stone='+selected:location.pathname);if(selected)renderEditor();else showList();}
+    return;
+  }
+  if(button.dataset.period){statsPeriod=button.dataset.period;loadStats();return;}
+  if(button.dataset.statsTarget){statsTarget=button.dataset.statsTarget;renderStats();return;}
   if(button.dataset.stone){selected=button.dataset.stone;tab='finds';history.replaceState(null,'','#stone='+selected);renderEditor();$('#editor h1').setAttribute('tabindex','-1');$('#editor h1').focus();return;}
   if(button.dataset.tab){tab=button.dataset.tab;renderEditor();return;}
   if(button.dataset.action==='back'){showList();return;}
@@ -119,7 +198,7 @@ document.addEventListener('click',event=>{
   if(button.dataset.editComment){openRecord('comments',button.dataset.editComment);return;}
   const stone=stones.find(s=>s.id===selected);
   if(button.dataset.action==='delete-stone'){
-    if(!confirm(`Delete ${stone.name} and all its finds, comments and view records? This cannot be undone.`))return;
+    if(!confirm(`Delete ${stone.name} and all its finds and comments? Historical traffic totals will remain. This cannot be undone.`))return;
     withButton(button,async()=>{await api('stones/'+selected,'DELETE');selected=null;await load();notice('Stone deleted.');});return;
   }
   const kind=button.dataset.deleteFind?'finds':button.dataset.deleteComment?'comments':null,id=button.dataset.deleteFind||button.dataset.deleteComment;

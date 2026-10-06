@@ -44,3 +44,37 @@ button:hover { border-color:var(--purple); } button:disabled { opacity:.55; curs
 #record-dialog { width:min(620px,calc(100vw - 28px)); padding:24px; background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:10px; max-height:90vh; overflow:auto; }
 #record-dialog::backdrop { background:#111b; } .record-dialog-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; } .record-dialog-top h2 { margin:0; } #record-error { color:#ffa399; }
 @media(max-width:700px) { .admin-header { padding:14px; } .admin-brand { font-size:17px; } .admin-brand span { display:block; margin:0; } .admin-header > div { gap:10px; font-size:12px; } #admin-main { padding:24px 14px 50px; } h1 { font-size:25px; } .login-card { margin:30px auto; padding:24px; } .admin-stats { grid-template-columns:repeat(2,1fr); gap:10px; } .admin-toolbar { grid-template-columns:1fr 1fr; gap:10px; } .admin-toolbar label:first-child { grid-column:1/-1; } .admin-stone-list,.editor-grid { grid-template-columns:1fr; } .panel { padding:18px; } .editor-top { flex-wrap:wrap; } .editor-top .danger { margin-left:0; } .field-grid { gap:10px; } .admin-record-head { flex-wrap:wrap; gap:4px; } .admin-stone-card { padding:16px; } }
+.admin-tabs { display:flex; gap:8px; border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:28px; }
+.admin-tabs button { padding:11px 24px; font-weight:700; }
+.admin-tabs button[aria-selected="true"] { background:var(--purple); color:#202930; border-color:var(--purple); }
+.qr-panel { text-align:center; }
+.qr-panel h2,.qr-panel .form-hint { text-align:left; }
+.stone-qr { width:min(220px,100%); aspect-ratio:1; margin:20px auto; background:white; }
+.stone-qr svg { display:block; width:100%; height:100%; shape-rendering:crispEdges; }
+.qr-link { display:block; font-size:11px; color:var(--muted); overflow-wrap:anywhere; margin-bottom:16px; }
+.qr-actions { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+.stats-toolbar { display:flex; justify-content:space-between; align-items:end; gap:20px; margin-bottom:22px; }
+.stats-toolbar label { width:260px; }
+.period-picker { display:flex; gap:8px; }
+.period-picker button[aria-pressed="true"] { background:var(--purple); border-color:var(--purple); color:#202930; font-weight:800; }
+#traffic-summary { margin-top:16px; }
+.chart-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.chart-legend { display:flex; gap:16px; font-size:11px; }
+.legend-home { color:var(--teal); } .legend-stories { color:var(--purple); }
+.traffic-chart { display:block; width:100%; min-height:180px; }
+.chart-grid { stroke:var(--line); stroke-width:1; }
+.chart-label { fill:var(--muted); font:12px var(--body-font); }
+.chart-home { fill:var(--teal); } .chart-stories,.chart-point { fill:var(--purple); }
+.chart-line { fill:none; stroke:var(--purple); stroke-width:3; }
+.chart-hit { fill:transparent; }
+.traffic-chart g:focus .chart-point,.traffic-chart g:hover .chart-point { fill:var(--yellow); stroke:var(--yellow); stroke-width:4; }
+.traffic-chart g:focus .chart-hit,.traffic-chart g:hover .chart-hit { fill:#b49aff16; }
+.traffic-chart g:focus { outline:none; }
+.chart-detail { color:var(--muted); font-size:12px; min-height:18px; margin:8px 0 0; }
+.traffic-table { width:100%; border-collapse:collapse; font-size:13px; }
+.traffic-table th,.traffic-table td { padding:12px 8px; border-bottom:1px solid var(--line); text-align:right; }
+.traffic-table th:first-child,.traffic-table td:first-child { text-align:left; }
+.traffic-table th { color:var(--muted); font-size:11px; font-weight:400; }
+.traffic-table button { padding:0; border:0; background:none; text-align:left; color:var(--ink); overflow-wrap:anywhere; }
+.traffic-table button:hover { color:var(--purple); }
+@media(max-width:700px) { .stats-toolbar { align-items:stretch; flex-direction:column; gap:14px; } .stats-toolbar label { width:100%; } .period-picker button { flex:1; padding:9px 7px; } .chart-panel { padding:18px 10px; } .traffic-chart { min-height:150px; } .chart-label { font-size:17px; } .chart-legend { font-size:10px; } .traffic-table { font-size:12px; } .traffic-table td,.traffic-table th { padding:10px 4px; } }

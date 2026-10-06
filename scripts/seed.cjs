@@ -25,7 +25,6 @@ for (const s of sandbox.stones) {
     insert("stones", {
       id: s.id,
       name: s.name,
-      story: s.story,
       born: s.started,
       creator: s.finds[0].nickname,
       image: s.image,
@@ -67,4 +66,5 @@ for (const s of sandbox.stones) {
       );
   });
 }
+lines.push("INSERT OR IGNORE INTO traffic_targets(target,name,kind) SELECT 'stone:' || id,name,'stone' FROM stones;");
 fs.writeFileSync("backend/seed.sql", lines.join("\n") + "\n");

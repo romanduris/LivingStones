@@ -206,6 +206,7 @@ const stoneRepository = (() => {
     async load() {
       stones = (await request("/api/stones")).stones;
     },
+    recordHomepage: () => request("/api/page-views", {viewId: crypto.randomUUID()}),
     async recordView(id) {
       const result = await request(`/api/stones/${encodeURIComponent(id)}/views`, {viewId: crypto.randomUUID()});
       const stone = stones.find(s => s.id === id);
@@ -219,6 +220,7 @@ const stoneRepository = (() => {
   };
 })();
 let selectedId = null;
+let overviewVisible = false;
 let flow = null;
 let returnFocus = null;
 let toastTimer;
@@ -548,6 +550,7 @@ function openStone(id, updateURL = true) {
   const dialog = $("#stone-dialog");
   if (!dialog.open) returnFocus = document.activeElement;
   selectedId = id;
+  overviewVisible = false;
   flow = null;
   if (!dialog.open) dialog.showModal();
   renderDetail();
@@ -578,6 +581,10 @@ function syncURL() {
   const id = new URL(location.href).searchParams.get("stone");
   if (stoneRepository.get(id)) openStone(id, false);
   else {
+    if (!overviewVisible) {
+      overviewVisible = true;
+      stoneRepository.recordHomepage().catch(() => {});
+    }
     selectedId = null;
     flow = null;
     disposeMap("journey-map");

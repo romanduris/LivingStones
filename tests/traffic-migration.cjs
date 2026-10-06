@@ -1,0 +1,14 @@
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'livingstones-traffic-migration-')),migrations=path.join(dir,'migrations');fs.mkdirSync(migrations);
+const config=path.join(dir,'wrangler.json');fs.writeFileSync(config,JSON.stringify({name:'migration-check',main:path.resolve('backend/worker.js'),compatibility_date:'2026-10-05',d1_databases:[{binding:'DB',database_name:'migration-db',database_id:'11111111-1111-1111-1111-111111111111',migrations_dir:migrations}]}));
+const cli=args=>execFileSync('node',['node_modules/wrangler/bin/wrangler.js','d1',...args,'--config',config,'--local','--persist-to',dir],{encoding:'utf8',stdio:['ignore','pipe','pipe'],env:{...process.env,WRANGLER_SEND_METRICS:'false'}});
+try{
+ for(const file of fs.readdirSync('backend/migrations').filter(f=>Number(f.slice(0,4))<=6))fs.copyFileSync('backend/migrations/'+file,path.join(migrations,file));
+ cli(['migrations','apply','migration-db']);
+ cli(['execute','migration-db','--command',"INSERT INTO stones(id,name,story,born,image,theme,color,is_demo,code_hash,demo_code,creator,views) VALUES ('A1','Sunny','Old story','2025-04-12','sun.svg','sun','#ffffff',1,'dummy','8451','Nina',9); INSERT INTO finds(id,stone_id,occurred_at,lat,lon,city,country,address,nickname,source) VALUES ('f1','A1','2025-04-12T00:00:00Z',48,17,'Bratislava','Slovakia','Park','Nina','seed'); INSERT INTO comments(id,stone_id,find_id,created_at,nickname,message) VALUES ('c1','A1','f1','2025-04-12T00:00:00Z','Nina','Keep this note'); INSERT INTO stone_views(id,stone_id,created_at) VALUES ('one','A1','2026-10-04T00:00:00Z'),('two','A1','2026-10-04T01:00:00Z'),('three','A1','2026-10-05T00:00:00Z');"]);
+ for(const file of fs.readdirSync('backend/migrations').filter(f=>Number(f.slice(0,4))>6))fs.copyFileSync('backend/migrations/'+file,path.join(migrations,file));
+ cli(['migrations','apply','migration-db']);
+ const result=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT views,creator FROM stones; SELECT baseline_views FROM traffic_targets WHERE target='stone:A1'; SELECT day,views FROM traffic_daily ORDER BY day; SELECT message FROM comments; PRAGMA table_info(stones); SELECT COUNT(*) AS finds FROM finds;"]));
+ assert.equal(result[0].results[0].views,9);assert.equal(result[0].results[0].creator,'Nina');assert.equal(result[1].results[0].baseline_views,6);assert.deepEqual(result[2].results,[{day:'2026-10-04',views:2},{day:'2026-10-05',views:1}]);assert.equal(result[3].results[0].message,'Keep this note');assert.ok(!result[4].results.some(c=>c.name==='story'));assert.equal(result[5].results[0].finds,1);
+ console.log('Passed: traffic migration backfills dated events, retains undated totals and removes Story without losing finds or comments.');
+}finally{fs.rmSync(dir,{recursive:true,force:true});}

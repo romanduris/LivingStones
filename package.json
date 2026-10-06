@@ -6,11 +6,13 @@
     "test": "tests"
   },
   "devDependencies": {
+    "jsqr": "1.4.0",
     "playwright": "^1.63.0",
+    "qrcode-generator": "2.0.4",
     "wrangler": "^4.147.0"
   },
   "scripts": {
-    "test": "node --test tests/page.test.cjs && node tests/api.cjs && node tests/browser.cjs && node tests/management-browser.cjs",
+    "test": "node --test tests/page.test.cjs tests/statistics.test.cjs && node tests/traffic-migration.cjs && node tests/api.cjs && node tests/browser.cjs && node tests/management-browser.cjs",
     "dev:api": "wrangler dev --config wrangler.local.jsonc --port 8787",
     "seed": "node scripts/seed.cjs",
     "deploy": "wrangler deploy --config wrangler.jsonc",

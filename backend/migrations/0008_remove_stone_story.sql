@@ -1,0 +1,1 @@
+ALTER TABLE stones DROP COLUMN story;

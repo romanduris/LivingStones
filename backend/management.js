@@ -1,3 +1,4 @@
+import { trafficStatistics } from './traffic.js';
 import { fail, sha256, text, requireOrigin, jsonBody, limit } from './common.js';
 const hours = 4 * 3600;
 function constantEqual(a, b) {
@@ -43,6 +44,7 @@ export async function handleManagement(request, env, listStones) {
     await env.DB.prepare('DELETE FROM admin_sessions WHERE token_hash=?').bind(tokenHash).run();
     return { ok: true };
   }
+  if (path === 'stats' && request.method === 'GET') return trafficStatistics(request, env);
   if (path === 'session' && request.method === 'GET') return { ok: true };
   if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true) };
   const match = path.match(/^stones\/([A-Za-z0-9_-]{1,32})(?:\/(finds|comments)\/([A-Za-z0-9_-]{1,80}))?$/);
@@ -57,11 +59,12 @@ export async function handleManagement(request, env, listStones) {
     if (request.method === 'DELETE') {
       // Explicit order respects foreign keys and removes orphaned replay/view events.
       for (const table of ['comments','submissions','stone_views','finds']) statements.push(env.DB.prepare(`DELETE FROM ${table} WHERE stone_id=?`).bind(id));
+      statements.push(env.DB.prepare('UPDATE traffic_targets SET deleted=1 WHERE target=?').bind('stone:'+id));
       statements.push(env.DB.prepare('DELETE FROM stones WHERE id=?').bind(id));
     } else {
       const body = await jsonBody(request);
       const name = text(body.name,80,true), creator = text(body.creator,80,true);
-      const born = date(body.started).slice(0,10), story = text(body.story,1000);
+      const born = date(body.started).slice(0,10);
       const image = text(body.image,300,true), theme = text(body.theme,20,true), color = text(body.color,7,true);
       if (!/^(?:(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:svg|png|jpe?g|webp)|https:\/\/[^\s<>"']+)$/i.test(image)) fail(400, 'Use a stone asset path or an HTTPS image URL.');
       if (!['sun','moon','leaf','heart','wave'].includes(theme) || !/^#[a-f0-9]{6}$/i.test(color) || typeof body.demo !== 'boolean') fail(400, 'Choose a valid appearance and stone type.');
@@ -74,7 +77,8 @@ export async function handleManagement(request, env, listStones) {
       if (!first) fail(409, 'A stone must have its birth location.');
       const birthMoment = born !== stone.born ? born+'T00:00:00.000Z' : first.occurred_at;
       if (second && Date.parse(birthMoment) >= Date.parse(second.occurred_at)) fail(400, 'Birth must be before the next find.');
-      statements.push(env.DB.prepare('UPDATE stones SET name=?,creator=?,born=?,story=?,image=?,theme=?,color=?,is_demo=?,code_hash=?,demo_code=? WHERE id=?').bind(name,creator,born,story,image,theme,color,body.demo?1:0,code?await sha256(code):stone.code_hash,body.demo?(code||stone.demo_code):null,id));
+      statements.push(env.DB.prepare('UPDATE stones SET name=?,creator=?,born=?,image=?,theme=?,color=?,is_demo=?,code_hash=?,demo_code=? WHERE id=?').bind(name,creator,born,image,theme,color,body.demo?1:0,code?await sha256(code):stone.code_hash,body.demo?(code||stone.demo_code):null,id));
+      statements.push(env.DB.prepare('UPDATE traffic_targets SET name=? WHERE target=?').bind(name,'stone:'+id));
       if (born !== stone.born) {
         statements.push(env.DB.prepare('UPDATE finds SET occurred_at=? WHERE id=?').bind(birthMoment,first.id));
         statements.push(env.DB.prepare('UPDATE comments SET created_at=? WHERE find_id=?').bind(birthMoment,first.id));

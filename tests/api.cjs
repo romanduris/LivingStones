@@ -100,7 +100,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       25,
     );
     assert.ok(!JSON.stringify(result.body).includes("code_hash"));
-    assert.ok(result.body.stones.every(stone => !("tagline" in stone)));
+    assert.ok(result.body.stones.every(stone => !("tagline" in stone) && !("story" in stone)));
     assert.equal((await call("/stones/unknown")).status, 404);
     assert.equal(
       (await call("/stones/A1/verify", { code: "WRONG" })).status,
@@ -282,6 +282,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       /Idempotency-Key/,
     );
     // Real admin sessions, no unauthenticated management reads or writes.
+    assert.equal((await call("/admin/stats")).status,401);
     assert.equal((await call("/admin/stones")).status,401);
     assert.equal((await call("/admin/stones",null,null,{Authorization:"Bearer "+"a".repeat(64)})).status,401);
     assert.equal((await call("/admin/login",{password:managementPassword},null,{Origin:"https://bad.invalid"})).status,403);
@@ -303,6 +304,17 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal((await call("/stones/A1/views",{viewId:"bad"})).status,400);
     assert.equal((await call("/stones/unknown/views",{viewId:randomUUID()})).status,404);
     assert.equal((await admin("stones/A1")).body.stone.views,1);
+    const homeEvent=randomUUID();
+    const homeCounts=await Promise.all(Array.from({length:4},()=>call('/page-views',{viewId:homeEvent})));
+    assert.ok(homeCounts.every(r=>r.status===200));
+    assert.equal((await call('/page-views',{viewId:'bad'})).status,400);
+    assert.equal((await call('/page-views',{viewId:randomUUID()},null,{Origin:'https://bad.invalid'})).status,403);
+    assert.equal((await admin('stats?period=invalid')).status,400);
+    const traffic=(await admin('stats?period=7')).body;
+    assert.equal(traffic.targets.find(t=>t.key==='home').totalViews,1);
+    assert.equal(traffic.targets.find(t=>t.key==='stone:A1').totalViews,1);
+    assert.equal(traffic.days.reduce((n,d)=>n+d.views,0),2);
+    assert.equal((Date.parse(traffic.range.to)-Date.parse(traffic.range.from))/86400000,6);
     let managed=(await admin("stones/A1")).body.stone;
     const originalName=managed.name;
     assert.equal((await admin("stones/A1","PATCH",{...managed,name:"Managed Sunny Side",creator:"Admin creator"})).status,200);
@@ -333,6 +345,8 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal((await admin("stones/A1","DELETE",null,{Origin:"https://bad.invalid"})).status,403);
     assert.equal((await admin("stones/A1","DELETE")).status,200);
     assert.equal((await call("/stones/A1")).status,404);
+    const retained=(await admin('stats?period=all')).body.targets.find(t=>t.key==='stone:A1');
+    assert.equal(retained.deleted,true);assert.equal(retained.totalViews,1);
     const tables=JSON.parse(cli(["d1","execute","livingstones-local-db","--local","--persist-to",state,"--json","--command","SELECT (SELECT COUNT(*) FROM finds WHERE stone_id='A1') AS finds,(SELECT COUNT(*) FROM comments WHERE stone_id='A1') AS comments,(SELECT COUNT(*) FROM submissions WHERE stone_id='A1') AS submissions,(SELECT COUNT(*) FROM stone_views WHERE stone_id='A1') AS views"]));
     assert.deepEqual(tables[0].results[0],{finds:0,comments:0,submissions:0,views:0});
     assert.equal((await admin("logout","POST",{})).status,200);
