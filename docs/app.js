@@ -1033,6 +1033,12 @@ $("#stone-dialog").addEventListener("click", (event) => {
 });
 window.addEventListener("popstate", syncURL);
 async function boot() {
+  if (location.hostname === "livingstones.rodulab.com" && location.protocol === "http:") {
+    const secureURL = new URL(location.href);
+    secureURL.protocol = "https:";
+    location.replace(secureURL.href);
+    return;
+  }
   const status = $("#data-status");
   status.hidden = false;
   status.textContent = "Our little stories are on their way…";
