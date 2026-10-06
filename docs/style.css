@@ -368,6 +368,9 @@ footer {
   background: none;
   border: 0;
 }
+.map-tone-defs { position: absolute; overflow: hidden; pointer-events: none; }
+.map-stone-image { pointer-events: none; display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 3px #071c21cc); transform: scale(1.55); transition: transform .18s; }
+.stone-image-pin:hover .map-stone-image, .stone-image-pin:focus-visible .map-stone-image { transform: scale(1.7); }
 .pin-core {
   position: absolute;
   left: 4px;
@@ -421,8 +424,7 @@ footer {
   color: var(--muted);
 }
 .leaflet-tile-pane {
-  filter: grayscale(1) invert(1) brightness(0.85) contrast(0.85) sepia(0.6)
-    hue-rotate(215deg) saturate(1.2);
+  filter: url("#map-petrol-tone");
 }
 /* Map-first stone detail. */
 dialog {
@@ -1246,7 +1248,7 @@ body:has(dialog[open]) {
   opacity: 1;
 }
 .leaflet-container {
-  background: var(--surface);
+  background: #19353a;
 }
 @media (max-width: 700px) {
   .map-overview {

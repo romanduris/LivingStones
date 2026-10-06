@@ -5,7 +5,11 @@ const assetBase = new URL(
   document.querySelector('script[src*="app.js"]').src,
 ).href;
 // Image paths can later be replaced by local JPGs or full photo URLs.
-const stoneImageURL = (stone) => new URL(stone.image, assetBase).href;
+const stoneImageURL = (stone) => {
+  const url = new URL(stone.image, assetBase);
+  if (url.origin === new URL(assetBase).origin) url.searchParams.set("v", "58");
+  return url.href;
+};
 const escapeHTML = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -405,7 +409,6 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       dashArray: "4 7",
       interactive: false,
     }).addTo(map);
-  const symbols = { sun: "☀", moon: "☾", leaf: "♧", heart: "♡", wave: "≈", hello: "✉", clover: "♧", flame: "♨", cloud: "☁" };
   const markers = points.map((find, index) => {
     const stone = journey || previewPlace ? stones[0] : stones[index];
     const latest = journey && index === points.length - 1;
@@ -420,8 +423,10 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       title: label,
       alt: label,
       icon: L.divIcon({
-        className: `stone-pin${local ? " is-new" : ""}`,
-        html: `<span class="pin-core" style="--stone-color:${color}">${local ? "✦" : journey ? index + 1 : (symbols[stone.theme] || "●")}</span>`,
+        className: `stone-pin${!journey && !previewPlace ? " stone-image-pin" : ""}${local ? " is-new" : ""}`,
+        html: !journey && !previewPlace
+          ? `<img class="map-stone-image" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="34" height="34">`
+          : `<span class="pin-core" style="--stone-color:${color}">${local ? "✦" : index + 1}</span>`,
         iconSize: [34, 34],
         iconAnchor: [17, 17],
         popupAnchor: [0, -12],
