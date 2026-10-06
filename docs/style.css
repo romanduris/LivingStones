@@ -198,6 +198,12 @@ nav a:hover {
   background: var(--teal);
   flex-shrink: 0;
 }
+.map-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; margin-bottom: 8px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font-size: 13px; }
+.map-toggle:hover { background: #354750; }
+.map-toggle > span:first-child { color: var(--teal); }
+.map-toggle-chevron { color: var(--muted); }
+.map-toggle[aria-expanded="false"] { margin-bottom: 0; }
+.map-toggle[aria-expanded="false"] .map-toggle-chevron { transform: rotate(180deg); }
 .map-frame {
   position: relative;
   border: 1px solid var(--line);
@@ -369,8 +375,8 @@ footer {
   border: 0;
 }
 .map-tone-defs { position: absolute; overflow: hidden; pointer-events: none; }
-.map-stone-image { pointer-events: none; display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 3px #071c21cc); transform: scale(1.55); transition: transform .18s; }
-.stone-image-pin:hover .map-stone-image, .stone-image-pin:focus-visible .map-stone-image { transform: scale(1.7); }
+.map-stone-image { pointer-events: none; display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 3px #071c21cc); transform: scale(.52); transition: transform .18s; }
+.stone-image-pin:hover .map-stone-image, .stone-image-pin:focus-visible .map-stone-image { transform: scale(.57); }
 .pin-core {
   position: absolute;
   left: 4px;
@@ -1170,7 +1176,7 @@ body:has(dialog[open]) {
 }
 .journey-totals {
   display: flex;
-  gap: 34px;
+  gap: 28px;
   margin: 0;
 }
 .journey-totals > div {
@@ -1181,14 +1187,14 @@ body:has(dialog[open]) {
 .journey-totals dt {
   order: 2;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 14px;
 }
 .journey-totals dd {
   margin: 0;
   color: var(--ink);
   font-family: var(--heading-font);
   font-weight: 600;
-  font-size: 32px;
+  font-size: 28px;
   line-height: 1;
 }
 .journey-totals > div:nth-child(2) dd {
@@ -1199,10 +1205,6 @@ body:has(dialog[open]) {
 }
 .journey-totals > div:nth-child(4) dd {
   color: var(--purple);
-}
-.map-hint {
-  font-size: 12px;
-  color: var(--muted);
 }
 .demo-badge {
   display: inline-block;
@@ -1267,15 +1269,12 @@ body:has(dialog[open]) {
     gap: 4px;
   }
   .journey-totals dt {
-    font-size: 14px;
+    font-size: 13px;
   }
   .journey-totals dd {
-    font-size: 28px;
+    font-size: 24px;
   }
-  .map-hint {
-    display: none;
   }
-}
 
 @media (max-width: 700px) {
   #world-map {

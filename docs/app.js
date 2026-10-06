@@ -457,11 +457,17 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       weight: 1,
       interactive: false,
     }).addTo(map);
-  fit();
+  const needsFit = !container.clientWidth || !container.clientHeight;
+  if (!needsFit) fit();
   tiles.addTo(map);
   const observer = new ResizeObserver(() => {
-    if (mapInstances.get(container.id)?.map === map)
-      map.invalidateSize({ pan: false });
+    const instance = mapInstances.get(container.id);
+    if (instance?.map !== map || !container.clientWidth || !container.clientHeight) return;
+    map.invalidateSize({ pan: false });
+    if (instance.needsFit) {
+      fit();
+      instance.needsFit = false;
+    }
   });
   observer.observe(container);
   mapInstances.set(container.id, {
@@ -469,6 +475,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
     bounds,
     fit,
     markers,
+    needsFit,
     tiles,
     observer,
   });
@@ -1049,6 +1056,22 @@ document.addEventListener("beforetoggle", (event) => {
 const repositionLanguages = () => document.querySelectorAll(".language-menu:popover-open").forEach(positionLanguageMenu);
 window.addEventListener("resize", repositionLanguages);
 document.addEventListener("scroll", repositionLanguages, true);
+$("#map-toggle").addEventListener("click", () => {
+  const button = $("#map-toggle");
+  const body = $("#world-map-body");
+  body.hidden = !body.hidden;
+  button.setAttribute("aria-expanded", String(!body.hidden));
+  button.setAttribute("aria-label", body.hidden ? "Show map" : "Hide map");
+  button.title = body.hidden ? "Show map" : "Hide map";
+  if (!body.hidden) requestAnimationFrame(() => {
+    const instance = mapInstances.get("world-map");
+    instance?.map.invalidateSize({ pan: false });
+    if (instance?.needsFit) {
+      instance.fit();
+      instance.needsFit = false;
+    }
+  });
+});
 $("#stone-search").addEventListener("input", event => {
   collectionState.search = event.target.value;
   renderCollection();

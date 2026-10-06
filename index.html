@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="docs/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="docs/style.css?v=58" />
+    <link rel="stylesheet" href="docs/style.css?v=59" />
     <script src="docs/vendor/leaflet/leaflet.js" defer></script>
     <script src="docs/config.js?v=1" defer></script>
-    <script src="docs/app.js?v=58" defer></script>
+    <script src="docs/app.js?v=59" defer></script>
   </head>
   <body>
     <svg class="map-tone-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="map-petrol-tone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 0 0 0 1 0" result="inverted"/><feComponentTransfer in="inverted" result="petrol"><feFuncR type="table" tableValues=".075 .18 .5 .76 .94"/><feFuncG type="table" tableValues=".155 .28 .56 .76 .90"/><feFuncB type="table" tableValues=".17 .29 .46 .60 .72"/></feComponentTransfer><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 .82 0 0 0 0 .70 0 0 0 0 .43 0 -6 6 0 -.25" result="border-colors"/><feComponentTransfer in="border-colors" result="borders"><feFuncA type="discrete" tableValues="0 0 0 0 .75"/></feComponentTransfer><feMerge><feMergeNode in="petrol"/><feMergeNode in="borders"/></feMerge></filter></defs></svg>
@@ -86,24 +86,28 @@
               <dd id="total-countries">—</dd>
             </div>
           </dl>
-          <span class="map-hint">Tap a stone. Meet a little friend.</span>
         </div>
-        <div class="map-frame">
-          <div
-            id="world-map"
-            class="map-panel"
-            role="region"
-            aria-label="Interactive map of the stones’ last known locations"
-          ></div>
-          <button
-            class="map-reset"
-            data-reset-map="world-map"
-            aria-label="Show all stones on the map"
-          >
-            Show all stones ⤢
-          </button>
+        <div class="map-disclosure">
+          <button id="map-toggle" class="map-toggle" type="button" aria-expanded="true" aria-controls="world-map-body" aria-label="Hide map" title="Hide map"><span aria-hidden="true">▧</span> Map <span class="map-toggle-chevron" aria-hidden="true">⌃</span></button>
+          <div id="world-map-body">
+            <div class="map-frame">
+              <div
+                id="world-map"
+                class="map-panel"
+                role="region"
+                aria-label="Interactive map of the stones’ last known locations"
+              ></div>
+              <button
+                class="map-reset"
+                data-reset-map="world-map"
+                aria-label="Show all stones on the map"
+              >
+                Show all stones ⤢
+              </button>
+            </div>
+            <p id="world-map-status" class="map-status" role="status" hidden></p>
+          </div>
         </div>
-        <p id="world-map-status" class="map-status" role="status" hidden></p>
       </section>
       <section
         id="explore"
