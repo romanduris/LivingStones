@@ -2,7 +2,7 @@
 
 Painted stones, shared journeys. English, map-first website: https://romanduris.github.io/LivingStones/.
 
-The frontend is published from `docs/` using GitHub Pages. The root `index.html` serves the same UI locally with `docs/` asset paths. Keep both entry points in sync.
+GitHub Pages publishes the root of `main`. The root `index.html` uses assets from `docs/`; `docs/index.html` serves the same UI with relative asset paths. Keep both entry points in sync.
 
 ## Live data
 
@@ -14,7 +14,7 @@ Opening a stone or its shared `?stone=A1` link only reads data. Desktop visitors
 
 The standalone Leave a note button has been removed; existing standalone notes remain visible. New messages are attached to finds and remain after refresh. Alive means found in the last 90 days. All public form text is rendered as text, not HTML.
 
-Requests have stable idempotency keys so retries after lost responses cannot create duplicate records. Find and associated note writes are transactional. The API validates codes, text lengths, coordinates and request origins, uses bound SQL parameters, and limits write attempts. CORS is configured for the GitHub Pages origin; it is not authentication. Demo codes remain public for testing. Real Find Codes must be sufficiently random and kept on the physical stones. Coordinates, nicknames and messages are public; no raw IP addresses are stored in the write limiter.
+Requests have stable idempotency keys so retries after lost responses cannot create duplicate records. Find and associated note writes are transactional. The API validates codes, text lengths, coordinates and request origins, uses bound SQL parameters, and limits write attempts. CORS allows `https://romanduris.github.io` and `https://livingstones.rodulab.com`; it is not authentication. Demo codes remain public for testing. Real Find Codes must be sufficiently random and kept on the physical stones. Coordinates, nicknames and messages are public; no raw IP addresses are stored in the write limiter.
 
 ## Design
 

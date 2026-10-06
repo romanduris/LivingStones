@@ -6,7 +6,7 @@
   "workers_dev": true,
   "preview_urls": false,
   "vars": {
-    "ALLOWED_ORIGINS": "https://romanduris.github.io",
+    "ALLOWED_ORIGINS": "https://romanduris.github.io,https://livingstones.rodulab.com",
   },
   "d1_databases": [
     {
