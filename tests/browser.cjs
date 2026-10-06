@@ -56,7 +56,10 @@ process.on("exit", () => server?.kill());
         status = 200;
       if (req.method() === "POST") {
         const body = req.postDataJSON();
-        if (body.code !== stone?.code) {
+        if (kind === "views") {
+          stone.views = (stone.views || 0) + 1;
+          result = {views: stone.views};
+        } else if (body.code !== stone?.code) {
           status = 403;
           result = { error: "That code doesn’t match this stone." };
         } else if (kind === "verify") result = { ok: true };
@@ -219,6 +222,7 @@ process.on("exit", () => server?.kill());
       .click();
     await page.locator(".stone-overview-popup").waitFor();
     assert.equal(await page.locator("dialog[open]").count(), 0);
+    assert.equal(await page.evaluate(() => stoneRepository.list().reduce((n,s)=>n+(s.views||0),0)),0,"Opening the map popup does not count a story view");
     assert.equal(new URL(page.url()).searchParams.has("stone"), false);
     assert.match(await page.locator(".stone-popup-facts").innerText(), /Born.*12 Apr 2025.*Alive.*days.*Last found.*26 Sept 2026.*Trnava/s);
     assert.equal(await page.locator(".stone-popup-city .country-flag").count(), 1);
@@ -241,7 +245,8 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator(".origin-note, .life-summary").count(), 0);
     assert.match((await page.locator(".detail-story").innerText()).replace(/\s+/g, " "), /Nina painted me on 12 Apr 2025 in Petržalka, Slovakia/);
     assert.match(await page.locator(".detail-stats").innerText(), /Days alive.*Finds.*Countries/s);
-    assert.equal(await page.locator(".stone-views").innerText(), "Views: 524");
+    await page.waitForFunction(() => Number(document.querySelector(".stone-views strong").textContent) > 0);
+    assert.match(await page.locator(".stone-views").innerText(), /^Views: \d+$/);
     assert.equal(await page.locator(".find-number").count(), 0);
     assert.equal(await page.locator(".find-entry .country-flag").count(), 5);
     assert.ok(
@@ -343,7 +348,10 @@ process.on("exit", () => server?.kill());
     }
     assert.equal(await phone.evaluate(() => window.gpsCalls), 0);
     assert.equal(lookups, 0);
+    await phone.waitForFunction(() => Number(document.querySelector(".stone-views strong").textContent)>0);
+    const viewsBeforeForm=await phone.locator(".stone-views").innerText();
     await phone.locator("#start-find").click();
+    assert.equal(await phone.locator(".stone-views").innerText(),viewsBeforeForm,"Opening a find form does not add another story view");
     assert.equal(await phone.evaluate(() => document.activeElement.id), "find-title");
     await phone.waitForFunction(() => {
       const header = document.querySelector(".detail-topbar").getBoundingClientRect();

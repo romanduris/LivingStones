@@ -10,10 +10,11 @@
     "wrangler": "^4.147.0"
   },
   "scripts": {
-    "test": "node --test tests/page.test.cjs && node tests/api.cjs && node tests/browser.cjs",
+    "test": "node --test tests/page.test.cjs && node tests/api.cjs && node tests/browser.cjs && node tests/management-browser.cjs",
     "dev:api": "wrangler dev --config wrangler.local.jsonc --port 8787",
     "seed": "node scripts/seed.cjs",
-    "deploy": "wrangler deploy --config wrangler.jsonc"
+    "deploy": "wrangler deploy --config wrangler.jsonc",
+    "management:password": "node scripts/management-password.cjs"
   },
   "repository": {
     "type": "git",

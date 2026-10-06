@@ -1,35 +1,10 @@
-class APIError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
-const fail = (status, message) => {
-  throw new APIError(status, message);
-};
-const sha256 = async (value) =>
-  [
-    ...new Uint8Array(
-      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)),
-    ),
-  ]
-    .map((n) => n.toString(16).padStart(2, "0"))
-    .join("");
-function text(value, max, required = false) {
-  if (value == null && !required) return "";
-  if (
-    typeof value !== "string" ||
-    value.length > max ||
-    (required && !value.trim())
-  )
-    fail(400, "Please check the form fields.");
-  return value.trim();
-}
-async function listStones(db, id) {
+import { fail, sha256, text, requireOrigin, jsonBody, limit } from "./common.js";
+import { handleManagement } from "./management.js";
+async function listStones(db, id, admin = false) {
   const where = id ? " WHERE id = ?" : "";
   const statements = [
     db.prepare(
-      "SELECT id,name,story,born,image,theme,color,is_demo,demo_code,creator FROM stones" +
+      "SELECT id,name,story,born,image,theme,color,is_demo,demo_code,creator,views FROM stones" +
         where +
         (id ? "" : " ORDER BY id"),
     ),
@@ -55,12 +30,13 @@ async function listStones(db, id) {
     theme: s.theme,
     color: s.color,
     demo: Boolean(s.is_demo),
+    views: s.views,
     ...(s.is_demo ? { code: s.demo_code } : {}),
     finds: finds.results
       .filter((f) => f.stone_id === s.id)
       .map((f) => ({
         id: f.id,
-        date: f.source === "seed" ? f.occurred_at.slice(0, 10) : f.occurred_at,
+        date: !admin && f.source === "seed" ? f.occurred_at.slice(0, 10) : f.occurred_at,
         lat: f.lat,
         lon: f.lon,
         accuracy: f.accuracy,
@@ -83,28 +59,10 @@ async function listStones(db, id) {
       })),
   }));
 }
-async function rateLimit(request, env) {
-  // Bucket all attempts, including bad codes. No raw IP addresses are stored.
-  const now = Math.floor(Date.now() / 1000),
-    bucket = await sha256(
-      (request.headers.get("CF-Connecting-IP") || "local") +
-        ":" +
-        Math.floor(now / 600),
-    );
-  const result = await env.DB.prepare(
-    "INSERT INTO rate_limits(bucket,attempts,expires_at) VALUES (?,1,?) ON CONFLICT(bucket) DO UPDATE SET attempts=attempts+1 RETURNING attempts",
-  )
-    .bind(bucket, now + 1200)
-    .first();
-  if (result.attempts > 40)
-    fail(429, "Too many attempts. Please try again in a few minutes.");
-  await env.DB.prepare("DELETE FROM rate_limits WHERE expires_at < ?")
-    .bind(now)
-    .run();
-}
 async function handle(request, env) {
   const url = new URL(request.url),
     path = url.pathname;
+  if (path.startsWith("/api/admin/")) return handleManagement(request, env, listStones);
   if (request.method === "GET" && path === "/api/health") {
     await env.DB.prepare("SELECT id FROM stones LIMIT 1").first();
     return { ok: true, service: "livingstones-api" };
@@ -112,7 +70,7 @@ async function handle(request, env) {
   if (request.method === "GET" && path === "/api/stones")
     return { stones: await listStones(env.DB) };
   const match = path.match(
-    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments))?$/,
+    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views))?$/,
   );
   if (!match) fail(404, "That page could not be found.");
   const [, id, kind] = match;
@@ -122,25 +80,21 @@ async function handle(request, env) {
     return { stone };
   }
   if (request.method !== "POST" || !kind) fail(405, "Method not allowed.");
-  const origin = request.headers.get("Origin");
-  const allowed = (env.ALLOWED_ORIGINS || "").split(",");
-  if (!origin || !allowed.includes(origin))
-    fail(403, "Please open the Living Stones website to add your moment.");
-  if (!request.headers.get("Content-Type")?.startsWith("application/json"))
-    fail(415, "Please send JSON.");
-  if (Number(request.headers.get("Content-Length")) > 8192)
-    fail(413, "This message is too large.");
-  const raw = await request.text();
-  if (raw.length > 8192) fail(413, "This message is too large.");
-  let body;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    fail(400, "Please check the form fields.");
+  requireOrigin(request, env);
+  const body = await jsonBody(request);
+  if (kind === "views") {
+    const viewId = text(body.viewId, 80, true);
+    if (!/^[a-zA-Z0-9-]{16,80}$/.test(viewId)) fail(400, "Invalid view event.");
+    if (!await env.DB.prepare("SELECT id FROM stones WHERE id=?").bind(id).first()) fail(404, "This stone could not be found.");
+    await limit(request, env, "views", 120);
+    await env.DB.batch([
+      env.DB.prepare("UPDATE stones SET views=views+1 WHERE id=? AND NOT EXISTS(SELECT 1 FROM stone_views WHERE id=?)").bind(id, viewId),
+      env.DB.prepare("INSERT INTO stone_views(id,stone_id,created_at) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING").bind(viewId, id, new Date().toISOString()),
+      env.DB.prepare("DELETE FROM stone_views WHERE created_at < ?").bind(new Date(Date.now()-30*86400000).toISOString()),
+    ]);
+    return { views: (await env.DB.prepare("SELECT views FROM stones WHERE id=?").bind(id).first()).views };
   }
-  if (!body || typeof body !== "object" || Array.isArray(body))
-    fail(400, "Please check the form fields.");
-  await rateLimit(request, env);
+  await limit(request, env, "public", 40);
   const stone = await env.DB.prepare(
     "SELECT code_hash,is_demo FROM stones WHERE id = ?",
   )
@@ -283,8 +237,8 @@ export default {
         status: allowed ? 204 : 403,
         headers: {
           ...headers,
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key",
+          "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, Authorization",
           "Access-Control-Max-Age": "600",
         },
       });

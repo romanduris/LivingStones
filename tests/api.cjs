@@ -3,7 +3,9 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { spawn, execFileSync } = require("node:child_process");
-const { randomUUID } = require("node:crypto");
+const { randomUUID, createHash } = require("node:crypto");
+const managementPassword = randomUUID()+randomUUID();
+const managementHash = createHash("sha256").update(managementPassword).digest("hex");
 const state = fs.mkdtempSync(path.join(os.tmpdir(), "livingstones-d1-"));
 const config = "wrangler.local.jsonc",
   port = 8791;
@@ -64,6 +66,8 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
         config,
         "--port",
         String(port),
+        "--var",
+        "ADMIN_PASSWORD_HASH:"+managementHash,
         "--persist-to",
         state,
       ],
@@ -277,14 +281,80 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       preflight.headers.get("Access-Control-Allow-Headers"),
       /Idempotency-Key/,
     );
+    // Real admin sessions, no unauthenticated management reads or writes.
+    assert.equal((await call("/admin/stones")).status,401);
+    assert.equal((await call("/admin/stones",null,null,{Authorization:"Bearer "+"a".repeat(64)})).status,401);
+    assert.equal((await call("/admin/login",{password:managementPassword},null,{Origin:"https://bad.invalid"})).status,403);
+    assert.equal((await call("/admin/login",{password:"incorrect"})).status,401);
+    const login = await call("/admin/login",{password:managementPassword});
+    assert.equal(login.status,200);assert.match(login.body.token,/^[a-f0-9]{64}$/);
+    const bearer={Authorization:"Bearer "+login.body.token};
+    async function admin(path,method="GET",body,headers={}) {
+      const response=await fetch(`http://127.0.0.1:${port}/api/admin/`+path,{method,headers:{Origin:origin,...bearer,...headers,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
+      return {status:response.status,body:await response.json()};
+    }
+    assert.equal((await admin("stones")).body.stones.length,5);
+    const beforeViews=(await call("/stones/A1")).body.stone;
+    const event=randomUUID();
+    const counted=await Promise.all(Array.from({length:4},()=>call("/stones/A1/views",{viewId:event})));
+    assert.ok(counted.every(r=>r.status===200));
+    const afterViews=(await call("/stones/A1")).body.stone;
+    assert.equal(afterViews.views,1);assert.deepEqual(afterViews.finds,beforeViews.finds);assert.deepEqual(afterViews.comments,beforeViews.comments);
+    assert.equal((await call("/stones/A1/views",{viewId:"bad"})).status,400);
+    assert.equal((await call("/stones/unknown/views",{viewId:randomUUID()})).status,404);
+    assert.equal((await admin("stones/A1")).body.stone.views,1);
+    let managed=(await admin("stones/A1")).body.stone;
+    const originalName=managed.name;
+    assert.equal((await admin("stones/A1","PATCH",{...managed,name:"Managed Sunny Side",creator:"Admin creator"})).status,200);
+    assert.equal((await call("/stones/A1")).body.stone.name,"Managed Sunny Side");
+    assert.equal((await admin("stones/A1","PATCH",{...managed,demo:false})).status,400);
+    assert.equal((await admin("stones/A1","PATCH",{...managed,demo:false,code:"8451"})).status,400);
+    assert.equal((await admin("stones/A1","PATCH",{...managed,demo:false,code:"PRIVATE9876"})).status,200);
+    const realAdmin=(await call("/stones/A1")).body.stone;assert.equal(realAdmin.demo,false);assert.ok(!('code' in realAdmin));
+    assert.equal((await call("/stones/A1/verify",{code:"PRIVATE9876"})).status,200);
+    assert.equal((await admin("stones/A1","PATCH",{...managed,name:originalName,demo:true,code:"8451"})).status,200);
+    managed=(await admin("stones/A1")).body.stone;
+    const linked=managed.comments.find(c=>c.findId);
+    assert.equal((await admin(`stones/A1/comments/${linked.id}`,"PATCH",{nickname:"<img src=x>",message:"Edited note"})).status,200);
+    const withEdit=(await call("/stones/A1")).body.stone;
+    assert.equal(withEdit.comments.find(c=>c.id===linked.id).message,"Edited note");
+    assert.equal(withEdit.finds.find(f=>f.id===linked.findId).nickname,"<img src=x>");
+    assert.equal((await admin(`stones/E5/comments/${linked.id}`,"DELETE")).status,404);
+    assert.equal((await admin(`stones/A1/comments/${linked.id}`,"DELETE")).status,200);
+    assert.ok((await call("/stones/A1")).body.stone.finds.some(f=>f.id===linked.findId));
+    const first=managed.finds[0],last=managed.finds.at(-1);
+    assert.equal((await admin(`stones/A1/finds/${first.id}`,"DELETE")).status,409);
+    assert.equal((await admin(`stones/A1/finds/${last.id}`,"PATCH",{...last,city:"Admin city",lat:49,lon:19,source:"manual",accuracy:null})).status,200);
+    assert.equal((await call("/stones/A1")).body.stone.finds.at(-1).city,"Admin city");
+    assert.equal((await admin(`stones/A1/finds/${last.id}`,"PATCH",{...last,date:"2025-01-01T00:00:00Z"})).status,400);
+    assert.equal((await admin(`stones/A1/finds/${last.id}`,"DELETE")).status,200);
+    assert.ok(!(await call("/stones/A1")).body.stone.finds.some(f=>f.id===last.id));
+    // A complete deletion removes all dependent records and survives another read.
+    assert.equal((await admin("stones/A1","DELETE",null,{Origin:"https://bad.invalid"})).status,403);
+    assert.equal((await admin("stones/A1","DELETE")).status,200);
+    assert.equal((await call("/stones/A1")).status,404);
+    const tables=JSON.parse(cli(["d1","execute","livingstones-local-db","--local","--persist-to",state,"--json","--command","SELECT (SELECT COUNT(*) FROM finds WHERE stone_id='A1') AS finds,(SELECT COUNT(*) FROM comments WHERE stone_id='A1') AS comments,(SELECT COUNT(*) FROM submissions WHERE stone_id='A1') AS submissions,(SELECT COUNT(*) FROM stone_views WHERE stone_id='A1') AS views"]));
+    assert.deepEqual(tables[0].results[0],{finds:0,comments:0,submissions:0,views:0});
+    assert.equal((await admin("logout","POST",{})).status,200);
+    assert.equal((await admin("stones")).status,401);
+    const secondLogin=await call("/admin/login",{password:managementPassword});
+    const expiredHash=createHash("sha256").update(secondLogin.body.token).digest("hex");
+    cli(["d1","execute","livingstones-local-db","--local","--persist-to",state,"--command",`UPDATE admin_sessions SET expires_at=0 WHERE token_hash='${expiredHash}'`]);
+    assert.equal((await call("/admin/stones",null,null,{Authorization:"Bearer "+secondLogin.body.token})).status,401);
+    let loginLimited;
+    for(let i=0;i<12;i++){
+      loginLimited=await call("/admin/login",{password:"incorrect"});
+      if(loginLimited.status===429)break;
+    }
+    assert.equal(loginLimited.status,429);
     let limited;
     for (let i = 0; i < 45; i++) {
-      limited = await call("/stones/A1/verify", { code: "bad" });
+      limited = await call("/stones/B2/verify", { code: "bad" });
       if (limited.status === 429) break;
     }
     assert.equal(limited.status, 429);
     console.log(
-      "Passed: real local D1 migrations, seed preservation, persistent finds/notes, atomic writes, concurrent idempotency, validation, private real codes, CORS and rate limits.",
+      "Passed: real local D1 migrations, seed preservation, persistent finds/notes, atomic writes, concurrent idempotency, validation, private real codes, CORS, authenticated management CRUD/session revocation, atomic view counting and separate rate limits.",
     );
   } finally {
     server?.kill("SIGTERM");

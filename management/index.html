@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https:; connect-src 'self' https://livingstones-api.livingstones-romanduris.workers.dev http://127.0.0.1:8787 http://localhost:8787; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Management · Living Stones</title>
+  <link rel="stylesheet" href="../docs/style.css?v=44">
+  <link rel="stylesheet" href="management.css?v=1">
+  <script src="../docs/config.js?v=1" defer></script>
+  <script src="management.js?v=1" defer></script>
+</head>
+<body>
+  <header class="admin-header"><a class="admin-brand" href="../">🪨 Living Stones <span>Management</span></a><div><a href="../">Visit website ↗</a><button id="logout" hidden>Sign out</button></div></header>
+  <main id="admin-main">
+    <section id="login" class="login-card">
+      <p class="eyebrow">YOUR LITTLE WORLD</p><h1>Care for their stories.</h1>
+      <p>Sign in to manage stones and the people they’ve met.</p>
+      <form id="login-form"><label for="password">Management password</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128"><button type="submit" class="primary">Sign in</button></form>
+      <p class="login-hint">Your session lasts up to four hours. Never share this password with finders.</p>
+    </section>
+    <section id="dashboard" hidden>
+      <div class="page-heading"><div><p class="eyebrow">LIVING STONES MANAGEMENT</p><h1>Every stone. Every little hello.</h1></div><button id="refresh">Refresh</button></div>
+      <div id="summary" class="admin-stats"></div>
+      <div class="admin-toolbar"><label>Search stones<input id="search" type="search" placeholder="Name, ID or city"></label><label>Type<select id="type-filter"><option value="all">All stones</option><option value="demo">Demo</option><option value="real">Real</option></select></label><label>Sort by<select id="sort"><option value="latest">Last found</option><option value="views">Most viewed</option><option value="name">Name</option></select></label></div>
+      <div id="stone-list" class="admin-stone-list"></div>
+      <p class="admin-footnote">Views count story openings since tracking began. They are not a count of unique people.</p>
+    </section>
+    <section id="editor" hidden></section>
+    <p id="notice" role="status" aria-live="polite" hidden></p>
+  </main>
+  <dialog id="record-dialog"><div class="record-dialog-top"><h2 id="record-title">Edit record</h2><button id="close-record" aria-label="Close editor">×</button></div><form id="record-form"></form><p id="record-error" role="alert" hidden></p></dialog>
+</body>
+</html>

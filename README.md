@@ -16,11 +16,27 @@ The standalone Leave a note button has been removed; existing standalone notes r
 
 Requests have stable idempotency keys so retries after lost responses cannot create duplicate records. Find and associated note writes are transactional. The API validates codes, text lengths, coordinates and request origins, uses bound SQL parameters, and limits write attempts. CORS allows `https://romanduris.github.io` and `https://livingstones.rodulab.com`; it is not authentication. Demo codes remain public for testing. Real Find Codes must be sufficiently random and kept on the physical stones. Coordinates, nicknames and messages are public; no raw IP addresses are stored in the write limiter.
 
+## Management
+
+`https://livingstones.rodulab.com/management/` provides an owner dashboard for all stones, view totals, search/type filters and sorting, stone details/appearance/Find Codes, finds and attached or standalone comments. Changes use authenticated admin API endpoints and the same D1 database as the public website. Deleting a stone removes its finds, comments, idempotency records and view events in a transaction. Deleting a comment keeps the find. A stone retains its birth location; edit it instead of deleting it, or delete the entire stone. Birth and encounter dates stay chronologically valid. Converting Demo to Real requires a new private Find Code.
+
+Authentication uses a generated 256-bit password, with only its SHA-256 hash in the Worker's `ADMIN_PASSWORD_HASH` secret. No admin credential belongs in source or frontend configuration. Sign-in attempts are limited separately from public finds. Session tokens have 256 bits of randomness, are stored only as hashes in D1, expire after four hours, and are revoked on sign-out. The owner browser stores its token in sessionStorage (per-tab); admin writes require an allowed Origin and Bearer authorization. The admin UI has a restrictive Content Security Policy and escapes public content. Anonymous visitors can load only the sign-in shell; admin reads and writes fail without a valid session, including at the direct workers.dev endpoint.
+
+After applying migrations, create or rotate the owner password:
+
+```sh
+npm run management:password
+```
+
+The command installs the hash as a Worker secret, revokes existing sessions, and writes a private local access file (mode 0600). It prints only the file path. Keep the password in a password manager. Never commit the access file. Rotation changes only LivingStones resources.
+
+Public `POST /api/stones/:id/views` counts a story opening without a Find Code. A generated view-event ID deduplicates retries/concurrent submissions transactionally. Reading the stone list, clicking a main-map popup, admin browsing, and rerendering a find form do not record story views. Counts start at zero; the former example value of 524 is not imported. View events expire after 30 days for bounded deduplication storage; total counts remain. Counts measure openings, not unique people. Public view attempts have their own rate limiter. No raw IP addresses are stored.
+
 ## Design
 
 The sticky charcoal navigation, Baloo 2 headings and Nunito Sans text use local WOFF2 fonts with their licenses in `docs/assets/fonts/`. Purple, coral, teal and yellow accents match the painted pebble brand. Leaflet is locally vendored. OpenStreetMap tiles receive a subdued charcoal/purple filter, with lavender marker outlines and journey routes. Attribution remains visible. If tiles fail, location markers and controls still work.
 
-The overview remains a table at phone sizes: The first visible data column is left aligned, the last is right aligned, and the middle columns are centered. Born and Last Found use the same date format. Last Found shows elapsed days in parentheses instead of the time, with city and flag on the smaller second line. Age (days) shows only the number. Finds and Countries are separate columns; on phones the Countries heading uses the globe symbol. Primary table lines share one bold font size and secondary lines a smaller regular size. Short stone taglines have been removed from the UI, API, seed and database. Less important columns disappear progressively and birth details move underneath the stone name. The overview starts with the map. Stone details show the stone image and Alive age in the header, followed by a personal introduction, creator, birthplace and age/encounter totals. The mobile find button, share icon and other-stones action sit in one row before the route map and journey statistics. The story feed combines finds and standalone notes, newest first, with date, city and flag on the left, the address directly underneath, and the finder on the right and the location-source badge after the address. The message follows beneath them. Standalone notes do not claim a location. URL/history/sharing support stays in the main page.
+The overview remains a table at phone sizes: The first visible data column is left aligned, the last is right aligned, and the middle columns are centered. Last Found highlights elapsed days, followed by a smaller date without the year in parentheses, with city and flag underneath. Age (days) shows only the number. Finds and Countries are separate columns; the Countries heading remains a word on phones. Primary table lines share one bold font size and secondary lines a smaller regular size. Short stone taglines have been removed from the UI, API, seed and database. Less important columns disappear progressively and birth details move underneath the stone name. The overview starts with the map. Stone details show the stone image and Alive age in the header, followed by a personal introduction, creator, birthplace and age/encounter totals. The mobile find button, share icon and other-stones action sit in one row before the route map and journey statistics. The story feed combines finds and standalone notes, newest first, with date, city and flag on the left, the address directly underneath, and the finder on the right and the location-source badge after the address. The message follows beneath them. Standalone notes do not claim a location. URL/history/sharing support stays in the main page.
 
 ## Development and tests
 
@@ -66,8 +82,9 @@ BTSflighttickets resources are not part of either Wrangler configuration. Projec
 | `GET /api/health` | Checks the database binding |
 | `GET /api/stones` | Public journeys and messages |
 | `GET /api/stones/:id` | Public stone detail |
+| `POST /api/stones/:id/views` | Records a deduplicated story opening |
 | `POST /api/stones/:id/verify` | Validates Find Code before requesting GPS |
 | `POST /api/stones/:id/finds` | Saves a confirmed find and optional message |
 | `POST /api/stones/:id/comments` | Saves a note without a find |
 
-Writes require JSON, the allowed frontend Origin, and `code`. Find/comment submissions also require an `Idempotency-Key`. The Worker supplies timestamps and record IDs. No administration or stone-creation endpoint is exposed in this first backend; real stones can be inserted through controlled D1 migrations/operations when ready.
+Public find/comment writes require JSON, the allowed frontend Origin, and `code`. Find/comment submissions also require an `Idempotency-Key`. The Worker supplies timestamps and record IDs. Authenticated management endpoints live under `/api/admin/` (login/logout, stone reads/updates/deletion, find and comment updates/deletion). A stone-creation endpoint is not exposed yet; new real stones can be inserted through controlled D1 operations.

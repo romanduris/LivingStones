@@ -206,6 +206,12 @@ const stoneRepository = (() => {
     async load() {
       stones = (await request("/api/stones")).stones;
     },
+    async recordView(id) {
+      const result = await request(`/api/stones/${encodeURIComponent(id)}/views`, {viewId: crypto.randomUUID()});
+      const stone = stones.find(s => s.id === id);
+      if (stone) stone.views = result.views;
+      return result.views;
+    },
     verify: (id, code) =>
       request(`/api/stones/${encodeURIComponent(id)}/verify`, { code }),
     addFind: (id, body, key) => save(id, "finds", body, key),
@@ -495,7 +501,7 @@ function renderDetail() {
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
         <p class="journey-explanation">Follow my journey. Each numbered stop is a little hello.</p>
         <div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div>
-        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}<span class="stone-views" title="Example count; view tracking is coming later" aria-label="Views: 524, example count">Views: <strong>524</strong></span></span></div>
+        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}<span class="stone-views" title="Story openings since view tracking began">Views: <strong>${stone.views || 0}</strong></span></span></div>
         <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${finds}</strong> Finds</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>
       <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">The friends I’ve met.</h3></div><p class="section-subtitle">Every hello is part of my story.</p><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
@@ -545,6 +551,12 @@ function openStone(id, updateURL = true) {
   flow = null;
   if (!dialog.open) dialog.showModal();
   renderDetail();
+  stoneRepository.recordView(id).then(views => {
+    if (selectedId === id && dialog.open) {
+      const counter = $(".stone-views strong");
+      if (counter) counter.textContent = views;
+    }
+  }).catch(() => {});
   if (updateURL && new URL(location.href).searchParams.get("stone") !== id) {
     const url = new URL(location.href);
     url.searchParams.set("stone", id);
