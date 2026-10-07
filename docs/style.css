@@ -1973,9 +1973,9 @@ body:has(dialog[open]) {
 .card-facts dd span { color: var(--purple); }
 .card-facts dd .card-find-unit { color: inherit; }
 .card-location { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 6px; border-top: 1px solid #53626e; background: #36414fb3; padding: 8px 9px; font-size: 11px; }
-.card-location > span { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.card-city { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card-location time { flex-shrink: 0; color: #bac5ce; font-size: 10px; }
+.card-location > span { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.card-city { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-location time { flex-shrink: 0; white-space: nowrap; color: #bac5ce; font-size: 10px; }
 .card-location .country-flag { flex-shrink: 0; width: 18px; height: 12px; }
 .stone-empty { padding: 28px; text-align: center; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 @media (max-width: 999px) {
@@ -2006,7 +2006,7 @@ body:has(dialog[open]) {
   .card-facts dd { font-size: 10px; }
   .card-facts dd span { display: none; }
   .card-born { right: 3px; bottom: 4px; font-size: 7px; letter-spacing: 0; }
-  .card-location { flex-direction: column; align-items: flex-start; padding: 6px 5px; gap: 2px; font-size: 9px; }
+  .card-location { flex-direction: row; align-items: center; padding: 6px 5px; gap: 3px; font-size: 9px; }
   .card-location > span { gap: 3px; max-width: 100%; }
   .card-location .country-flag { width: 12px; height: 8px; }
   .card-location time { font-size: 9px; }
