@@ -247,7 +247,7 @@ nav a:hover {
   color: #ead09c;
 }
 .stones-section {
-  padding-top: 35px;
+  padding-top: 0;
 }
 .section-label {
   font-size: 11px;
@@ -853,7 +853,7 @@ body:has(dialog[open]) {
     display: none;
   }
   .stones-section {
-    padding-top: 27px;
+    padding-top: 0;
   }
   .demo-note {
     font-size: 11px;

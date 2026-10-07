@@ -25,7 +25,7 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=64" />
+    <link rel="stylesheet" href="style.css?v=65" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="config.js?v=1" defer></script>
     <script src="app.js?v=62" defer></script>
@@ -118,11 +118,11 @@
         aria-label="Explore stones"
       >
         <div class="filters-disclosure disclosure">
-          <button id="filters-toggle" class="disclosure-toggle" type="button" aria-expanded="true" aria-controls="stone-filter-body" aria-label="Hide filters" title="Hide filters">
+          <button id="filters-toggle" class="disclosure-toggle" type="button" aria-expanded="false" aria-controls="stone-filter-body" aria-label="Show filters" title="Show filters">
             <svg class="disclosure-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span>Filters</span>
           </button>
-          <div id="stone-filter-body">
+          <div id="stone-filter-body" hidden>
             <div class="stone-toolbar" aria-label="Explore stones">
               <label class="stone-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search stones</span><input id="stone-search" type="search" placeholder="Search stones…" autocomplete="off"></label>
               <div class="stone-filters" role="group" aria-label="Sort stones">

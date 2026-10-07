@@ -57,6 +57,7 @@ process.on('exit', () => server.kill());
     assert.equal(await page.locator('#stone-count').textContent(), 'Showing 14 of 14 stones');
     assert.equal(await page.locator('#show-more-stones').isVisible(), false);
     assert.equal(await page.locator('.journey-card').nth(9).evaluate(el => el === document.activeElement), true);
+    await page.locator('#filters-toggle').click();
     await page.locator('#stone-search').fill('Luna');
     assert.equal(await page.locator('#stone-count').textContent(), 'Showing 1 of 1 stone');
     await page.locator('#stone-search').fill('');

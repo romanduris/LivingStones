@@ -119,7 +119,10 @@ process.on("exit", () => server?.kill());
               stoneRepository.list().length === 14 &&
               document.querySelector("#data-status").hidden,
           );
-          if (!(await page.locator("dialog[open]").count())) await page.locator('[data-stone-view="list"]').click();
+          if (!(await page.locator("dialog[open]").count())) {
+            if (!(await page.locator("#stone-filter-body").isVisible())) await page.locator("#filters-toggle").click();
+            await page.locator('[data-stone-view="list"]').click();
+          }
           return result;
         };
       }
@@ -526,6 +529,7 @@ process.on("exit", () => server?.kill());
     await phone.locator("#finish-find").click();
     await phone.locator("#other-stones").click();
     assert.equal(new URL(phone.url()).searchParams.get("source"), null, "Returning to the list clears QR access");
+    if (!(await phone.locator("#stone-filter-body").isVisible())) await phone.locator("#filters-toggle").click();
     await phone.locator('[data-stone-view="list"]').click();
     await phone.locator('.stone-link[data-stone="A1"]').click();
     assert.equal(await phone.locator("#start-find, .find-help").count(), 0, "List navigation does not inherit QR access");
