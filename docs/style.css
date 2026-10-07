@@ -1504,8 +1504,10 @@ body:has(dialog[open]) {
 }
 .detail-actions .button {
   white-space: nowrap;
+  height: 42px;
+  min-height: 42px;
 }
-.detail-actions .icon-button { flex-shrink: 0; }
+.detail-actions .icon-button { flex-shrink: 0; width: 42px; height: 42px; }
 .detail-history-heading {
   display: flex;
   align-items: center;
