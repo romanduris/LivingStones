@@ -62,6 +62,8 @@ process.on('exit', () => server.kill());
     assert.equal(await page.locator('#stone-count').textContent(), 'Showing 1 of 1 stone');
     await page.locator('#stone-search').fill('');
     assert.equal(await page.locator('.journey-card:visible').count(), 9);
+    await page.locator('#map-toggle').click();
+    await page.waitForFunction(() => !mapInstances.get('world-map').needsFit);
     const mapView = await page.evaluate(() => { const map = mapInstances.get('world-map').map; return { zoom: map.getZoom(), center: map.getCenter() }; });
     await page.locator('#map-toggle').click();
     assert.equal(await page.locator('#world-map').isVisible(), false);

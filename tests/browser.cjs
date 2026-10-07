@@ -120,6 +120,7 @@ process.on("exit", () => server?.kill());
               document.querySelector("#data-status").hidden,
           );
           if (!(await page.locator("dialog[open]").count())) {
+            if (!(await page.locator("#world-map-body").isVisible())) await page.locator("#map-toggle").click();
             if (!(await page.locator("#stone-filter-body").isVisible())) await page.locator("#filters-toggle").click();
             await page.locator('[data-stone-view="list"]').click();
           }
@@ -182,7 +183,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator("#map-legend").count(), 0);
     assert.match(
       await page.locator(".intro-copy").innerText(),
-      /another country/,
+      /Scan the QR code on the stone/,
     );
     assert.match(
       await page.locator('.stone-row[data-stone="A1"]').innerText(),

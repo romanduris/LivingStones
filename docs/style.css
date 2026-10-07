@@ -199,8 +199,8 @@ nav a:hover {
   flex-shrink: 0;
 }
 .disclosure { border: 1px solid var(--line); border-radius: 7px; }
-.disclosure-toggle { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 7px 11px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-align: left; }
-.disclosure-toggle:hover { background: #ffffff06; color: var(--ink); }
+.disclosure-toggle { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 7px 11px; border: 0; border-radius: 6px; background: linear-gradient(110deg, #344852, #343144); color: #d4dbe4; font-size: 12px; text-align: left; cursor: pointer; }
+.disclosure-toggle:hover, .disclosure-toggle:focus-visible { background: linear-gradient(110deg, #405863, #48405b); color: var(--ink); }
 .disclosure-toggle[aria-expanded="true"] { border-bottom: 1px solid var(--line); border-radius: 6px 6px 0 0; }
 .disclosure-chevron { flex-shrink: 0; }
 .disclosure-toggle[aria-expanded="false"] .disclosure-chevron { transform: rotate(-90deg); }
@@ -247,7 +247,7 @@ nav a:hover {
   color: #ead09c;
 }
 .stones-section {
-  padding-top: 0;
+  padding-top: 8px;
 }
 .section-label {
   font-size: 11px;
@@ -852,7 +852,7 @@ body:has(dialog[open]) {
     display: none;
   }
   .stones-section {
-    padding-top: 0;
+    padding-top: 8px;
   }
   .demo-note {
     font-size: 11px;

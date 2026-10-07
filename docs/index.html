@@ -25,7 +25,7 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=72" />
+    <link rel="stylesheet" href="style.css?v=73" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="config.js?v=1" defer></script>
     <script src="app.js?v=66" defer></script>
@@ -69,12 +69,12 @@
         <div class="map-overview">
           <dl class="journey-totals" aria-label="Journey statistics">
             <div>
-              <dt>Stones</dt>
+              <dt>Stones born</dt>
               <dd id="total-stones">—</dd>
             </div>
             <div>
               <dt title="Found within the last 90 days">
-                Alive
+                Stones alive
                 <span class="sr-only">— found within the last 90 days</span>
               </dt>
               <dd id="total-active">—</dd>
@@ -90,11 +90,11 @@
           </dl>
         </div>
         <div class="map-disclosure disclosure">
-          <button id="map-toggle" class="map-toggle disclosure-toggle" type="button" aria-expanded="true" aria-controls="world-map-body" aria-label="Hide map" title="Hide map">
+          <button id="map-toggle" class="map-toggle disclosure-toggle" type="button" aria-expanded="false" aria-controls="world-map-body" aria-label="Show map" title="Show map">
             <svg class="map-toggle-chevron disclosure-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span>Map</span>
           </button>
-          <div id="world-map-body">
+          <div id="world-map-body" hidden>
             <div class="map-frame">
               <div
                 id="world-map"
