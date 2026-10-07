@@ -251,11 +251,11 @@ process.on("exit", () => server?.kill());
     assert.match((await page.locator(".detail-story").innerText()).replace(/\s+/g, " "), /Nina painted me on 12 Apr 2025\. I was born in Petržalka, Slovakia/);
     assert.match(await page.locator(".detail-story").innerText(), /Since I was born, I’ve been found 4 times and travelled [\d,]+ km\./);
     assert.equal(await page.locator(".detail-stats .stat-finds").innerText(), "4 Finds");
-    assert.equal(await page.locator(".detail-header-actions #share-stone").count(), 1);
-    assert.equal(await page.locator(".detail-actions #share-stone").count(), 0);
+    assert.equal(await page.locator(".detail-header-actions #share-stone").count(), 0);
+    assert.equal(await page.locator(".detail-actions #share-stone").count(), 1);
     assert.equal(await page.locator("#other-stones").innerText(), "Explore more stones ↗");
     assert.equal(await page.locator(".journey-explanation").innerText(), "Follow my journey.");
-    assert.equal(await page.locator("#history-title").innerText(), "My activity.");
+    assert.equal(await page.locator("#history-title").innerText(), "My activity (Every find and message is part of my story.)");
     // Birth alone is not a find; the first later encounter uses singular wording.
     await page.evaluate(() => {
       const stone = stoneRepository.get(selectedId);

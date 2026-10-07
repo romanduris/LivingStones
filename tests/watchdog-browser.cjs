@@ -38,7 +38,7 @@ process.on('exit', () => server.kill());
       await page.locator('#watch-stone').click();
       assert.equal(await page.locator('#watch-stone').getAttribute('aria-expanded'), 'true');
       assert.equal(await page.evaluate(() => document.activeElement.id), 'watchdog-title');
-      assert.match(await page.locator('#watchdog-panel').innerText(), /Notifications are not active yet.*Your email stays private/s);
+      assert.match(await page.locator('#watchdog-panel').innerText(), /Leave your email to follow.*Your email stays private/s);
       await page.locator('#watchdog-email').fill('invalid');
       await page.locator('#save-watchdog').click();
       assert.equal(submissions.length, 0, 'Invalid emails do not submit');

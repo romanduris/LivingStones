@@ -1496,18 +1496,15 @@ body:has(dialog[open]) {
   margin-top: 14px;
 }
 .detail-actions {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-top: 9px;
 }
 .detail-actions .button {
   white-space: nowrap;
 }
-.detail-actions .share-button {
-  flex-shrink: 0;
-  width: 42px;
-  padding-inline: 0;
-}
+.detail-actions .icon-button { flex-shrink: 0; }
 .detail-history-heading {
   display: flex;
   align-items: center;
@@ -1518,6 +1515,7 @@ body:has(dialog[open]) {
 .detail-history-heading h3 {
   margin-bottom: 0;
 }
+.activity-description { font-family: "Nunito Sans", sans-serif; font-size: 13px; font-weight: 400; color: var(--muted); }
 .detail-history-heading .note-button {
   flex-shrink: 0;
   white-space: nowrap;
@@ -1556,19 +1554,11 @@ body:has(dialog[open]) {
     padding-inline: 9px;
     gap: 5px;
   }
-  .detail-actions .share-button {
-    width: 38px;
-    padding-inline: 0;
-  }
 }
 @media (max-width: 360px) {
   .detail-actions .button {
     font-size: 11px;
     padding-inline: 7px;
-  }
-  .detail-actions .share-button {
-    width: 36px;
-    padding-inline: 0;
   }
 }
 
@@ -1662,11 +1652,6 @@ body:has(dialog[open]) {
 .detail-topbar h2 {
   font-size: 20px;
 }
-.detail-header-actions .share-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 .detail-header-actions {
   display: flex;
   align-items: center;
@@ -1674,11 +1659,6 @@ body:has(dialog[open]) {
   flex-shrink: 0;
 }
 #watchdog-panel { margin-bottom: 24px; }
-@media (max-width: 480px) {
-  .detail-topbar { flex-wrap: wrap; }
-  .detail-topbar h2 { flex-basis: 100%; }
-  .detail-header-actions { margin-left: auto; }
-}
 .language-switch {
   display: inline-flex;
   align-items: center;
