@@ -25,10 +25,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="docs/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="docs/style.css?v=63" />
+    <link rel="stylesheet" href="docs/style.css?v=64" />
     <script src="docs/vendor/leaflet/leaflet.js" defer></script>
     <script src="docs/config.js?v=1" defer></script>
-    <script src="docs/app.js?v=61" defer></script>
+    <script src="docs/app.js?v=62" defer></script>
   </head>
   <body>
     <svg class="map-tone-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="map-petrol-tone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 0 0 0 1 0" result="inverted"/><feComponentTransfer in="inverted" result="petrol"><feFuncR type="table" tableValues=".075 .18 .5 .76 .94"/><feFuncG type="table" tableValues=".155 .28 .56 .76 .90"/><feFuncB type="table" tableValues=".17 .29 .46 .60 .72"/></feComponentTransfer><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 .82 0 0 0 0 .70 0 0 0 0 .43 0 -6 6 0 -.25" result="border-colors"/><feComponentTransfer in="border-colors" result="borders"><feFuncA type="discrete" tableValues="0 0 0 0 .75"/></feComponentTransfer><feMerge><feMergeNode in="petrol"/><feMergeNode in="borders"/></feMerge></filter></defs></svg>
@@ -87,9 +87,9 @@
             </div>
           </dl>
         </div>
-        <div class="map-disclosure">
-          <button id="map-toggle" class="map-toggle" type="button" aria-expanded="true" aria-controls="world-map-body" aria-label="Hide map" title="Hide map">
-            <svg class="map-toggle-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="map-disclosure disclosure">
+          <button id="map-toggle" class="map-toggle disclosure-toggle" type="button" aria-expanded="true" aria-controls="world-map-body" aria-label="Hide map" title="Hide map">
+            <svg class="map-toggle-chevron disclosure-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span>Map</span>
           </button>
           <div id="world-map-body">
@@ -117,16 +117,24 @@
         class="stones-section"
         aria-label="Explore stones"
       >
-        <div class="stone-toolbar" aria-label="Explore stones">
-          <label class="stone-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search stones</span><input id="stone-search" type="search" placeholder="Search stones…" autocomplete="off"></label>
-          <div class="stone-filters" role="group" aria-label="Sort stones">
-            <button type="button" data-stone-sort="age" aria-pressed="false" title="Oldest stones first">#Age</button>
-            <button type="button" data-stone-sort="distance" aria-pressed="false">#Most Traveled</button>
-            <button type="button" data-stone-sort="recent" aria-pressed="true">#Recently Found</button>
-          </div>
-          <div class="stone-view-switch" role="group" aria-label="Stone view">
-            <button type="button" data-stone-view="cards" aria-pressed="true" aria-controls="stone-cards">Cards</button>
-            <button type="button" data-stone-view="list" aria-pressed="false" aria-controls="stone-list">List</button>
+        <div class="filters-disclosure disclosure">
+          <button id="filters-toggle" class="disclosure-toggle" type="button" aria-expanded="true" aria-controls="stone-filter-body" aria-label="Hide filters" title="Hide filters">
+            <svg class="disclosure-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Filters</span>
+          </button>
+          <div id="stone-filter-body">
+            <div class="stone-toolbar" aria-label="Explore stones">
+              <label class="stone-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search stones</span><input id="stone-search" type="search" placeholder="Search stones…" autocomplete="off"></label>
+              <div class="stone-filters" role="group" aria-label="Sort stones">
+                <button type="button" data-stone-sort="age" aria-pressed="false" title="Oldest stones first">#Age</button>
+                <button type="button" data-stone-sort="distance" aria-pressed="false">#Most Traveled</button>
+                <button type="button" data-stone-sort="recent" aria-pressed="true">#Recently Found</button>
+              </div>
+              <div class="stone-view-switch" role="group" aria-label="Stone view">
+                <button type="button" data-stone-view="cards" aria-pressed="true" aria-controls="stone-cards">Cards</button>
+                <button type="button" data-stone-view="list" aria-pressed="false" aria-controls="stone-list">List</button>
+              </div>
+            </div>
           </div>
         </div>
         <div id="stone-cards" class="stone-card-grid" aria-label="Stone journeys"></div>

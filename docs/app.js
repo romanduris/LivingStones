@@ -1087,6 +1087,14 @@ $("#map-toggle").addEventListener("click", () => {
     }
   });
 });
+$("#filters-toggle").addEventListener("click", () => {
+  const button = $("#filters-toggle");
+  const body = $("#stone-filter-body");
+  body.hidden = !body.hidden;
+  button.setAttribute("aria-expanded", String(!body.hidden));
+  button.setAttribute("aria-label", body.hidden ? "Show filters" : "Hide filters");
+  button.title = body.hidden ? "Show filters" : "Hide filters";
+});
 $("#stone-search").addEventListener("input", event => {
   collectionState.search = event.target.value;
   collectionState.visibleRows = 3;
