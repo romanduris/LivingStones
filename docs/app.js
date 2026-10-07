@@ -424,7 +424,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
     const stone = journey || previewPlace ? stones[0] : stones[index];
     const latest = journey && index === points.length - 1;
     const local = find.local || Boolean(previewPlace);
-    const color = local ? "#b49aff" : stone.color;
+    const color = local ? "#b49aff" : /^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be";
     const label = previewPlace
       ? "Your find location"
       : journey
@@ -434,9 +434,9 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       title: label,
       alt: label,
       icon: L.divIcon({
-        className: `stone-pin${!journey && !previewPlace ? " stone-image-pin" : ""}${local ? " is-new" : ""}`,
+        className: `stone-pin${!journey && !previewPlace ? " stone-dot-pin" : ""}${local ? " is-new" : ""}`,
         html: !journey && !previewPlace
-          ? `<img class="map-stone-image" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="34" height="34">`
+          ? `<span class="map-stone-dot" style="--stone-color:${color}" aria-hidden="true"></span>`
           : `<span class="pin-core" style="--stone-color:${color}">${local ? "✦" : index + 1}</span>`,
         iconSize: [34, 34],
         iconAnchor: [17, 17],
