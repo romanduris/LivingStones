@@ -1482,6 +1482,7 @@ body:has(dialog[open]) {
 }
 .detail-intro .detail-story {
   max-width: none;
+  text-align: justify;
   font-size: 14px;
   line-height: 1.8;
 }
