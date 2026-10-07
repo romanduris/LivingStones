@@ -1037,6 +1037,7 @@ body:has(dialog[open]) {
   align-items: flex-start;
 }
 .intro-copy p {
+  text-align: justify;
   max-width: 850px;
   line-height: 1.8;
 }
