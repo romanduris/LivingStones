@@ -1674,6 +1674,12 @@ body:has(dialog[open]) {
   gap: 8px;
   flex-shrink: 0;
 }
+#watchdog-panel { margin-bottom: 24px; }
+@media (max-width: 480px) {
+  .detail-topbar { flex-wrap: wrap; }
+  .detail-topbar h2 { flex-basis: 100%; }
+  .detail-header-actions { margin-left: auto; }
+}
 .language-switch {
   display: inline-flex;
   align-items: center;

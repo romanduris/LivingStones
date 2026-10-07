@@ -228,6 +228,7 @@ const stoneRepository = (() => {
       if (stone) stone.views = result.views;
       return result.views;
     },
+    watch: (id, email) => request(`/api/stones/${encodeURIComponent(id)}/watchdog`, { email }),
     verify: (id, code) =>
       request(`/api/stones/${encodeURIComponent(id)}/verify`, { code }),
     addFind: (id, body, key) => save(id, "finds", body, key),
@@ -559,7 +560,7 @@ function renderDetail() {
   const shareIcon =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
   $("#stone-detail").innerHTML = `
-    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span></span></h2><div class="detail-header-actions"><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button><div class="language-picker"><button class="language-switch" type="button" popovertarget="detail-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12"><span class="language-label">EN</span></button><div id="detail-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus><span class="language-name"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12">English</span><span class="language-code">EN</span></button><button type="button" data-language="sk"><span class="language-name"><img class="language-flag" src="${assetBase}flags/sk.svg" alt="" width="18" height="12">Slovenčina</span><span class="language-code">SK</span></button><button type="button" data-language="hu"><span class="language-name"><img class="language-flag" src="${assetBase}flags/hu.svg" alt="" width="18" height="12">Magyar</span><span class="language-code">HU</span></button><button type="button" data-language="de"><span class="language-name"><img class="language-flag" src="${assetBase}flags/de.svg" alt="" width="18" height="12">Deutsch</span><span class="language-code">DE</span></button></div></div><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
+    <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span></span></h2><div class="detail-header-actions"><button class="icon-button" id="watch-stone" type="button" aria-label="Watchdog: watch this stone" title="Watchdog: watch this stone" aria-expanded="false" aria-controls="watchdog-panel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="M12 2V1"/></svg></button><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button><div class="language-picker"><button class="language-switch" type="button" popovertarget="detail-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12"><span class="language-label">EN</span></button><div id="detail-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus><span class="language-name"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12">English</span><span class="language-code">EN</span></button><button type="button" data-language="sk"><span class="language-name"><img class="language-flag" src="${assetBase}flags/sk.svg" alt="" width="18" height="12">Slovenčina</span><span class="language-code">SK</span></button><button type="button" data-language="hu"><span class="language-name"><img class="language-flag" src="${assetBase}flags/hu.svg" alt="" width="18" height="12">Magyar</span><span class="language-code">HU</span></button><button type="button" data-language="de"><span class="language-name"><img class="language-flag" src="${assetBase}flags/de.svg" alt="" width="18" height="12">Deutsch</span><span class="language-code">DE</span></button></div></div><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
     <div class="detail-body">
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
@@ -569,6 +570,17 @@ function renderDetail() {
         <div id="share-fallback" class="share-fallback" hidden></div>
       </section>
       <div id="find-container"></div>
+      <section id="watchdog-panel" class="find-panel" aria-labelledby="watchdog-title" hidden>
+        <h3 id="watchdog-title" tabindex="-1">Watchdog · Follow my next adventure</h3>
+        <p>Leave your email to follow <strong>${escapeHTML(stone.name)}</strong>. Watchdog will let you know when a new find is recorded or I move to a new place.</p>
+        <p id="watchdog-help">For now, we only save your email for this stone. Notifications are not active yet, so no emails will be sent. Your email stays private.</p>
+        <form id="watchdog-form">
+          <label class="field" for="watchdog-email">Your email<input id="watchdog-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="watchdog-help watchdog-status"></label>
+          <div class="form-actions"><button class="button primary" id="save-watchdog" type="submit">Save my email</button></div>
+        </form>
+        <p id="watchdog-status" role="status" aria-live="polite"></p>
+        <button class="button secondary" id="close-watchdog" type="button">Close</button>
+      </section>
       <section class="detail-journey" aria-labelledby="journey-title">
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
         <p class="journey-explanation">Follow my journey.</p>
@@ -583,8 +595,49 @@ function renderDetail() {
   $("#close-detail").addEventListener("click", closeDetail);
   $("#share-stone").addEventListener("click", shareStone);
   $("#other-stones").addEventListener("click", showOtherStones);
+  const watchButton = $("#watch-stone"), watchPanel = $("#watchdog-panel");
+  const closeWatchdog = () => {
+    watchPanel.hidden = true;
+    watchButton.setAttribute("aria-expanded", "false");
+    $("#find-container").hidden = false;
+    watchButton.focus({ preventScroll: true });
+  };
+  watchButton.addEventListener("click", () => {
+    if (!watchPanel.hidden) return closeWatchdog();
+    watchPanel.hidden = false;
+    watchButton.setAttribute("aria-expanded", "true");
+    $("#find-container").hidden = true;
+    watchPanel.style.scrollMarginTop = `${$(".detail-topbar").getBoundingClientRect().height + 12}px`;
+    watchPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#watchdog-title").focus({ preventScroll: true });
+  });
+  $("#close-watchdog").addEventListener("click", closeWatchdog);
+  const watchForm = $("#watchdog-form"), watchEmail = $("#watchdog-email"), watchSubmit = $("#save-watchdog"), watchStatus = $("#watchdog-status");
+  watchForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (watchSubmit.disabled) return;
+    const email = watchEmail.value.trim();
+    watchSubmit.disabled = true;
+    watchEmail.disabled = true;
+    watchSubmit.textContent = "Saving…";
+    watchStatus.textContent = "";
+    try {
+      await stoneRepository.watch(stone.id, email);
+      watchForm.reset();
+      watchStatus.textContent = "Your email is saved for this stone. Notifications are not active yet; no emails will be sent.";
+    } catch (error) {
+      watchStatus.textContent = error.message;
+    } finally {
+      watchSubmit.disabled = false;
+      watchEmail.disabled = false;
+      watchSubmit.textContent = "Save my email";
+    }
+  });
   $("#start-find")?.addEventListener("click", () => {
     if (!openedFromQR() || !supportsPreciseLocation()) return;
+    watchPanel.hidden = true;
+    watchButton.setAttribute("aria-expanded", "false");
+    $("#find-container").hidden = false;
     flow = {
       id: stone.id,
       step: 1,

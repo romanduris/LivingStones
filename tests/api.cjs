@@ -101,6 +101,31 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     );
     assert.ok(!JSON.stringify(result.body).includes("code_hash"));
     assert.ok(result.body.stones.every(stone => !("tagline" in stone) && !("story" in stone)));
+    const watched = await call("/stones/A1/watchdog", { email: "  Watcher+one@example.invalid  " });
+    assert.equal(watched.status, 200);
+    assert.deepEqual(watched.body, { ok: true, notificationsEnabled: false });
+    assert.deepEqual((await call("/stones/A1/watchdog", { email: "WATCHER+ONE@EXAMPLE.INVALID" })).body, watched.body);
+    assert.equal((await call("/stones/A1/watchdog", { email: "second@example.invalid" })).status, 200);
+    assert.equal((await call("/stones/B2/watchdog", { email: "watcher+one@example.invalid" })).status, 200);
+    const concurrentWatchers = await Promise.all([1, 2].map(() => call("/stones/A1/watchdog", { email: "parallel@example.invalid" }, undefined, { "CF-Connecting-IP": "192.0.2.10" })));
+    assert.ok(concurrentWatchers.every(r => r.status === 200));
+    const watchers = JSON.parse(cli(["d1", "execute", "livingstones-local-db", "--local", "--persist-to", state, "--json", "--command", "SELECT stone_id,email FROM stone_watchers ORDER BY stone_id,email"]));
+    assert.deepEqual(watchers[0].results, [
+      { stone_id: "A1", email: "parallel@example.invalid" },
+      { stone_id: "A1", email: "second@example.invalid" },
+      { stone_id: "A1", email: "watcher+one@example.invalid" },
+      { stone_id: "B2", email: "watcher+one@example.invalid" },
+    ]);
+    for (const email of ["invalid", "a@b", "bad\naddress@example.invalid", 42])
+      assert.equal((await call("/stones/A1/watchdog", { email })).status, 400);
+    assert.equal((await call("/stones/unknown/watchdog", { email: "test@example.invalid" })).status, 404);
+    assert.equal((await call("/stones/A1/watchdog", { email: "test@example.invalid" }, undefined, { Origin: "https://evil.invalid" })).status, 403);
+    assert.equal((await call("/stones/A1/watchdog")).status, 405);
+    assert.doesNotMatch(JSON.stringify((await call("/stones")).body), /example\.invalid|stone_watchers|watchdog|email/i);
+    assert.doesNotMatch(JSON.stringify((await call("/stones/A1")).body), /example\.invalid|stone_watchers|watchdog|email/i);
+    let watchLimited;
+    for (let i = 0; i < 11; i++) watchLimited = await call("/stones/B2/watchdog", { email: "watcher+one@example.invalid" }, undefined, { "CF-Connecting-IP": "192.0.2.11" });
+    assert.equal(watchLimited.status, 429);
     assert.equal((await call("/stones/unknown")).status, 404);
     assert.equal(
       (await call("/stones/A1/verify", { code: "WRONG" })).status,
@@ -348,6 +373,8 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal((await admin("stones/A1","DELETE",null,{Origin:"https://bad.invalid"})).status,403);
     assert.equal((await admin("stones/A1","DELETE")).status,200);
     assert.equal((await call("/stones/A1")).status,404);
+    const removedWatchers = JSON.parse(cli(["d1", "execute", "livingstones-local-db", "--local", "--persist-to", state, "--json", "--command", "SELECT COUNT(*) AS total FROM stone_watchers WHERE stone_id='A1'"]));
+    assert.equal(removedWatchers[0].results[0].total, 0);
     const retained=(await admin('stats?period=all')).body.targets.find(t=>t.key==='stone:A1');
     assert.equal(retained.deleted,true);assert.equal(retained.totalViews,1);
     const tables=JSON.parse(cli(["d1","execute","livingstones-local-db","--local","--persist-to",state,"--json","--command","SELECT (SELECT COUNT(*) FROM finds WHERE stone_id='A1') AS finds,(SELECT COUNT(*) FROM comments WHERE stone_id='A1') AS comments,(SELECT COUNT(*) FROM submissions WHERE stone_id='A1') AS submissions,(SELECT COUNT(*) FROM stone_views WHERE stone_id='A1') AS views"]));

@@ -435,7 +435,7 @@ process.on("exit", () => server?.kill());
     await phone.locator("#find-code").click();
     assert.equal(await phone.evaluate(() => document.activeElement.id), "find-code");
     assert.match(
-      await phone.locator(".find-panel").innerText(),
+      await phone.locator("#find-container .find-panel").innerText(),
       /enjoy my company/,
     );
     await phone.locator("#find-code").fill("WRONG");

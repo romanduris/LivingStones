@@ -74,7 +74,7 @@ async function handle(request, env) {
     return recordTraffic(request, env, await jsonBody(request));
   }
   const match = path.match(
-    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views))?$/,
+    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|watchdog))?$/,
   );
   if (!match) fail(404, "That page could not be found.");
   const [, id, kind] = match;
@@ -87,6 +87,20 @@ async function handle(request, env) {
   requireOrigin(request, env);
   const body = await jsonBody(request);
   if (kind === "views") return recordTraffic(request, env, body, id);
+  if (kind === "watchdog") {
+    await limit(request, env, "watchdog", 10);
+    const stone = await env.DB.prepare("SELECT id FROM stones WHERE id = ?").bind(id).first();
+    if (!stone) fail(404, "This stone could not be found.");
+    const email = text(body.email, 254, true).toLowerCase();
+    const localPart = email.split("@")[0];
+    if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i.test(email) || localPart.length > 64 || localPart.startsWith(".") || localPart.endsWith(".") || localPart.includes(".."))
+      fail(400, "Enter a valid email address.");
+    // A retry or a second signup must not reveal existing subscribers.
+    await env.DB.prepare(
+      "INSERT INTO stone_watchers(stone_id,email,created_at) VALUES (?,?,?) ON CONFLICT(stone_id,email) DO NOTHING",
+    ).bind(id, email, new Date().toISOString()).run();
+    return { ok: true, notificationsEnabled: false };
+  }
   await limit(request, env, "public", 40);
   const stone = await env.DB.prepare(
     "SELECT code_hash,is_demo FROM stones WHERE id = ?",

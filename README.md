@@ -98,3 +98,9 @@ Stats filters 7 / 30 / 90 days / all time and homepage / all stories / individua
 `GET /api/admin/stats?period=30` requires a management session. Daily aggregates survive event cleanup and stone deletion. Individual deduplication IDs are retained for 30 days. New view events share the existing separate view rate limit.
 
 HTTPS is enforced by GitHub Pages for `livingstones.rodulab.com`; HTTP requests redirect to HTTPS with status 301. The frontend also retains an HTTPS redirect before fetching data.
+
+## Stone Watchdog
+
+The bell in each stone’s detail opens the Watchdog email form. `POST /api/stones/:id/watchdog` accepts `{ "email": "reader@example.com" }` from the allowed website origins without a Find Code. Migration 0009 stores subscriptions in `stone_watchers`, with one normalized email per stone and a creation timestamp. A stone can have multiple subscribers; the same email can watch several stones. Retrying a signup returns the same `{ "ok": true, "notificationsEnabled": false }` response. The endpoint validates email addresses and limits requests separately from finds.
+
+Emails are private: public stone responses never include subscriptions, and there is no public subscriber-list endpoint. Removing a stone also removes its subscriptions. This currently only saves email addresses; there is no email delivery, movement notification, or background notification job.
