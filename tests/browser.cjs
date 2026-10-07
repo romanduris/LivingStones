@@ -245,7 +245,34 @@ process.on("exit", () => server?.kill());
       /I’m a little painted stone called Sunny Side/,
     );
     assert.equal(await page.locator(".origin-note, .life-summary").count(), 0);
-    assert.match((await page.locator(".detail-story").innerText()).replace(/\s+/g, " "), /Nina painted me on 12 Apr 2025 in Petržalka, Slovakia/);
+    assert.match((await page.locator(".detail-story").innerText()).replace(/\s+/g, " "), /Nina painted me on 12 Apr 2025\. I was born in Petržalka, Slovakia/);
+    assert.match(await page.locator(".detail-story").innerText(), /Since I was born, I’ve been found 4 times and travelled [\d,]+ km\./);
+    assert.equal(await page.locator(".detail-stats .stat-finds").innerText(), "4 Finds");
+    assert.equal(await page.locator(".detail-header-actions #share-stone").count(), 1);
+    assert.equal(await page.locator(".detail-actions #share-stone").count(), 0);
+    assert.equal(await page.locator("#other-stones").innerText(), "Explore more stones ↗");
+    assert.equal(await page.locator(".journey-explanation").innerText(), "Follow my journey.");
+    assert.equal(await page.locator("#history-title").innerText(), "My activity.");
+    // Birth alone is not a find; the first later encounter uses singular wording.
+    await page.evaluate(() => {
+      const stone = stoneRepository.get(selectedId);
+      window.savedDetailFinds = stone.finds;
+      stone.finds = stone.finds.slice(0, 1);
+      renderDetail();
+    });
+    assert.doesNotMatch(await page.locator(".detail-story").innerText(), /Since I was born/);
+    assert.equal(await page.locator(".detail-stats .stat-finds").innerText(), "0 Finds");
+    await page.evaluate(() => {
+      stoneRepository.get(selectedId).finds = window.savedDetailFinds.slice(0, 2);
+      renderDetail();
+    });
+    assert.match(await page.locator(".detail-story").innerText(), /I’ve been found 1 time and travelled [\d,]+ km\./);
+    assert.equal(await page.locator(".detail-stats .stat-finds").innerText(), "1 Find");
+    await page.evaluate(() => {
+      stoneRepository.get(selectedId).finds = window.savedDetailFinds;
+      delete window.savedDetailFinds;
+      renderDetail();
+    });
     assert.match(await page.locator(".detail-stats").innerText(), /Days alive.*Finds.*Countries/s);
     await page.waitForFunction(() => Number(document.querySelector(".stone-views strong").textContent) > 0);
     assert.match(await page.locator(".stone-views").innerText(), /^Views: \d+$/);
@@ -364,10 +391,10 @@ process.on("exit", () => server?.kill());
         .evaluateAll((elements) =>
           elements.map((el) => el.getBoundingClientRect().top),
         );
-      assert.equal(actions.length, 3);
+      assert.equal(actions.length, 2);
       assert.ok(
         Math.max(...actions) - Math.min(...actions) <= 1,
-        "Three mobile actions share one line",
+        "Two mobile actions share one line",
       );
       assert.ok(
         await phone
@@ -400,7 +427,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator('#detail-language-menu:popover-open').count(), 0);
     assert.equal(await phone.locator('dialog[open]').count(), 1);
     assert.equal(await phone.locator(".site-header .language-switch").isEnabled(), true);
-    assert.match(await phone.locator("#detail-title small").innerText(), /^\(Alive · \d+ days\)$/);
+    assert.equal(await phone.locator("#detail-title small").count(), 0);
     assert.equal(await phone.locator("#find-code").getAttribute("inputmode"), "numeric");
     await phone.locator("#find-code").click();
     assert.equal(await phone.evaluate(() => document.activeElement.id), "find-code");
@@ -555,10 +582,10 @@ process.on("exit", () => server?.kill());
     const gpsEntry = phone.locator(rows).first();
     assert.equal(await gpsEntry.locator(".entry-address .gps-badge").count(), 1);
     assert.equal(await gpsEntry.locator(".entry-author .local-badge").count(), 0);
-    assert.equal(await gpsEntry.locator(".entry-address").innerText(), "Ľanová 8, Ružinov GPS find ~25m");
+    assert.equal(await gpsEntry.locator(".entry-address").innerText(), "GPS Ľanová 8, Ružinov");
     assert.match(
       await phone.locator(rows).first().innerText(),
-      /GPS find ~25m/,
+      /GPS/,
     );
     const pin = await phone.evaluate(() => {
       const p = mapInstances.get("journey-map").markers.at(-1).getLatLng();
