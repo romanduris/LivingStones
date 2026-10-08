@@ -52,7 +52,10 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    assert.equal(await page.locator('.qr-link').getAttribute('href'),'https://livingstones.rodulab.com/?stone=A1&source=qr');
    assert.equal(await page.locator('.editor-top a').getAttribute('href'),'../?stone=A1');
    assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'8451');
-   assert.ok(await page.locator('.qr-code-value').evaluate(el=>Number(el.getAttribute('font-size'))>=39));
+   assert.ok(await page.locator('.stone-qr .qr-code-value').evaluate(el=>Number(el.getAttribute('font-size'))>=39));
+   const qrSizes=await page.locator('.qr-previews').evaluate(el=>{const [large,small]=el.children;return {large:large.getBoundingClientRect().width,small:small.getBoundingClientRect().width,left:large.getBoundingClientRect().left,right:small.getBoundingClientRect().left};});
+   assert.ok(Math.abs(qrSizes.large/qrSizes.small-2)<0.01);assert.ok(qrSizes.left<qrSizes.right);
+   await page.locator('.qr-previews').screenshot({path:`/tmp/livingstones-qr-comparison-${width}.png`});
    assert.equal(await page.locator('.admin-logo').evaluate(el=>el.complete&&el.naturalWidth>0),true);
    assert.equal(await page.locator('.stone-qr').getAttribute('data-error-correction'),'H');
    const svgEvent=page.waitForEvent('download');await page.locator('[data-download-qr=svg]').click();const svgDownload=await svgEvent;assert.match(fs.readFileSync(await svgDownload.path(),'utf8'),/fill="black">8451<\/text>/);
