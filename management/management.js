@@ -105,22 +105,45 @@ function qrPanel(stone){
   const code=labelCode(stone),url=qrStoryURL(stone);
   return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="stone-qr" data-error-correction="H" data-quiet-zone="4" role="img" aria-label="${escapeHTML('Story QR for '+stone.name+(code?', Find Code '+code:''))}">${qrLabelSVG(stone)}</div>${code?'':`<form class="qr-code-form" id="qr-code-form"><label>Find Code<input name="code" autocomplete="off" required maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label><p class="form-hint">Enter the existing code to add it to the label. It is kept only for this signed-in session.</p><button type="submit">Show Find Code</button></form>`}<a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
 }
+// Embed the public brand icon so downloaded labels are self-contained.
+const qrBrandIcon = `<svg x="0" y="0" width="28" height="28" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <radialGradient id="pebble" cx=".3" cy=".2" r=".95">
+      <stop stop-color="#f0e6ff"/>
+      <stop offset=".55" stop-color="#bba0ed"/>
+      <stop offset="1" stop-color="#7550b4"/>
+    </radialGradient>
+  </defs>
+  <!-- An uneven, almost full-bleed silhouette stays stone-like at 16 px. -->
+  <path d="M5 25 12 12Q15 7 24 4L36 2Q44 2 49 7L57 17Q60 20 61 29L60 40Q59 47 52 52L41 60Q36 63 28 61L17 58Q12 57 8 50L3 40Q1 34 5 25Z" fill="url(#pebble)" stroke="#69419e" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="m10 24 5-10q5-6 13-7" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+  <!-- Slightly wonky painted lines, like a sun drawn by a child. -->
+  <g stroke="#674131" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M31 17 30 11m12 11 5-5m-1 15 8-1m-11 11 5 6m-17-3-1 8m-8-13-6 6m2-16-8-1m12-7-5-6"/>
+    <path d="M32 21q9-1 12 8 3 8-5 13-8 5-15-2-6-6-1-13 3-5 9-6Z" fill="#ffda69"/>
+    <path d="m27 30 .2 1m10-1-.3 1m-10 5q5 6 10-1" stroke-width="2.2"/>
+  </g>
+  <path d="m46 32 8-1m-36-1-8-1" stroke="#168b88" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="25.5" cy="34" r="1.7" fill="#e66a70"/>
+  <circle cx="38.5" cy="34" r="1.7" fill="#e66a70"/>
+</svg>`;
 function qrLabelSVG(stone){
-  const qr=qrFor(stone),code=labelCode(stone),size=(qr.getModuleCount()+8)*4;
+  const qr=qrFor(stone),code=labelCode(stone),size=(qr.getModuleCount()+8)*4,header=44;
   const svg=qr.createSvgTag({cellSize:4,margin:16,scalable:true,title:'Public story QR for '+stone.name});
-  if(!code)return svg;
-  const fontSize=Math.min(40,(size-32)/(code.length*.66));
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size+80}"><rect width="100%" height="100%" fill="white"/>${svg.replace('<svg ','<svg width="'+size+'" height="'+size+'" ')}<text x="${size/2}" y="${size+14}" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#555">Find Code</text><text class="qr-code-value" x="${size/2}" y="${size+57}" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="${fontSize}" fill="black">${escapeHTML(code)}</text></svg>`;
+  const fontSize=code?Math.min(40,(size-32)/(code.length*.66)):0;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${header+size+(code?80:0)}"><rect width="100%" height="100%" fill="white"/><g class="qr-brand" transform="translate(${(size-178)/2} 12)" shape-rendering="geometricPrecision">${qrBrandIcon}<text x="34" y="21" font-family="sans-serif" font-weight="700" font-size="18" fill="black">Living Stones</text></g>${svg.replace('<svg ','<svg y="'+header+'" width="'+size+'" height="'+size+'" ')}${code?`<text class="qr-code-caption" x="${size/2}" y="${header+size+20}" text-anchor="middle" font-family="sans-serif" font-size="14" fill="black">Find Code</text><text class="qr-code-value" x="${size/2}" y="${header+size+62}" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="${fontSize}" fill="black">${escapeHTML(code)}</text>`:''}</svg>`;
 }
 async function downloadQR(format){
-  const stone=stones.find(s=>s.id===selected),qr=qrFor(stone);let blob;
-  if(format==='svg')blob=new Blob([qrLabelSVG(stone)],{type:'image/svg+xml'});
-  else{
-    const scale=24,count=qr.getModuleCount(),canvas=document.createElement('canvas');const code=labelCode(stone);canvas.width=(count+8)*scale;canvas.height=canvas.width+(code?480:0);
-    const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.fillStyle='#000';
-    for(let row=0;row<count;row++)for(let col=0;col<count;col++)if(qr.isDark(row,col))context.fillRect((col+4)*scale,(row+4)*scale,scale,scale);
-    if(code){context.textAlign='center';context.fillStyle='#555';context.font='60px sans-serif';context.fillText('Find Code',canvas.width/2,canvas.width+84);context.fillStyle='#000';context.font='bold '+Math.min(240,(canvas.width-192)/(code.length*.66))+'px sans-serif';context.fillText(code,canvas.width/2,canvas.width+342);}
-    blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  const stone=stones.find(s=>s.id===selected),svg=qrLabelSVG(stone);let blob=new Blob([svg],{type:'image/svg+xml'});
+  if(format==='png'){
+    const image=new Image(),source=URL.createObjectURL(blob);
+    try{
+      image.src=source;await image.decode();
+      const canvas=document.createElement('canvas'),size=(qrFor(stone).getModuleCount()+8)*4;
+      canvas.width=size*6;canvas.height=(44+size+(labelCode(stone)?80:0))*6;
+      const context=canvas.getContext('2d');context.imageSmoothingEnabled=false;context.drawImage(image,0,0,canvas.width,canvas.height);
+      blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+    }finally{URL.revokeObjectURL(source);}
   }
   if(!blob)throw new Error('Could not prepare the QR download.');
   const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=stone.id+'-qr-H.'+format;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
