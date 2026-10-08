@@ -49,7 +49,7 @@ button:hover { border-color:var(--purple); } button:disabled { opacity:.55; curs
 .admin-tabs button[aria-selected="true"] { background:var(--purple); color:#202930; border-color:var(--purple); }
 .qr-panel { text-align:center; }
 .qr-panel h2,.qr-panel .form-hint { text-align:left; }
-.stone-qr { width:min(220px,100%); margin:20px auto; background:white; }
+.stone-qr { width:min(110px,100%); margin:20px auto; background:white; }
 .stone-qr > svg { display:block; width:100%; height:auto; shape-rendering:crispEdges; }
 .qr-link { display:block; font-size:11px; color:var(--muted); overflow-wrap:anywhere; margin-bottom:16px; }
 .qr-actions { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }

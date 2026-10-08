@@ -134,7 +134,7 @@ function qrLabelSVG(stone){
   const brandContext=document.createElement('canvas').getContext('2d');
   brandContext.font='bold 18px sans-serif';
   const brandTextWidth=brandContext.measureText('Living Stones').width,brandWidth=34+brandTextWidth;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${header+size+(code?80:0)}"><rect width="100%" height="100%" fill="white"/><g class="qr-brand" transform="translate(${(size-brandWidth)/2} 12)" shape-rendering="geometricPrecision">${qrBrandIcon}<text x="34" y="21" textLength="${brandTextWidth}" lengthAdjust="spacingAndGlyphs" font-family="sans-serif" font-weight="700" font-size="18" fill="black">Living Stones</text></g>${svg.replace('<svg ','<svg y="'+header+'" width="'+size+'" height="'+size+'" ')}${code?`<text class="qr-code-caption" x="${size/2}" y="${header+size+20}" text-anchor="middle" font-family="sans-serif" font-size="14" fill="black">Find Code</text><text class="qr-code-value" x="${size/2}" y="${header+size+62}" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="${fontSize}" fill="black">${escapeHTML(code)}</text>`:''}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size/2}" height="${(header+size+(code?80:0))/2}" viewBox="0 0 ${size} ${header+size+(code?80:0)}"><rect width="100%" height="100%" fill="white"/><g class="qr-brand" transform="translate(${(size-brandWidth)/2} 12)" shape-rendering="geometricPrecision">${qrBrandIcon}<text x="34" y="21" textLength="${brandTextWidth}" lengthAdjust="spacingAndGlyphs" font-family="sans-serif" font-weight="700" font-size="18" fill="black">Living Stones</text></g>${svg.replace('<svg ','<svg y="'+header+'" width="'+size+'" height="'+size+'" ')}${code?`<text class="qr-code-caption" x="${size/2}" y="${header+size+20}" text-anchor="middle" font-family="sans-serif" font-size="14" fill="black">Find Code</text><text class="qr-code-value" x="${size/2}" y="${header+size+62}" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="${fontSize}" fill="black">${escapeHTML(code)}</text>`:''}</svg>`;
 }
 async function downloadQR(format){
   const stone=stones.find(s=>s.id===selected),svg=qrLabelSVG(stone);let blob=new Blob([svg],{type:'image/svg+xml'});
@@ -143,7 +143,7 @@ async function downloadQR(format){
     try{
       image.src=source;await image.decode();
       const canvas=document.createElement('canvas'),size=(qrFor(stone).getModuleCount()+8)*4;
-      canvas.width=size*6;canvas.height=(44+size+(labelCode(stone)?80:0))*6;
+      canvas.width=size*3;canvas.height=(44+size+(labelCode(stone)?80:0))*3;
       const context=canvas.getContext('2d');context.imageSmoothingEnabled=false;context.drawImage(image,0,0,canvas.width,canvas.height);
       blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
     }finally{URL.revokeObjectURL(source);}
