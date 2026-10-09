@@ -4,15 +4,46 @@ const id=new URL(location.href).searchParams.get('stone');
 const assetBase=new URL('../docs/assets/',location.href);
 let images=[],place=null,requestKey=null,gpsRun=0,portraitRun=0;
 let cityTimer,cityController,birthMap=null;
-const themes={
-  sun:['Sun · a little sunshine','A warm golden background for a cheerful little friend.',1],
-  moon:['Moon · a little wonder','A soft purple background for a curious little dreamer.',2],
-  leaf:['Leaf · a little nature','A gentle green background for a friend of the outdoors.',3],
-  heart:['Heart · a little kindness','A warm rose background for sharing little moments of kindness.',4],
-  wave:['Wave · a little adventure','A calm blue background for a little explorer on the move.',5],
-};
+const themes={sun:1,moon:2,leaf:3,heart:4,wave:5};
+const locales={en:'en-GB',sk:'sk-SK',hu:'hu-HU',de:'de-DE'};
+let language='en';
+try { language=localStorage.getItem('livingstones-birth-language')||navigator.language.slice(0,2); } catch {}
+if(!locales[language])language='en';
+const messages=new Map();
+function t(key,params={}){return (BIRTH_TRANSLATIONS[language][key]||BIRTH_TRANSLATIONS.en[key]||key).replace(/\{(\w+)\}/g,(_,name)=>params[name]??'');}
+function showMessage(selector,key,params={}){messages.set(selector,{key,params});$(selector).textContent=t(key,params);}
+function errorKey(error){
+  if(error.i18nKey)return error.i18nKey;
+  const aliases={'That Find Code does not match.':'codeWrong','That code doesn’t match this stone. Check the back of the stone.':'codeWrong'};
+  return aliases[error.message]||Object.keys(BIRTH_TRANSLATIONS.en).find(key=>BIRTH_TRANSLATIONS.en[key]===error.message)||'genericError';
+}
+function localizedError(key){const error=new Error(t(key));error.i18nKey=key;return error;}
+function portraitLabel(image){
+  if(!image.id.startsWith('birth-'))return image.label;
+  const [palette,theme]=image.label.split(' ');
+  return t('palette'+palette)+' · '+t('theme'+theme);
+}
+function setLanguage(value){
+  language=locales[value]?value:'en';
+  try{localStorage.setItem('livingstones-birth-language',language);}catch{}
+  document.documentElement.lang=language;document.title=t('pageTitle');
+  for(const node of document.querySelectorAll('[data-i18n]'))if(node.id!=='give-birth')node.textContent=t(node.dataset.i18n);
+  for(const [attribute,target] of [['i18nPlaceholder','placeholder'],['i18nAlt','alt'],['i18nAria','aria-label']]){
+    const name=attribute.replace(/[A-Z]/g,c=>'-'+c.toLowerCase());
+    for(const node of document.querySelectorAll('[data-'+name+']'))node.setAttribute(target,t(node.dataset[attribute]));
+  }
+  $('#birth-language-label').textContent=language.toUpperCase();
+  $('#birth-language-flag').src=new URL('flags/'+(language==='en'?'gb':language)+'.svg',assetBase).href;
+  for(const button of document.querySelectorAll('[data-birth-language]'))button.setAttribute('aria-current',String(button.dataset.birthLanguage===language));
+  for(const [selector,message] of messages)$(selector).textContent=t(message.key,message.params);
+  for(const [index,node] of [...$('#portrait-options').children].entries()){
+    const label=portraitLabel(images[index]);node.querySelector('span').textContent=label;node.querySelector('img').alt=t('portraitAlt',{label});
+  }
+  $('#birth-date').textContent=new Intl.DateTimeFormat(locales[language],{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+  $('#give-birth').textContent=t($('#birth-fields').disabled?'savingButton':'giveBirth');updatePreview();
+}
 const storyURL=()=>new URL('../?'+new URLSearchParams({stone:id,source:'qr'}),location.href).href;
-function status(message,error=false){$('#form-status').textContent=message;$('#form-status').classList.toggle('error',error);}
+function status(key,error=false,params={}){showMessage('#form-status',key,params);$('#form-status').classList.toggle('error',error);}
 async function api(suffix='',body,key){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
   try{
@@ -21,7 +52,7 @@ async function api(suffix='',body,key){
     if(!response.ok){const error=new Error(data.error||'Please try again.');error.status=response.status;throw error;}
     return data;
   }catch(error){
-    if(error.name==='AbortError'||error instanceof TypeError)throw new Error('We couldn’t confirm the request. Your form is still here — please try again.');
+    if(error.name==='AbortError'||error instanceof TypeError)throw localizedError('connection');
     throw error;
   }finally{clearTimeout(timer);}
 }
@@ -30,12 +61,12 @@ function updateBirthButton(){
 }
 function selectedPortrait(){return images.find(image=>image.id===$('#portrait-options input:checked')?.value);}
 function updatePreview(){
-  $('#preview-name').textContent=$('#stone-name').value.trim()||'Your little travelling friend';
+  $('#preview-name').textContent=$('#stone-name').value.trim()||t('friend');
   const image=selectedPortrait();$('#hero-portrait').src=new URL(image?.image||'brand-stone.svg',assetBase).href;
-  const theme=$('#stone-theme').value,[title,description,example]=themes[theme];
+  const theme=$('#stone-theme').value,example=themes[theme],capital=theme[0].toUpperCase()+theme.slice(1);
   $('#theme-swatch').className='theme-swatch theme-'+theme;
   $('#theme-portrait').src=new URL(image?.image||`stone-${example}.svg`,assetBase).href;
-  $('#theme-preview-title').textContent=title;$('#theme-preview-copy').textContent=description;
+  $('#theme-preview-title').textContent=t('themeOption'+capital);$('#theme-preview-copy').textContent=t('themeCopy'+capital);
   updateBirthButton();
 }
 async function loadImages(){
@@ -47,25 +78,25 @@ async function loadImages(){
     for(const image of images){
       const label=document.createElement('label');label.className='portrait-option';
       const radio=document.createElement('input');radio.type='radio';radio.name='imageId';radio.value=image.id;radio.required=true;
-      const picture=document.createElement('img');picture.src=new URL(image.image,assetBase).href;picture.alt='Painted stone: '+image.label;picture.width=340;picture.height=280;
-      const caption=document.createElement('span');caption.textContent=image.label;
+      const picture=document.createElement('img');picture.src=new URL(image.image,assetBase).href;picture.alt=t('portraitAlt',{label:portraitLabel(image)});picture.width=340;picture.height=280;
+      const caption=document.createElement('span');caption.textContent=portraitLabel(image);
       label.append(radio,picture,caption);$('#portrait-options').append(label);
     }
-    $('#pool-status').textContent=data.available?`${data.available} unique portraits available · showing ${images.length}`:'All portraits are currently assigned. Please contact the Living Stones owner for more portraits.';
+    showMessage('#pool-status',data.available?'pool':'poolEmpty',{available:data.available,shown:images.length});
     requestKey=null;updatePreview();
   }finally{if(run===portraitRun)button.disabled=false;}
 }
 async function boot(){
   $('#retry-page').hidden=true;$('#page-status').classList.remove('error');
-  $('#page-status').hidden=false;$('#page-status').textContent='Finding your little stone…';
+  $('#page-status').hidden=false;showMessage('#page-status','finding');
   try{
-    if(!id||! /^[A-Za-z0-9_-]{1,32}$/.test(id))throw new Error('Scan the QR code on your new stone to open its setup page.');
+    if(!id||! /^[A-Za-z0-9_-]{1,32}$/.test(id))throw localizedError('scan');
     const {stone}=await api();
     if(stone.initialized!==false){location.replace(storyURL());return;}
     await loadImages();
-    $('#birth-date').textContent=new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric'}).format(new Date());
+    $('#birth-date').textContent=new Intl.DateTimeFormat(locales[language],{day:'numeric',month:'long',year:'numeric'}).format(new Date());
     $('#page-status').hidden=true;$('#birth-form').hidden=false;
-  }catch(error){$('#page-status').textContent=error.message;$('#page-status').classList.add('error');$('#retry-page').hidden=false;}
+  }catch(error){showMessage('#page-status',errorKey(error));$('#page-status').classList.add('error');$('#retry-page').hidden=false;}
 }
 async function lookupPlace(coords){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
@@ -81,7 +112,7 @@ async function lookupPlace(coords){
 function cancelCitySearch(){clearTimeout(cityTimer);cityController?.abort();cityController=null;}
 function setBirthPlace(value){
   place=value;requestKey=null;
-  $('#location-status').textContent=!place?'No location selected yet.':place.source==='manual'?`Manual city location: ${place.city}, ${place.country} · approximate location`:`${place.city}, ${place.country} · GPS accuracy ~${Math.round(place.accuracy)} m`;
+  showMessage('#location-status',!place?'noPlace':place.source==='manual'?'manualPlace':'gpsPlace',place?{...place,accuracy:Math.round(place.accuracy)}:{});
   const frame=$('#birth-location-preview-frame');frame.hidden=!place;
   if(birthMap){birthMap.remove();birthMap=null;}
   if(place){
@@ -103,7 +134,7 @@ $('#manual-city').addEventListener('input',()=>{
   cancelCitySearch();gpsRun++;$('#use-birth-gps').disabled=false;
   const input=$('#manual-city'),results=$('#city-results'),searchStatus=$('#city-search-status'),query=input.value.trim();
   results.replaceChildren();setBirthPlace(null);
-  searchStatus.textContent=query.length<2?'Type at least two letters.':'Searching cities…';
+  showMessage('#city-search-status',query.length<2?'typeTwo':'searching');
   if(query.length<2)return;
   cityTimer=setTimeout(async()=>{
     const request=cityController=new AbortController(),timer=setTimeout(()=>request.abort(),8000);
@@ -120,13 +151,13 @@ $('#manual-city').addEventListener('input',()=>{
         const button=document.createElement('button');button.type='button';button.className='city-result';button.textContent=label;
         button.onclick=()=>{
           if(!valid())return;cancelCitySearch();gpsRun++;
-          input.value=city;results.replaceChildren();searchStatus.textContent='City selected — approximate location.';
+          input.value=city;results.replaceChildren();showMessage('#city-search-status','citySelected');
           setBirthPlace({lat,lon,city,country,address:'Approximate city location',source:'manual',accuracy:null});
         };
         results.append(button);
       }
-      searchStatus.textContent=results.children.length?'Choose your city below.':'No matching cities. Try a different spelling.';
-    }catch{if(valid())searchStatus.textContent='City search is unavailable. Try typing again or use GPS.';}
+      showMessage('#city-search-status',results.children.length?'chooseCity':'noCities');
+    }catch{if(valid())showMessage('#city-search-status','searchFailed');}
     finally{clearTimeout(timer);}
   },350);
 });
@@ -143,40 +174,39 @@ $('#retry-page').addEventListener('click',boot);
 $('#birth-form').addEventListener('input',()=>{requestKey=null;updatePreview();});
 $('#portrait-options').addEventListener('change',()=>{const image=selectedPortrait();if(image)$('#stone-theme').value=image.theme;updatePreview();});
 $('#refresh-portraits').addEventListener('click',async()=>{
-  try{await loadImages();status('Choose a portrait from your new selection.');}catch(error){status(error.message,true);}
+  try{await loadImages();status('choosePortrait');}catch(error){status(errorKey(error),true);}
 });
 $('#use-birth-gps').addEventListener('click',async()=>{
   const button=$('#use-birth-gps'),code=$('#find-code');
   if(button.disabled)return;
   if(!code.reportValidity())return;
   button.disabled=true;const run=++gpsRun;setBirthPlace(null);
-  $('#location-status').textContent='Checking the Find Code…';
+  showMessage('#location-status','checkingCode');
   try{
     cancelCitySearch();
     await api('/verify',{code:code.value});
     if(run!==gpsRun)return;
-    if(!navigator.geolocation)throw new Error('Location is unavailable here. Open this page on your phone.');
-    $('#location-status').textContent='Waiting for your phone’s location permission…';
+    if(!navigator.geolocation)throw localizedError('gpsUnavailable');
+    showMessage('#location-status','awaitPermission');
     const position=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:15000,maximumAge:0}));
     if(run!==gpsRun)return;
-    $('#location-status').textContent='Finding the name of your birthplace…';
+    showMessage('#location-status','locating');
     const address=await lookupPlace(position.coords);if(run!==gpsRun)return;
     $('#manual-city').value='';$('#city-results').replaceChildren();
     setBirthPlace({lat:position.coords.latitude,lon:position.coords.longitude,accuracy:position.coords.accuracy,source:'gps',...address});
-    status('Your birthplace is ready. When you’re happy with the details, let your stone be born.');
+    status('placeReady');
   }catch(error){
     if(run!==gpsRun)return;
-    const message=error.code===1?'Location permission was declined. Allow it in your browser settings, then try again.':error.code===2||error.code===3?'Your phone couldn’t find its location. Try again with a clear GPS signal.':error.message;
-    $('#location-status').textContent=message||'Please try requesting your phone location again.';
+    showMessage('#location-status',error.code===1?'gpsDenied':error.code===2||error.code===3?'gpsFailed':errorKey(error));
   }finally{if(run===gpsRun)button.disabled=false;updateBirthButton();}
 });
 $('#birth-form').addEventListener('submit',async event=>{
   event.preventDefault();if($('#birth-fields').disabled)return;
-  if(!place||!selectedPortrait()){status('Choose a portrait and a birthplace first.',true);return;}
+  if(!place||!selectedPortrait()){status('needPlace',true);return;}
   const body=Object.fromEntries(new FormData(event.currentTarget));body.place=place;
   cancelCitySearch();
   requestKey ||= crypto.randomUUID();
-  $('#birth-fields').disabled=true;$('#give-birth').textContent='Beginning your story…';status('Saving your stone and its first memory…');
+  $('#birth-fields').disabled=true;$('#give-birth').textContent=t('savingButton');status('saving');
   try{
     await api('/initialize',body,requestKey);
     location.replace(storyURL());
@@ -188,9 +218,15 @@ $('#birth-form').addEventListener('submit',async event=>{
         await loadImages();
       }catch{}
     }
-    status(error.message,true);
+    status(errorKey(error),true);
   }finally{
-    $('#birth-fields').disabled=false;$('#give-birth').textContent='Let my stone be born ✦';updateBirthButton();
+    $('#birth-fields').disabled=false;$('#give-birth').textContent=t('giveBirth');updateBirthButton();
   }
 });
-boot();
+const languageMenu=$('#birth-language-menu'),languageSwitch=$('#birth-language-switch');
+languageMenu.addEventListener('toggle',()=>{
+  const open=languageMenu.matches(':popover-open');languageSwitch.setAttribute('aria-expanded',String(open));
+  if(open){const rect=languageSwitch.getBoundingClientRect();languageMenu.style.top=(rect.bottom+8)+'px';languageMenu.style.left=Math.max(8,Math.min(rect.right-176,innerWidth-184))+'px';}
+});
+for(const button of document.querySelectorAll('[data-birth-language]'))button.addEventListener('click',()=>{setLanguage(button.dataset.birthLanguage);languageMenu.hidePopover();languageSwitch.focus();});
+showMessage('#location-status','locationHelp');setLanguage(language);boot();

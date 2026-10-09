@@ -55,3 +55,8 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .theme-preview strong { color:var(--purple); font-size:14px; }
 #birth-location-preview-frame { margin:18px 0; }
 @media(max-width:650px) { .theme-preview { align-items:flex-start; gap:12px; } .theme-swatch { width:100px; height:90px; } }
+.birth-header-actions { display:flex; align-items:center; gap:18px; }
+.birth-header-actions > a { font-size:13px; color:var(--muted); }
+.birth-intro h1,[data-i18n="submitHelp"] { white-space:pre-line; }
+.birth-steps li > span[data-i18n] { display:inline; width:auto; height:auto; border:0; border-radius:0; background:none; color:var(--muted); }
+@media(max-width:650px) { .birth-header-actions { gap:8px; } .birth-header-actions > a { display:none; } }

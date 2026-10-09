@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sessionKey = 'livingstones-management-session';
 let auth = null, stones = [], selected = null, record = null, tab = 'finds', noticeTimer;
-let creationKey=null;
+let creationKey=null,draft=null;
 let section='management',statsPeriod='30',statsTarget='all',statsData=null,statsRun=0;
 const qrCache=new Map(),qrLabelCodes=new Map();
 if (location.protocol === 'http:' && !['localhost','127.0.0.1'].includes(location.hostname)) location.replace('https:'+location.href.slice(5));
@@ -13,7 +13,7 @@ function notice(message, error=false) {
   clearTimeout(noticeTimer); noticeTimer=setTimeout(()=>el.hidden=true,7000);
 }
 function signedOut() {
-  creationKey=null;qrLabelCodes.clear();auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
+  creationKey=null;draft=null;qrLabelCodes.clear();auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
   statsRun++;statsData=null;$('#admin-tabs').hidden=true;$('#management-panel').hidden=true;$('#statistics').hidden=true;
   $('#login').hidden=false;$('#dashboard').hidden=true;$('#editor').hidden=true;$('#editor').replaceChildren();$('#logout').hidden=true;
   if ($('#record-dialog').open) $('#record-dialog').close();
@@ -44,7 +44,7 @@ function renderList() {
   $('#summary').innerHTML=statsHTML([[stones.length,'Stones'],[stones.reduce((n,s)=>n+s.finds.length,0),'Finds'],[stones.reduce((n,s)=>n+(s.views||0),0),'Story views'],[stones.filter(s=>!s.demo).length,'Real stones']]);
   $('#stone-list').innerHTML=all.map(s=>{
     const last=s.finds.at(-1);
-    return `<button class="admin-stone-card" data-stone="${escapeHTML(s.id)}"><img src="${escapeHTML(imageURL(s))}" alt=""><span class="card-copy"><strong>${escapeHTML(s.name)}<span class="stone-type ${s.demo?'':'real'}">${s.initialized===false?'New · awaiting birth':s.demo?'Demo':'Real'}</span></strong><span class="card-meta">${escapeHTML(s.id)} · ${s.initialized===false?'Ready for setup':'Born '+formatDate(s.started)}</span><span class="card-meta">${last?escapeHTML(last.city)+' · '+formatDate(last.date):'No finds'}</span><span class="card-numbers"><span><b>${s.finds.length}</b> finds</span><span><b>${s.views||0}</b> views</span></span></span><span class="card-arrow" aria-hidden="true">↗</span></button>`;
+    return `<button class="admin-stone-card" data-stone="${escapeHTML(s.id)}"><img src="${escapeHTML(imageURL(s))}" alt=""><span class="card-copy"><strong>${escapeHTML(s.name)}<span class="stone-type ${s.demo?'':'real'}">${s.initialized===false?'Not born':s.demo?'Demo':'Real'}</span></strong><span class="card-meta">${escapeHTML(s.id)} · ${s.initialized===false?'Ready for setup':'Born '+formatDate(s.started)}</span><span class="card-meta">${last?escapeHTML(last.city)+' · '+formatDate(last.date):'No finds'}</span><span class="card-numbers"><span><b>${s.finds.length}</b> finds</span><span><b>${s.views||0}</b> views</span></span></span><span class="card-arrow" aria-hidden="true">↗</span></button>`;
   }).join('') || '<p>No stones match your search.</p>';
 }
 function field(name,label,value,type='text',extra='') {
@@ -53,14 +53,18 @@ function field(name,label,value,type='text',extra='') {
 function selectField(name,label,options,value) {
   return `<label>${label}<select name="${name}">${options.map(([v,l])=>`<option value="${v}" ${v===value?'selected':''}>${l}</option>`).join('')}</select></label>`;
 }
-function notePanel(stone) {
-  return `<section class="panel private-note-panel"><h2>My private note</h2><p id="private-note-help" class="form-hint">Only you can read and edit this in management. It never appears in the public story.</p><form id="private-note-form"><label for="admin-note">Owner’s note<textarea id="admin-note" name="note" maxlength="2000" aria-describedby="private-note-help" placeholder="Anything you’d like to remember about this stone…">${escapeHTML(stone.adminNote||'')}</textarea></label><div class="form-actions"><button class="primary" type="submit">Save private note</button></div></form></section>`;
+function notePanel(stone,isDraft=false) {
+  return `<section class="panel private-note-panel"><h2>My private note</h2><p id="private-note-help" class="form-hint">Only you can read and edit this in management. It never appears in the public story.</p><form id="${isDraft?'draft-create-form':'private-note-form'}"><label for="admin-note">Owner’s note<textarea id="admin-note" name="note" maxlength="2000" aria-describedby="private-note-help" placeholder="Anything you’d like to remember about this stone…">${escapeHTML(stone.adminNote||'')}</textarea></label><div class="form-actions"><button class="primary" type="submit">${isDraft?'Create stone':'Save private note'}</button></div></form></section>`;
 }
 function renderEditor() {
-  const s=stones.find(s=>s.id===selected);if(!s){showList();return;}
+  const isDraft=draft?.stone.id===selected,s=isDraft?draft.stone:stones.find(s=>s.id===selected);if(!s){showList();return;}
   $('#editor').hidden=false;$('#dashboard').hidden=true;
+  if(isDraft) {
+    $('#editor').innerHTML=`<div class="editor-top"><button data-action="cancel-draft">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>A new little adventure</h1><span class="stone-type">Draft · not saved</span></div><button data-action="cancel-draft">Cancel</button></div><div class="editor-grid"><div><section class="panel"><p class="eyebrow">ONE LITTLE STORY, READY TO BEGIN</p><h2>Ready to create this stone?</h2><p>Add your private note, then tap <strong>Create stone</strong>. This saves the stone as <strong>Not born</strong> and activates its QR label for printing. Its creator will give it a name, portrait and birthplace later.</p><p class="form-hint">ID: ${escapeHTML(s.id)} · This preview has not been saved yet.</p></section>${notePanel(s,true)}</div><div>${qrPanel(s,true)}</div></div>`;
+    return;
+  }
   if(s.initialized===false) {
-    $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>A new little adventure</h1><span class="stone-type real">New · awaiting birth</span></div><button class="danger" data-action="delete-stone">Delete stone</button></div><div class="editor-grid"><div><section class="panel"><p class="eyebrow">READY TO MEET ITS CREATOR</p><h2>The label comes first. The story comes next.</h2><p>Print the QR label and Find Code for this stone. Its creator can scan the QR, name it, choose a portrait and theme, and give it a birthplace using their phone.</p><p class="form-hint">ID: ${escapeHTML(s.id)} · Not visible in the public collection until it is born.</p><a class="button primary" href="../initialize/?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open setup page ↗</a><p class="form-hint">Keep the Find Code on the physical stone. The same QR opens its story after setup.</p></section>${notePanel(s)}</div><div>${qrPanel(s)}</div></div>`;
+    $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>A new little adventure</h1><span class="stone-type real">Not born</span></div><button class="danger" data-action="delete-stone">Delete stone</button></div><div class="editor-grid"><div><section class="panel"><p class="eyebrow">READY TO MEET ITS CREATOR</p><h2>The label comes first. The story comes next.</h2><p>Print the QR label and Find Code for this stone. Its creator can scan the QR, name it, choose a portrait and theme, and give it a birthplace using their phone.</p><p class="form-hint">ID: ${escapeHTML(s.id)} · Not visible in the public collection until it is born.</p><a class="button primary" href="../initialize/?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open setup page ↗</a><p class="form-hint">Keep the Find Code on the physical stone. The same QR opens its story after setup.</p></section>${notePanel(s)}</div><div>${qrPanel(s)}</div></div>`;
     return;
   }
   $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>${escapeHTML(s.name)}</h1><a href="../?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open public story ↗</a></div><button class="danger" data-action="delete-stone">Delete stone</button></div>
@@ -94,7 +98,7 @@ async function load() {
   const params=new URLSearchParams(location.hash.slice(1));
   section=params.get('tab')==='stats'?'stats':'management';
   selected=selected||params.get('stone');
-  if(selected&&stones.some(s=>s.id===selected))renderEditor();else{selected=null;$('#editor').hidden=true;$('#dashboard').hidden=false;renderList();}
+  if(selected&&(stones.some(s=>s.id===selected)||draft?.stone.id===selected))renderEditor();else{selected=null;$('#editor').hidden=true;$('#dashboard').hidden=false;renderList();}
   updateSection();
   if(section==='stats'){
     statsPeriod=['7','30','90','all'].includes(params.get('period'))?params.get('period'):statsPeriod;
@@ -109,9 +113,9 @@ function qrFor(stone){
   return qrCache.get(stone.id);
 }
 function labelCode(stone){return stone.demo?stone.code:qrLabelCodes.get(stone.id)||'';}
-function qrPanel(stone){
+function qrPanel(stone,isDraft=false){
   const code=labelCode(stone),url=qrStoryURL(stone);
-  return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="qr-previews"><div class="qr-preview-original" role="img" aria-label="${escapeHTML('Original size story QR for '+stone.name+(code?', Find Code '+code:''))}">${qrLabelSVG(stone)}</div><div class="stone-qr" data-error-correction="H" data-quiet-zone="4" role="img" aria-label="${escapeHTML('Story QR for '+stone.name+(code?', Find Code '+code:''))}">${qrLabelSVG(stone)}</div></div>${code?'':`<form class="qr-code-form" id="qr-code-form"><label>Find Code<input name="code" autocomplete="off" required maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label><p class="form-hint">Enter the existing code to add it to the label. It is kept only for this signed-in session.</p><button type="submit">Show Find Code</button></form>`}<a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a><div class="qr-actions"><button data-download-qr="svg">Download SVG</button><button data-download-qr="png">Download PNG</button></div></section>`;
+  return `<section class="panel qr-panel"><h2>A little doorway to my story</h2><p class="form-hint">High error correction (H). Keep the white border when printing.</p><div class="qr-previews"><div class="qr-preview-original" role="img" aria-label="${escapeHTML('Original size story QR for '+stone.name+(code?', Find Code '+code:''))}">${qrLabelSVG(stone)}</div><div class="stone-qr" data-error-correction="H" data-quiet-zone="4" role="img" aria-label="${escapeHTML('Story QR for '+stone.name+(code?', Find Code '+code:''))}">${qrLabelSVG(stone)}</div></div>${code?'':`<form class="qr-code-form" id="qr-code-form"><label>Find Code<input name="code" autocomplete="off" required maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label><p class="form-hint">Enter the existing code to add it to the label. It is kept only for this signed-in session.</p><button type="submit">Show Find Code</button></form>`}${isDraft?`<p class="form-hint">Create this stone to activate its QR and download the label.</p><span class="qr-link">${escapeHTML(url)}</span>`:`<a class="qr-link" href="${escapeHTML(url)}" target="_blank" rel="noopener">${escapeHTML(url)}</a>`}<div class="qr-actions"><button data-download-qr="svg" ${isDraft?'disabled':''}>Download SVG</button><button data-download-qr="png" ${isDraft?'disabled':''}>Download PNG</button></div></section>`;
 }
 // Embed the public brand icon so downloaded labels are self-contained.
 const qrBrandIcon = `<svg x="0" y="0" width="28" height="28" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
@@ -145,6 +149,7 @@ function qrLabelSVG(stone){
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size/2}" height="${(header+size+(code?80:0))/2}" viewBox="0 0 ${size} ${header+size+(code?80:0)}"><rect width="100%" height="100%" fill="white"/><g class="qr-brand" transform="translate(${(size-brandWidth)/2} 12)" shape-rendering="geometricPrecision">${qrBrandIcon}<text x="34" y="21" textLength="${brandTextWidth}" lengthAdjust="spacingAndGlyphs" font-family="sans-serif" font-weight="700" font-size="18" fill="black">Living Stones</text></g>${svg.replace('<svg ','<svg y="'+header+'" width="'+size+'" height="'+size+'" ')}${code?`<text class="qr-code-caption" x="${size/2}" y="${header+size+20}" text-anchor="middle" font-family="sans-serif" font-size="14" fill="black">Find Code</text><text class="qr-code-value" x="${size/2}" y="${header+size+62}" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="${fontSize}" fill="black">${escapeHTML(code)}</text>`:''}</svg>`;
 }
 async function downloadQR(format){
+  if(draft?.stone.id===selected)throw new Error('Create this stone before downloading its label.');
   const stone=stones.find(s=>s.id===selected),svg=qrLabelSVG(stone);let blob=new Blob([svg],{type:'image/svg+xml'});
   if(format==='png'){
     const image=new Image(),source=URL.createObjectURL(blob);
@@ -205,12 +210,11 @@ $('#login-form').addEventListener('submit',event=>{
 $('#logout').addEventListener('click',event=>withButton(event.currentTarget,async()=>{try {await api('logout','POST',{});} finally {signedOut();}notice('Signed out.');}));
 $('#create-stone').addEventListener('click',event=>withButton(event.currentTarget,async()=>{
   creationKey ||= crypto.randomUUID();
-  const data=await api('stones','POST',{},creationKey);
-  creationKey=null;
-  stones=stones.filter(s=>s.id!==data.stone.id).concat(data.stone);
+  const data=await api('stone-drafts','POST',{},creationKey);
+  draft={stone:data.stone,key:creationKey};
   if(data.code)qrLabelCodes.set(data.stone.id,data.code);
-  selected=data.stone.id;tab='finds';history.replaceState(null,'','#stone='+selected);renderEditor();
-  notice('New stone created. Download its QR label, then scan it to begin its story.');
+  selected=data.stone.id;tab='finds';history.replaceState(null,'','#draft');renderEditor();
+  notice('Preview ready. Add your private note, then press Create stone to save it.');
 }));
 $('#refresh').addEventListener('click',event=>withButton(event.currentTarget,async()=>{await load();notice('Latest stories loaded.');}));
 for(const selector of ['#search','#type-filter','#sort'])$(selector).addEventListener(selector==='#search'?'input':'change',renderList);
@@ -230,6 +234,26 @@ $('#record-form').addEventListener('submit',async event=>{
   try {const data=await api(`stones/${selected}/${record.kind}/${record.id}`,'PATCH',body);$('#record-dialog').close();updateStone(data);notice('Changes saved.');}catch(e){$('#record-error').textContent=e.message;$('#record-error').hidden=false;}finally{button.disabled=false;}
 });
 $('#editor').addEventListener('submit',event=>{
+  if(event.target.id==='draft-create-form'){
+    event.preventDefault();if(!draft)return;
+    const activeDraft=draft,note=new FormData(event.target).get('note');
+    activeDraft.stone.adminNote=note;
+    // Freeze the note while the same draft key is committed or retried.
+    withButton(event.submitter,async()=>{
+      const input=$('#admin-note'),cancelButtons=[...$('#editor').querySelectorAll('[data-action=cancel-draft]')];input.disabled=true;cancelButtons.forEach(button=>button.disabled=true);
+      try{
+        let data=await api('stones','POST',{note},activeDraft.key);
+        if(data.stone.adminNote!==note.trim())data={...data,...await api('stones/'+data.stone.id+'/note','PATCH',{note})};
+        if(draft!==activeDraft)return;
+        stones=stones.filter(s=>s.id!==data.stone.id).concat(data.stone);
+        if(data.code)qrLabelCodes.set(data.stone.id,data.code);
+        selected=data.stone.id;draft=null;creationKey=null;
+        history.replaceState(null,'','#stone='+selected);renderEditor();
+        notice('Stone created · Not born. Its QR label is ready to print.');
+      }finally{if(input.isConnected)input.disabled=false;cancelButtons.forEach(button=>button.disabled=false);}
+    });return;
+  }
+
   if(event.target.id==='private-note-form'){
     event.preventDefault();const stoneId=selected,note=new FormData(event.target).get('note');
     withButton(event.submitter,async()=>{
@@ -248,6 +272,7 @@ document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;
   if(button.dataset.downloadQr){withButton(button,()=>downloadQR(button.dataset.downloadQr));return;}
   if(button.dataset.section){
+    if(draft?.stone.id===selected&&$('#admin-note'))draft.stone.adminNote=$('#admin-note').value;
     section=button.dataset.section;updateSection();
     if(section==='stats'){history.replaceState(null,'','#'+new URLSearchParams({tab:'stats',period:statsPeriod,target:statsTarget}));loadStats();}
     else{history.replaceState(null,'',selected?'#stone='+selected:location.pathname);if(selected)renderEditor();else showList();}
@@ -257,6 +282,10 @@ document.addEventListener('click',event=>{
   if(button.dataset.statsTarget){statsTarget=button.dataset.statsTarget;renderStats();return;}
   if(button.dataset.stone){selected=button.dataset.stone;tab='finds';history.replaceState(null,'','#stone='+selected);renderEditor();$('#editor h1').setAttribute('tabindex','-1');$('#editor h1').focus();return;}
   if(button.dataset.tab){tab=button.dataset.tab;renderEditor();return;}
+  if(button.dataset.action==='cancel-draft'){
+    if(draft){qrLabelCodes.delete(draft.stone.id);qrCache.delete(draft.stone.id);}
+    draft=null;creationKey=null;showList();return;
+  }
   if(button.dataset.action==='back'){showList();return;}
   if(button.dataset.action==='cancel-record'){$('#record-dialog').close();return;}
   if(button.dataset.editFind){openRecord('finds',button.dataset.editFind);return;}

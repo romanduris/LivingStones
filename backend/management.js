@@ -48,8 +48,8 @@ export async function handleManagement(request, env, listStones) {
   if (path === 'stats' && request.method === 'GET') return trafficStatistics(request, env);
   if (path === 'session' && request.method === 'GET') return { ok: true };
   if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true), imagesAvailable: await availableImageCount(env.DB) };
-  if (path === 'stones' && request.method === 'POST') {
-    await jsonBody(request);
+  if (['stones','stone-drafts'].includes(path) && request.method === 'POST') {
+    const body=await jsonBody(request),note=text(body.note,2000);
     await limit(request, env, 'admin-create-stone', 40);
     const key = request.headers.get('Idempotency-Key');
     if (!key || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) fail(400, 'Please retry from the create button.');
@@ -57,7 +57,10 @@ export async function handleManagement(request, env, listStones) {
     const id = 'S' + (await sha256('stone-id:' + key)).slice(0,16).toUpperCase();
     const digest = await sha256('stone-code:' + env.ADMIN_PASSWORD_HASH + ':' + key);
     const code = String(parseInt(digest.slice(0,8),16) % 10000).padStart(4,'0');
-    await env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key).run();
+    if(path==='stone-drafts') {
+      return { draft:true, code, stone:{id,name:'New stone',creator:'',started:'',image:'brand-stone.svg',theme:'sun',color:'#b49aff',demo:false,initialized:false,adminNote:note,views:0,finds:[],comments:[]} };
+    }
+    await env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key,admin_note) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key, note).run();
     const saved = await env.DB.prepare('SELECT id,code_hash FROM stones WHERE creation_key=?').bind(key).first();
     const stone = (await listStones(env.DB,saved.id,true))[0];
     return { stone, ...(saved.code_hash === await sha256(code) ? { code } : {}) };

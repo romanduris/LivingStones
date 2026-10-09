@@ -12,7 +12,7 @@
   <script src="../docs/config.js?v=1" defer></script>
   <script src="vendor/qrcode.js?v=2.0.4" defer></script>
   <script src="statistics.js?v=1" defer></script>
-  <script src="management.js?v=11" defer></script>
+  <script src="management.js?v=12" defer></script>
 </head>
 <body>
   <header class="admin-header"><a class="admin-brand" href="../"><img class="admin-logo" src="logo.svg" alt=""><span class="admin-brand-name">Living Stones <span>Management</span></span></a><div><a href="../">Visit website ↗</a><button id="logout" hidden>Sign out</button></div></header>
@@ -29,7 +29,7 @@
     <section id="dashboard" hidden>
       <div class="page-heading"><div><p class="eyebrow">LIVING STONES MANAGEMENT</p><h1>Every stone. Every little hello.</h1></div><div class="heading-actions"><button id="create-stone" class="primary">＋ Create new stone</button><button id="refresh">Refresh</button></div></div>
       <div id="summary" class="admin-stats"></div>
-      <div class="admin-toolbar"><label>Search stones<input id="search" type="search" placeholder="Name, ID or city"></label><label>Type<select id="type-filter"><option value="all">All stones</option><option value="demo">Demo</option><option value="real">Real</option><option value="new">Awaiting birth</option></select></label><label>Sort by<select id="sort"><option value="latest">Last found</option><option value="views">Most viewed</option><option value="name">Name</option></select></label></div>
+      <div class="admin-toolbar"><label>Search stones<input id="search" type="search" placeholder="Name, ID or city"></label><label>Type<select id="type-filter"><option value="all">All stones</option><option value="demo">Demo</option><option value="real">Real</option><option value="new">Not born</option></select></label><label>Sort by<select id="sort"><option value="latest">Last found</option><option value="views">Most viewed</option><option value="name">Name</option></select></label></div>
       <div id="stone-list" class="admin-stone-list"></div>
       <p class="admin-footnote">Views count story openings since tracking began. They are not a count of unique people.</p>
     </section>
