@@ -28,5 +28,8 @@ try{
  fs.copyFileSync('backend/migrations/0013_short_stone_numbers.sql',path.join(migrations,'0013_short_stone_numbers.sql'));cli(['migrations','apply','migration-db']);
  const numbered=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT number,stone_id FROM stone_numbers; SELECT id,code_hash FROM stones WHERE id='legacy-real';"]));
  assert.deepEqual(numbered[0].results,[{number:1,stone_id:'legacy-real'}]);assert.deepEqual(numbered[1].results,[{id:'legacy-real',code_hash:'unchanged'}]);
+ fs.copyFileSync('backend/migrations/0014_qr_traffic.sql',path.join(migrations,'0014_qr_traffic.sql'));cli(['migrations','apply','migration-db']);
+ const qr=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT SUM(views) AS views,SUM(qr_views) AS qr FROM traffic_daily; SELECT value FROM traffic_meta WHERE key='qr_started_at';"]));
+ assert.deepEqual(qr[0].results,[{views:3,qr:0}]);assert.ok(qr[1].results[0].value);
  console.log('Passed: traffic migration backfills dated events, retains undated totals and removes Story, adds private notes and reclaims only unused orphan portraits without losing finds or comments.');
 }finally{fs.rmSync(dir,{recursive:true,force:true});}

@@ -240,7 +240,7 @@ const stoneRepository = (() => {
     },
     recordHomepage: () => request("/api/page-views", {viewId: crypto.randomUUID()}),
     async recordView(id) {
-      const result = await request(`/api/stones/${encodeURIComponent(id)}/views`, {viewId: crypto.randomUUID()});
+      const result = await request(`/api/stones/${encodeURIComponent(id)}/views`, {viewId: crypto.randomUUID(), source: openedFromQR() ? "qr" : "web"});
       const stone = stones.find(s => s.id === id);
       if (stone) stone.views = result.views;
       return result.views;
@@ -621,8 +621,7 @@ function renderDetail() {
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
         <p class="detail-story">${stoneStoryHTML(stone)}</p>
-        ${openedFromQR() ? ui`<p class="find-help">Found me?</p>` : ""}
-        ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find"><span class="find-action-title">I found this stone</span><span class="find-action-invitation">Let’s keep its story going →</span></button>` : ""}
+        ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find"><span class="find-action-title">I found this stone</span><span class="find-action-invitation">Click here to keep its story going →</span></button><p class="find-reassurance">Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.</p>` : ""}
       </section>
       <div id="find-container"></div>
       <section id="watchdog-panel" class="find-panel" aria-labelledby="watchdog-title" hidden>

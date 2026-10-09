@@ -18,7 +18,7 @@ globalThis.StoneStats = (() => {
       cumulative+=counts.home+counts.stories;
       days.push({date,home:counts.home,stories:counts.stories,total:counts.home+counts.stories,cumulative});
     }
-    return {days,total:targets.reduce((n,t)=>n+t.totalViews,0),inRange:days.reduce((n,d)=>n+d.total,0),today:days.at(-1)?.total||0};
+    return {days,qrTotal:targets.reduce((n,t)=>n+(t.totalQrViews||0),0),qrInRange:data.days.filter(row=>keys.has(row.target)).reduce((n,row)=>n+(row.qrViews||0),0),total:targets.reduce((n,t)=>n+t.totalViews,0),inRange:days.reduce((n,d)=>n+d.total,0),today:days.at(-1)?.total||0};
   }
   function buckets(days,maximum=45){
     const size=Math.max(1,Math.ceil(days.length/maximum)),result=[];

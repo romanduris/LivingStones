@@ -10,7 +10,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   for(const width of [375,1440]){
    const context=await browser.newContext({viewport:{width,height:900}});
    const stones=JSON.parse(JSON.stringify(fixture.stones));
-   stones.forEach((s,index)=>{s.views=index+4;s.creator=s.finds[0].nickname;s.finds.forEach((f,i)=>f.id='find-'+s.id+'-'+i);s.comments=s.finds.map((f,i)=>({id:'comment-'+s.id+'-'+i,findId:f.id,date:f.date,nickname:f.nickname,message:f.message}));});
+   stones.forEach((s,index)=>{s.views=index+4;s.qrViews=1;s.creator=s.finds[0].nickname;s.finds.forEach((f,i)=>f.id='find-'+s.id+'-'+i);s.comments=s.finds.map((f,i)=>({id:'comment-'+s.id+'-'+i,findId:f.id,date:f.date,nickname:f.nickname,message:f.message}));});
    const token='a'.repeat(64);let valid=true;
    await context.route('http://127.0.0.1:8787/api/admin/**',async route=>{
     const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones,imagesAvailable:40},status=200;
@@ -20,7 +20,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
     else if(parts[3]==='logout'){valid=false;result={ok:true};}
     else if(parts[3]==='stats'){
      const period=new URL(req.url()).searchParams.get('period')||'30',today=new Date().toISOString().slice(0,10);
-     result={period,since:today,timezone:'UTC',range:{from:period==='all'?today:new Date(Date.parse(today)-(Number(period)-1)*86400000).toISOString().slice(0,10),to:today},targets:[{key:'home',name:'Homepage',kind:'home',totalViews:10,beforeRange:0},...stones.map(s=>({key:'stone:'+s.id,name:s.name,kind:'stone',totalViews:s.views,beforeRange:0}))],days:[{day:today,target:'home',views:10},...stones.map(s=>({day:today,target:'stone:'+s.id,views:s.views}))]};
+     result={period,since:today,timezone:'UTC',range:{from:period==='all'?today:new Date(Date.parse(today)-(Number(period)-1)*86400000).toISOString().slice(0,10),to:today},targets:[{key:'home',name:'Homepage',kind:'home',totalViews:10,beforeRange:0},...stones.map(s=>({key:'stone:'+s.id,name:s.name,kind:'stone',totalViews:s.views,totalQrViews:s.qrViews,beforeRange:0}))],days:[{day:today,target:'home',views:10},...stones.map(s=>({day:today,target:'stone:'+s.id,views:s.views,qrViews:s.qrViews}))]};
     }else if(parts[4]){
      const s=stones.find(s=>s.id===parts[4]);
      if(parts[5]==='note'){
@@ -95,8 +95,10 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    delete realLabel.privateCode;realLabel.demo=true;realLabel.code='8451';await page.reload();await page.locator('#stone-form').waitFor();
    await page.locator('[data-section=stats]').click();await page.locator('#traffic-summary strong').first().waitFor();
    assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'157');
+   assert.match(await page.locator('#traffic-summary').innerText(),/14\s+QR opens · all time/);
    await page.locator('#stats-target').selectOption('home');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'10');
    await page.locator('#stats-target').selectOption('stone:A1');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'4');
+   assert.match(await page.locator('#traffic-summary').innerText(),/1\s+QR opens · this period/);
    await page.locator('[data-period="7"]').click();await page.waitForFunction(()=>document.querySelector('[data-period="7"]').getAttribute('aria-pressed')==='true');
    assert.equal(await page.locator('#daily-chart [data-chart-label]').count(),7);
    await page.locator('#daily-chart [data-chart-label]').last().focus();assert.match(await page.locator('#daily-chart-detail').innerText(),/4 opens/);

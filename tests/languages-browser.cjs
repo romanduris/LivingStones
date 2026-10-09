@@ -21,7 +21,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   await page.goto('http://127.0.0.1:8137/?stone='+stones[0].id+'&source=qr');await page.locator('#stone-dialog[open]').waitFor();
   const expected=locale==='fr-FR'?'en':locale.slice(0,2);assert.equal(await page.locator('html').getAttribute('lang'),expected);
   assert.equal(await page.locator('.detail-footnote').innerText(),await page.evaluate(()=>t('From one hand to another, my story goes on.')));
-  assert.equal(await page.locator('.find-action-invitation').innerText(),await page.evaluate(()=>t('Let’s keep its story going →')));
+  assert.equal(await page.locator('.find-action-invitation').innerText(),await page.evaluate(()=>t('Click here to keep its story going →')));
   await page.setViewportSize({width:320,height:844});
   assert.ok(await page.locator('#start-find').evaluate(button=>{
     const title=button.querySelector('.find-action-title'),invitation=button.querySelector('.find-action-invitation');

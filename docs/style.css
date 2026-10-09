@@ -1493,7 +1493,7 @@ body:has(dialog[open]) {
   color: var(--ink);
   font-weight: 600;
 }
-.find-help {
+.find-reassurance {
   text-align: center;
   font-size: 12px;
   line-height: 1.7;

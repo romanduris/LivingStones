@@ -12,3 +12,10 @@ test('long chart periods retain counts and final cumulative total when grouped',
  const days=Array.from({length:365},(_,i)=>({date:new Date(Date.UTC(2025,0,i+1)).toISOString().slice(0,10),home:1,stories:2,total:3,cumulative:20+(i+1)*3}));
  const bins=stats.buckets(days);assert.ok(bins.length<=45);assert.equal(bins.reduce((n,d)=>n+d.total,0),1095);assert.equal(bins.at(-1).cumulative,1115);assert.equal(bins[0].from,'2025-01-01');assert.match(stats.chart(days,'daily'),/tabindex="0"/);
 });
+
+test('QR opens are a subset of views and respect page and period filters',()=>{
+ const qr={...data,targets:data.targets.map(t=>({...t,totalQrViews:t.kind==='stone'?3:0})),days:data.days.map(row=>({...row,qrViews:row.target==='stone:A1'?2:0}))};
+ assert.equal(stats.series(qr).total,24);assert.equal(stats.series(qr).qrTotal,6);assert.equal(stats.series(qr).qrInRange,2);
+ assert.equal(stats.series(qr,'home').qrTotal,0);assert.equal(stats.series(qr,'stone:B2').qrTotal,3);assert.equal(stats.series(qr,'stone:B2').qrInRange,0);
+ assert.equal(stats.series(data).qrTotal,0);
+});

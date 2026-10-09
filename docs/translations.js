@@ -264,7 +264,9 @@ const SITE_TRANSLATIONS = {
     "A sample stone": "A sample stone",
     "From one hand to another, my story goes on.": "From one hand to another, my story goes on.",
     "Let’s keep its story going →": "Let’s keep its story going →",
-    "Found me?": "Found me?"
+    "Found me?": "Found me?",
+    "Click here to keep its story going →": "Click here to keep its story going →",
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue."
   },
   "sk": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
@@ -529,7 +531,9 @@ const SITE_TRANSLATIONS = {
     "A sample stone": "Ukážkový kamienok",
     "From one hand to another, my story goes on.": "Z ruky do ruky môj príbeh pokračuje.",
     "Let’s keep its story going →": "Pomôžem jeho príbehu pokračovať →",
-    "Found me?": "Našiel si ma?"
+    "Found me?": "Našiel si ma?",
+    "Click here to keep its story going →": "Klikni sem a pokračuj v jeho príbehu →",
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Stačí zaznamenať nález a prípadne pridať správu. Potom vezmi kamienok na ďalšie pekné miesto — tak pomôžeš jeho príbehu pokračovať."
   },
   "hu": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
@@ -794,7 +798,9 @@ const SITE_TRANSLATIONS = {
     "A sample stone": "Mintakavics",
     "From one hand to another, my story goes on.": "Kézről kézre járva folytatódik a történetem.",
     "Let’s keep its story going →": "Folytassuk a történetét →",
-    "Found me?": "Megtaláltál?"
+    "Found me?": "Megtaláltál?",
+    "Click here to keep its story going →": "Kattints ide a történet folytatásához →",
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Csak rögzítsd a megtalálást, és ha szeretnél, írj üzenetet. Aztán vidd a kavicsot egy másik szép helyre — így segítesz folytatni a történetét."
   },
   "de": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
@@ -1059,6 +1065,8 @@ const SITE_TRANSLATIONS = {
     "A sample stone": "Ein Beispielstein",
     "From one hand to another, my story goes on.": "Von Hand zu Hand geht meine Geschichte weiter.",
     "Let’s keep its story going →": "Schreiben wir seine Geschichte weiter →",
-    "Found me?": "Hast du mich gefunden?"
+    "Found me?": "Hast du mich gefunden?",
+    "Click here to keep its story going →": "Hier klicken: Geschichte fortsetzen →",
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Trage einfach deinen Fund ein und hinterlasse eine Nachricht, wenn du möchtest. Nimm den Stein dann an einen anderen schönen Ort mit — so hilfst du seiner Geschichte weiter."
   }
 };
