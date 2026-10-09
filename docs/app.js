@@ -581,8 +581,7 @@ function renderDetail() {
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
         <p class="detail-story">${stoneStoryHTML(stone)}</p>
         ${openedFromQR() ? ui`<p class="find-help">${uiText(supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Scan my QR code on your phone to help my story grow.")}</p>` : ""}
-        <div class="detail-actions">${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find">I found this stone</button>` : ""}<button class="button secondary" id="other-stones">Explore more stones ↗</button><button class="icon-button" id="watch-stone" type="button" aria-label="Watchdog: watch this stone" title="Watchdog: watch this stone" aria-expanded="false" aria-controls="watchdog-panel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="M12 2V1"/></svg></button><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
-        <div id="share-fallback" class="share-fallback" hidden></div>
+        ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find">I found this stone</button>` : ""}
       </section>
       <div id="find-container"></div>
       <section id="watchdog-panel" class="find-panel" aria-labelledby="watchdog-title" hidden>
@@ -597,8 +596,9 @@ function renderDetail() {
       </section>
       <section class="detail-journey" aria-labelledby="journey-title">
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
-        <p class="journey-explanation">Follow my journey.</p>
         <div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div>
+        <div class="detail-actions"><button class="button secondary" id="other-stones">Explore more stones ↗</button><button class="icon-button" id="watch-stone" type="button" aria-label="Watchdog: watch this stone" title="Watchdog: watch this stone" aria-expanded="false" aria-controls="watchdog-panel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="M12 2V1"/></svg></button><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
+        <div id="share-fallback" class="share-fallback" hidden></div>
         <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? ui`<span class="new-find-key">✦ Your new find · saved</span>` : ""}<span class="stone-views" title="Story openings since view tracking began">Views: <strong>${stone.views || 0}</strong></span></span></div>
         <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${encounters}</strong> ${uiText(encounters===1?"Find":"Finds")}</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>

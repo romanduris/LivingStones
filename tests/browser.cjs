@@ -260,7 +260,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await page.locator(".detail-header-actions #share-stone").count(), 0);
     assert.equal(await page.locator(".detail-actions #share-stone").count(), 1);
     assert.equal(await page.locator("#other-stones").innerText(), "Explore more stones ↗");
-    assert.equal(await page.locator(".journey-explanation").innerText(), "Follow my journey.");
+    assert.equal(await page.locator(".journey-explanation").count(), 0);
     assert.equal(await page.locator("#history-title").innerText(), "My activity (Every find and message is part of my story.)");
     // Birth alone is not a find; the first later encounter uses singular wording.
     await page.evaluate(() => {
@@ -292,9 +292,9 @@ process.on("exit", () => server?.kill());
         const top = (selector) =>
           document.querySelector(selector).getBoundingClientRect().top;
         return (
-          top(".detail-intro") < top(".detail-actions") &&
-          top(".detail-actions") < top("#journey-map") &&
-          top("#journey-map") < top(".detail-stats") &&
+          top(".detail-intro") < top("#journey-map") &&
+          top("#journey-map") < top(".detail-actions") &&
+          top(".detail-actions") < top(".detail-stats") &&
           top(".detail-stats") < top(".story-feed")
         );
       }),
@@ -396,15 +396,25 @@ process.on("exit", () => server?.kill());
     for (const width of [320, 375, 390]) {
       await phone.setViewportSize({ width, height: 844 });
       const actions = await phone
-        .locator(".detail-actions .button")
+        .locator(".detail-actions button")
         .evaluateAll((elements) =>
           elements.map((el) => el.getBoundingClientRect().top),
         );
-      assert.equal(actions.length, 2);
+      assert.equal(actions.length, 3);
       assert.ok(
         Math.max(...actions) - Math.min(...actions) <= 1,
-        "Two mobile actions share one line",
+        "Explore, watchdog and share fill one mobile row below the map",
       );
+      assert.ok(await phone.evaluate(() => {
+        const bounds = selector => document.querySelector(selector).getBoundingClientRect();
+        const find = bounds('#start-find'), intro = bounds('.detail-intro');
+        const row = bounds('.detail-actions'), map = bounds('.detail-journey .map-frame');
+        const explore = bounds('#other-stones'), watch = bounds('#watch-stone'), share = bounds('#share-stone');
+        return Math.abs(find.width - intro.width) < 1 && find.bottom <= map.top &&
+          row.top >= map.bottom && Math.abs(row.width - map.width) < 1 &&
+          Math.abs(explore.left - row.left) < 1 && Math.abs(share.right - row.right) < 1 &&
+          watch.width === watch.height && share.width === share.height;
+      }), 'Full-width find button and compact action row with square icons');
       assert.ok(
         await phone
           .locator("#stone-dialog")

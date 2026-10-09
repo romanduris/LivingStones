@@ -1550,13 +1550,27 @@ body:has(dialog[open]) {
   white-space: nowrap;
 }
 @media (max-width: 700px) {
+  .detail-intro #start-find {
+    width: 100%;
+    margin-top: 9px;
+  }
   .detail-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 38px 38px;
     gap: 6px;
   }
   .detail-actions .button {
+    width: 100%;
+    height: 38px;
+    min-height: 38px;
+    white-space: normal;
     font-size: 12px;
     padding-inline: 9px;
     gap: 5px;
+  }
+  .detail-actions .icon-button {
+    width: 38px;
+    height: 38px;
   }
 }
 @media (max-width: 360px) {
@@ -1601,19 +1615,8 @@ body:has(dialog[open]) {
   font-weight: 600;
 }
 
-.journey-explanation {
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--muted);
-  margin-bottom: 9px;
-}
 .entry-finder {
   color: var(--yellow);
-}
-@media (max-width: 600px) {
-  .journey-explanation {
-    font-size: 11px;
-  }
 }
 
 .manual-location-toggle {
