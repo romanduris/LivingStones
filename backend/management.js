@@ -47,6 +47,19 @@ export async function handleManagement(request, env, listStones) {
   if (path === 'stats' && request.method === 'GET') return trafficStatistics(request, env);
   if (path === 'session' && request.method === 'GET') return { ok: true };
   if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true) };
+  if (path === 'stones' && request.method === 'POST') {
+    await jsonBody(request);
+    await limit(request, env, 'admin-create-stone', 40);
+    const key = request.headers.get('Idempotency-Key');
+    if (!key || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) fail(400, 'Please retry from the create button.');
+    // Stable retries recover the label without storing a plaintext private code.
+    const id = 'S' + (await sha256('stone-id:' + key)).slice(0,16).toUpperCase();
+    const code = (await sha256('stone-code:' + env.ADMIN_PASSWORD_HASH + ':' + key)).slice(0,12).toUpperCase();
+    await env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key).run();
+    const saved = await env.DB.prepare('SELECT id,code_hash FROM stones WHERE creation_key=?').bind(key).first();
+    const stone = (await listStones(env.DB,saved.id,true))[0];
+    return { stone, ...(saved.code_hash === await sha256(code) ? { code } : {}) };
+  }
   const labelMatch=path.match(/^stones\/([A-Za-z0-9_-]{1,32})\/label-code$/);
   if(labelMatch && request.method==='POST') {
     const stone=await env.DB.prepare('SELECT code_hash FROM stones WHERE id=?').bind(labelMatch[1]).first();
@@ -71,6 +84,7 @@ export async function handleManagement(request, env, listStones) {
       statements.push(env.DB.prepare('UPDATE traffic_targets SET deleted=1 WHERE target=?').bind('stone:'+id));
       statements.push(env.DB.prepare('DELETE FROM stones WHERE id=?').bind(id));
     } else {
+      if (!stone.initialized) fail(409, 'Open this stone’s setup page to give it a name and birth location.');
       const body = await jsonBody(request);
       const name = text(body.name,80,true), creator = text(body.creator,80,true);
       const born = date(body.started).slice(0,10);

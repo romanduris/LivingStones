@@ -1,11 +1,12 @@
 import { fail, sha256, text, requireOrigin, jsonBody, limit } from "./common.js";
 import { recordTraffic } from "./traffic.js";
 import { handleManagement } from "./management.js";
+import { initializeStone, availableImages } from "./initialization.js";
 async function listStones(db, id, admin = false) {
-  const where = id ? " WHERE id = ?" : "";
+  const where = id ? " WHERE id = ?" : admin ? "" : " WHERE initialized = 1";
   const statements = [
     db.prepare(
-      "SELECT id,name,born,image,theme,color,is_demo,demo_code,creator,views FROM stones" +
+      "SELECT id,name,born,image,theme,color,is_demo,demo_code,creator,views,initialized FROM stones" +
         where +
         (id ? "" : " ORDER BY id"),
     ),
@@ -23,6 +24,7 @@ async function listStones(db, id, admin = false) {
   const [stones, finds, comments] = await db.batch(statements);
   return stones.results.map((s) => ({
     id: s.id,
+    initialized: Boolean(s.initialized),
     name: s.name,
     started: s.born,
     creator: s.creator,
@@ -74,10 +76,11 @@ async function handle(request, env) {
     return recordTraffic(request, env, await jsonBody(request));
   }
   const match = path.match(
-    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|watchdog))?$/,
+    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|watchdog|initialize|images))?$/,
   );
   if (!match) fail(404, "That page could not be found.");
   const [, id, kind] = match;
+  if (request.method === "GET" && kind === "images") return availableImages(env, id);
   if (request.method === "GET" && !kind) {
     const stone = (await listStones(env.DB, id))[0];
     if (!stone) fail(404, "This stone could not be found.");
@@ -86,6 +89,11 @@ async function handle(request, env) {
   if (request.method !== "POST" || !kind) fail(405, "Method not allowed.");
   requireOrigin(request, env);
   const body = await jsonBody(request);
+  if (kind === "initialize") return initializeStone(request, env, id, body, listStones);
+  if (kind !== "verify") {
+    const state = await env.DB.prepare("SELECT initialized FROM stones WHERE id=?").bind(id).first();
+    if (state && !state.initialized) fail(409, "This stone is waiting to be born. Finish its setup first.");
+  }
   if (kind === "views") return recordTraffic(request, env, body, id);
   if (kind === "watchdog") {
     await limit(request, env, "watchdog", 10);

@@ -320,6 +320,82 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       return {status:response.status,body:await response.json()};
     }
     assert.equal((await admin("stones")).body.stones.length,14);
+    // New labels are private; uninitialized stones stay off the public collection.
+    assert.equal((await call('/admin/stones',{})).status,401);
+    assert.equal((await admin('stones','POST',{}, {Origin:'https://bad.invalid','Idempotency-Key':randomUUID()})).status,403);
+    assert.equal((await admin('stones','POST',{})).status,400);
+    const creationKey=randomUUID();
+    const creations=await Promise.all([1,2].map(()=>admin('stones','POST',{}, {'Idempotency-Key':creationKey})));
+    assert.ok(creations.every(r=>r.status===200));
+    assert.deepEqual(creations[0].body,creations[1].body);
+    const newborn=creations[0].body;
+    assert.equal(newborn.stone.initialized,false);assert.match(newborn.code,/^[A-F0-9]{12}$/);
+    assert.equal(newborn.stone.finds.length,0);assert.equal(newborn.stone.started,'');
+    assert.ok(!(await call('/stones')).body.stones.some(s=>s.id===newborn.stone.id));
+    assert.equal((await call('/stones/'+newborn.stone.id)).body.stone.initialized,false);
+    assert.ok(!JSON.stringify((await call('/stones/'+newborn.stone.id)).body).includes(newborn.code));
+    assert.equal((await admin('stones/'+newborn.stone.id,'PATCH',{})).status,409);
+    const candidates=await call('/stones/'+newborn.stone.id+'/images');
+    assert.equal(candidates.body.available,40);assert.equal(candidates.body.images.length,10);
+    assert.equal(new Set(candidates.body.images.map(i=>i.id)).size,10);
+    assert.equal((await call('/stones/A1/images')).status,409);
+    const birthBody={code:newborn.code,name:'First new stone',creator:'Its painter',theme:'heart',imageId:candidates.body.images[0].id,place:{lat:48.148,lon:17.107,accuracy:8,source:'gps',city:'Bratislava',country:'Slovakia',address:'Birth street'}};
+    const freshHeaders={'CF-Connecting-IP':'192.0.2.70'};
+    const bornPath='/stones/'+newborn.stone.id;
+    assert.equal((await call(bornPath+'/initialize',{...birthBody,code:'WRONG'},randomUUID(),freshHeaders)).status,403);
+    assert.equal((await call(bornPath+'/initialize',{...birthBody,place:{...birthBody.place,source:'manual'}},randomUUID(),freshHeaders)).status,400);
+    assert.equal((await call(bornPath+'/initialize',{...birthBody,place:{...birthBody.place,lat:91}},randomUUID(),freshHeaders)).status,400);
+    assert.equal((await call(bornPath+'/initialize',{...birthBody,theme:'invalid'},randomUUID(),freshHeaders)).status,400);
+    for(const kind of ['finds','comments','views','watchdog']) assert.equal((await call(bornPath+'/'+kind,{code:newborn.code,viewId:randomUUID(),email:'test@example.invalid'})).status,409);
+    const other=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
+    const birthKey=randomUUID(),otherKey=randomUUID(),beforeBirth=Date.now();
+    const races=await Promise.all([
+      call(bornPath+'/initialize',birthBody,birthKey,freshHeaders),
+      call('/stones/'+other.stone.id+'/initialize',{...birthBody,code:other.code,name:'Other stone'},otherKey,freshHeaders),
+    ]);
+    assert.deepEqual(races.map(r=>r.status).sort(),[200,409]);
+    const winnerIndex=races.findIndex(r=>r.status===200),winner=winnerIndex===0?newborn:other,loser=winnerIndex===0?other:newborn;
+    const winningBody=winnerIndex===0?birthBody:{...birthBody,code:other.code,name:'Other stone'};
+    const winningKey=winnerIndex===0?birthKey:otherKey;
+    const born=races[winnerIndex].body.stone;
+    assert.equal(born.initialized,true);assert.equal(born.finds.length,1);assert.equal(born.theme,'heart');
+    assert.equal(born.finds[0].source,'gps');assert.equal(born.finds[0].accuracy,8);
+    assert.ok(Date.parse(born.finds[0].date)>=beforeBirth && Date.parse(born.finds[0].date)<=Date.now());
+    assert.equal(born.started,born.finds[0].date.slice(0,10));
+    assert.ok((await call('/stones')).body.stones.some(s=>s.id===winner.stone.id));
+    const retryBirth=await call('/stones/'+winner.stone.id+'/initialize',winningBody,winningKey,freshHeaders);
+    assert.equal(retryBirth.status,200);assert.equal(retryBirth.body.replayed,true);assert.equal(retryBirth.body.stone.finds.length,1);
+    assert.equal((await call('/stones/'+winner.stone.id+'/initialize',{...winningBody,name:'Overwrite'},winningKey,freshHeaders)).status,409);
+    assert.equal((await call('/stones/'+winner.stone.id+'/initialize',winningBody,randomUUID(),freshHeaders)).status,409);
+    const remaining=await call('/stones/'+loser.stone.id+'/images');assert.equal(remaining.body.available,39);
+    assert.ok(remaining.body.images.every(i=>i.id!==birthBody.imageId));
+    const sameStone=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
+    const sameBody={...birthBody,code:sameStone.code,imageId:remaining.body.images[0].id};
+    const sameKey=randomUUID();
+    const concurrentRetries=await Promise.all([1,2].map(()=>call('/stones/'+sameStone.stone.id+'/initialize',sameBody,sameKey,freshHeaders)));
+    assert.ok(concurrentRetries.every(r=>r.status===200));assert.ok(concurrentRetries.every(r=>r.body.stone.finds.length===1));
+    assert.equal((await call('/stones/'+loser.stone.id+'/images')).body.available,38);
+    for(const s of [winner,sameStone])assert.equal((await admin('stones/'+s.stone.id,'DELETE')).status,200);
+    assert.equal((await call('/stones/'+loser.stone.id+'/images')).body.available,38,'adopted portraits stay retired after deletion');
+    const unusedInventory=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT COUNT(*) AS count FROM stone_image_pool WHERE claimed_at IS NULL"]));
+    assert.equal(unusedInventory[0].results[0].count,38);
+    assert.equal((await admin('stones/'+loser.stone.id,'DELETE')).status,200);
+    const competingStone=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
+    const competingBirths=await Promise.all([1,2].map(i=>call('/stones/'+competingStone.stone.id+'/initialize',{...birthBody,code:competingStone.code,imageId:remaining.body.images[i].id},randomUUID(),{'CF-Connecting-IP':'192.0.2.71'})));
+    assert.deepEqual(competingBirths.map(r=>r.status).sort(),[200,409]);
+    assert.equal((await call('/stones/'+competingStone.stone.id)).body.stone.finds.length,1);
+    assert.equal((await call('/stones/'+competingStone.stone.id+'/verify',{code:competingStone.code},undefined,{'CF-Connecting-IP':'192.0.2.72'})).status,200);
+    assert.equal((await admin('stones/'+competingStone.stone.id,'DELETE')).status,200);
+    const exhaustedStone=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
+    cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--command',"UPDATE stone_image_pool SET claimed_at='2026-01-01T00:00:00Z' WHERE claimed_at IS NULL"]);
+    const exhausted=await call('/stones/'+exhaustedStone.stone.id+'/images');
+    assert.equal(exhausted.body.available,0);assert.deepEqual(exhausted.body.images,[]);
+    assert.equal((await call('/stones/'+exhaustedStone.stone.id+'/initialize',{...birthBody,code:exhaustedStone.code},randomUUID(),{'CF-Connecting-IP':'192.0.2.73'})).status,409);
+    const stillPending=(await call('/stones/'+exhaustedStone.stone.id)).body.stone;
+    assert.equal(stillPending.initialized,false);assert.equal(stillPending.finds.length,0);
+    assert.equal((await admin('stones/'+exhaustedStone.stone.id,'DELETE')).status,200);
+
+
     const beforeViews=(await call("/stones/A1")).body.stone;
     const event=randomUUID();
     const counted=await Promise.all(Array.from({length:4},()=>call("/stones/A1/views",{viewId:event})));

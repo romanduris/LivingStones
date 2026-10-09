@@ -3,6 +3,7 @@ const $ = s => document.querySelector(s);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sessionKey = 'livingstones-management-session';
 let auth = null, stones = [], selected = null, record = null, tab = 'finds', noticeTimer;
+let creationKey=null;
 let section='management',statsPeriod='30',statsTarget='all',statsData=null,statsRun=0;
 const qrCache=new Map(),qrLabelCodes=new Map();
 if (location.protocol === 'http:' && !['localhost','127.0.0.1'].includes(location.hostname)) location.replace('https:'+location.href.slice(5));
@@ -12,15 +13,15 @@ function notice(message, error=false) {
   clearTimeout(noticeTimer); noticeTimer=setTimeout(()=>el.hidden=true,7000);
 }
 function signedOut() {
-  qrLabelCodes.clear();auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
+  creationKey=null;qrLabelCodes.clear();auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
   statsRun++;statsData=null;$('#admin-tabs').hidden=true;$('#management-panel').hidden=true;$('#statistics').hidden=true;
-  $('#login').hidden=false;$('#dashboard').hidden=true;$('#editor').hidden=true;$('#logout').hidden=true;
+  $('#login').hidden=false;$('#dashboard').hidden=true;$('#editor').hidden=true;$('#editor').replaceChildren();$('#logout').hidden=true;
   if ($('#record-dialog').open) $('#record-dialog').close();
 }
-async function api(path,method='GET',body) {
+async function api(path,method='GET',body,key) {
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),20000);
   try {
-    const response=await fetch(LIVINGSTONES_API+'/api/admin/'+path,{method,credentials:'omit',cache:'no-store',signal:controller.signal,headers:{...(auth?{Authorization:'Bearer '+auth.token}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    const response=await fetch(LIVINGSTONES_API+'/api/admin/'+path,{method,credentials:'omit',cache:'no-store',signal:controller.signal,headers:{...(auth?{Authorization:'Bearer '+auth.token}:{}),...(body?{'Content-Type':'application/json'}:{}),...(key?{'Idempotency-Key':key}:{})},...(body?{body:JSON.stringify(body)}:{})});
     const data=await response.json();
     if (!response.ok) {
       if(response.status===401 && path!=='login') signedOut();
@@ -38,12 +39,12 @@ const formatMoment = value => new Intl.DateTimeFormat('en-GB',{day:'numeric',mon
 const statsHTML = items => items.map(([number,label])=>`<div><strong>${number}</strong><span>${label}</span></div>`).join('');
 function renderList() {
   const query=$('#search').value.trim().toLocaleLowerCase(),type=$('#type-filter').value,sort=$('#sort').value;
-  const all=[...stones].filter(s=>(type==='all'||s.demo===(type==='demo'))&&[s.name,s.id,s.finds.at(-1)?.city].join(' ').toLocaleLowerCase().includes(query));
+  const all=[...stones].filter(s=>(type==='all'||(type==='new'?s.initialized===false:type==='demo'?s.demo:!s.demo))&&[s.name,s.id,s.finds.at(-1)?.city].join(' ').toLocaleLowerCase().includes(query));
   all.sort((a,b)=>sort==='views'?(b.views-a.views||a.name.localeCompare(b.name)):sort==='name'?a.name.localeCompare(b.name):Date.parse(b.finds.at(-1)?.date)-Date.parse(a.finds.at(-1)?.date)||a.id.localeCompare(b.id));
   $('#summary').innerHTML=statsHTML([[stones.length,'Stones'],[stones.reduce((n,s)=>n+s.finds.length,0),'Finds'],[stones.reduce((n,s)=>n+(s.views||0),0),'Story views'],[stones.filter(s=>!s.demo).length,'Real stones']]);
   $('#stone-list').innerHTML=all.map(s=>{
     const last=s.finds.at(-1);
-    return `<button class="admin-stone-card" data-stone="${escapeHTML(s.id)}"><img src="${escapeHTML(imageURL(s))}" alt=""><span class="card-copy"><strong>${escapeHTML(s.name)}<span class="stone-type ${s.demo?'':'real'}">${s.demo?'Demo':'Real'}</span></strong><span class="card-meta">${escapeHTML(s.id)} · Born ${formatDate(s.started)}</span><span class="card-meta">${last?escapeHTML(last.city)+' · '+formatDate(last.date):'No finds'}</span><span class="card-numbers"><span><b>${s.finds.length}</b> finds</span><span><b>${s.views||0}</b> views</span></span></span><span class="card-arrow" aria-hidden="true">↗</span></button>`;
+    return `<button class="admin-stone-card" data-stone="${escapeHTML(s.id)}"><img src="${escapeHTML(imageURL(s))}" alt=""><span class="card-copy"><strong>${escapeHTML(s.name)}<span class="stone-type ${s.demo?'':'real'}">${s.initialized===false?'New · awaiting birth':s.demo?'Demo':'Real'}</span></strong><span class="card-meta">${escapeHTML(s.id)} · ${s.initialized===false?'Ready for setup':'Born '+formatDate(s.started)}</span><span class="card-meta">${last?escapeHTML(last.city)+' · '+formatDate(last.date):'No finds'}</span><span class="card-numbers"><span><b>${s.finds.length}</b> finds</span><span><b>${s.views||0}</b> views</span></span></span><span class="card-arrow" aria-hidden="true">↗</span></button>`;
   }).join('') || '<p>No stones match your search.</p>';
 }
 function field(name,label,value,type='text',extra='') {
@@ -55,6 +56,10 @@ function selectField(name,label,options,value) {
 function renderEditor() {
   const s=stones.find(s=>s.id===selected);if(!s){showList();return;}
   $('#editor').hidden=false;$('#dashboard').hidden=true;
+  if(s.initialized===false) {
+    $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>A new little adventure</h1><span class="stone-type real">New · awaiting birth</span></div><button class="danger" data-action="delete-stone">Delete stone</button></div><div class="editor-grid"><section class="panel"><p class="eyebrow">READY TO MEET ITS CREATOR</p><h2>The label comes first. The story comes next.</h2><p>Print the QR label and Find Code for this stone. Its creator can scan the QR, name it, choose a portrait and theme, and give it a birthplace using their phone.</p><p class="form-hint">ID: ${escapeHTML(s.id)} · Not visible in the public collection until it is born.</p><a class="button primary" href="../initialize/?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open setup page ↗</a><p class="form-hint">Keep the Find Code on the physical stone. The same QR opens its story after setup.</p></section><div>${qrPanel(s)}</div></div>`;
+    return;
+  }
   $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>${escapeHTML(s.name)}</h1><a href="../?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open public story ↗</a></div><button class="danger" data-action="delete-stone">Delete stone</button></div>
     <div class="editor-grid"><div><section class="panel"><h2>Stone details</h2><p class="form-hint">ID: ${escapeHTML(s.id)} · ${s.views||0} story views</p><form id="stone-form"><div class="field-grid">
     ${field('name','Name',s.name,'text','required maxlength="80"')}${field('creator','Painted by',s.creator,'text','required maxlength="80"')}${field('started','Born',s.started,'date','required')}${selectField('demo','Type',[['demo','Demo'],['real','Real']],s.demo?'demo':'real')}
@@ -195,6 +200,15 @@ $('#login-form').addEventListener('submit',event=>{
   event.preventDefault();withButton(event.submitter,async()=>{const data=await api('login','POST',{password:$('#password').value});auth=data;sessionStorage.setItem(sessionKey,JSON.stringify(auth));$('#password').value='';await load();notice('Signed in. Welcome back.');});
 });
 $('#logout').addEventListener('click',event=>withButton(event.currentTarget,async()=>{try {await api('logout','POST',{});} finally {signedOut();}notice('Signed out.');}));
+$('#create-stone').addEventListener('click',event=>withButton(event.currentTarget,async()=>{
+  creationKey ||= crypto.randomUUID();
+  const data=await api('stones','POST',{},creationKey);
+  creationKey=null;
+  stones=stones.filter(s=>s.id!==data.stone.id).concat(data.stone);
+  if(data.code)qrLabelCodes.set(data.stone.id,data.code);
+  selected=data.stone.id;tab='finds';history.replaceState(null,'','#stone='+selected);renderEditor();
+  notice('New stone created. Download its QR label, then scan it to begin its story.');
+}));
 $('#refresh').addEventListener('click',event=>withButton(event.currentTarget,async()=>{await load();notice('Latest stories loaded.');}));
 for(const selector of ['#search','#type-filter','#sort'])$(selector).addEventListener(selector==='#search'?'input':'change',renderList);
 $('#refresh-stats').addEventListener('click',event=>withButton(event.currentTarget,loadStats));

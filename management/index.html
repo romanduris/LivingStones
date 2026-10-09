@@ -8,11 +8,11 @@
   <link rel="icon" href="logo.svg" type="image/svg+xml">
   <title>Management · Living Stones</title>
   <link rel="stylesheet" href="../docs/style.css?v=50">
-  <link rel="stylesheet" href="management.css?v=6">
+  <link rel="stylesheet" href="management.css?v=7">
   <script src="../docs/config.js?v=1" defer></script>
   <script src="vendor/qrcode.js?v=2.0.4" defer></script>
   <script src="statistics.js?v=1" defer></script>
-  <script src="management.js?v=9" defer></script>
+  <script src="management.js?v=10" defer></script>
 </head>
 <body>
   <header class="admin-header"><a class="admin-brand" href="../"><img class="admin-logo" src="logo.svg" alt=""><span class="admin-brand-name">Living Stones <span>Management</span></span></a><div><a href="../">Visit website ↗</a><button id="logout" hidden>Sign out</button></div></header>
@@ -26,9 +26,9 @@
     <nav id="admin-tabs" class="admin-tabs" role="tablist" aria-label="Administration sections" hidden><button id="management-tab" role="tab" aria-selected="true" aria-controls="management-panel" data-section="management">Management</button><button id="stats-tab" role="tab" aria-selected="false" aria-controls="statistics" tabindex="-1" data-section="stats">Stats</button></nav>
     <div id="management-panel" role="tabpanel" aria-labelledby="management-tab" hidden>
     <section id="dashboard" hidden>
-      <div class="page-heading"><div><p class="eyebrow">LIVING STONES MANAGEMENT</p><h1>Every stone. Every little hello.</h1></div><button id="refresh">Refresh</button></div>
+      <div class="page-heading"><div><p class="eyebrow">LIVING STONES MANAGEMENT</p><h1>Every stone. Every little hello.</h1></div><div class="heading-actions"><button id="create-stone" class="primary">＋ Create new stone</button><button id="refresh">Refresh</button></div></div>
       <div id="summary" class="admin-stats"></div>
-      <div class="admin-toolbar"><label>Search stones<input id="search" type="search" placeholder="Name, ID or city"></label><label>Type<select id="type-filter"><option value="all">All stones</option><option value="demo">Demo</option><option value="real">Real</option></select></label><label>Sort by<select id="sort"><option value="latest">Last found</option><option value="views">Most viewed</option><option value="name">Name</option></select></label></div>
+      <div class="admin-toolbar"><label>Search stones<input id="search" type="search" placeholder="Name, ID or city"></label><label>Type<select id="type-filter"><option value="all">All stones</option><option value="demo">Demo</option><option value="real">Real</option><option value="new">Awaiting birth</option></select></label><label>Sort by<select id="sort"><option value="latest">Last found</option><option value="views">Most viewed</option><option value="name">Name</option></select></label></div>
       <div id="stone-list" class="admin-stone-list"></div>
       <p class="admin-footnote">Views count story openings since tracking began. They are not a count of unique people.</p>
     </section>

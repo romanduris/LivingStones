@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#202930">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; connect-src 'self' https://livingstones-api.livingstones-romanduris.workers.dev https://photon.komoot.io http://127.0.0.1:8787 http://localhost:8787; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>A little stone is born · Living Stones</title>
+  <link rel="icon" href="../docs/assets/brand-stone.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../docs/style.css?v=73">
+  <link rel="stylesheet" href="initialize.css?v=1">
+  <script src="../docs/config.js?v=1" defer></script>
+  <script src="initialize.js?v=1" defer></script>
+</head>
+<body>
+  <header class="birth-header"><a class="wordmark" href="../"><img class="brand-symbol" src="../docs/assets/brand-stone.svg" alt="" width="42" height="42">Living Stones</a><a href="../" target="_blank" rel="noopener">Discover Living Stones ↗</a></header>
+  <main class="birth-wrap">
+    <section class="birth-intro" aria-labelledby="birth-title"><div><p class="eyebrow">SMALL STONE. BRAND NEW STORY.</p><h1 id="birth-title">Every adventure<br>starts with a little hello.</h1><p>This little stone hasn’t been born yet. Give it a name, a face and a place in the world — then let its journey begin.</p><p>Paint it, take it on an adventure, and leave it somewhere safe for its next friend. Every QR scan opens its story; each new find adds another memory.</p><a href="../" target="_blank" rel="noopener">What is Living Stones? Find out more ↗</a></div><div class="birth-hero-stone"><img id="hero-portrait" src="../docs/assets/brand-stone.svg" alt="A little stone waiting for its first adventure"><span id="preview-name">Your little travelling friend</span><small>A whole world to discover.</small></div></section>
+    <ol class="birth-steps" aria-label="How to begin"><li><span>1</span>Give me a name</li><li><span>2</span>Choose my look</li><li><span>3</span>Let me be born</li></ol>
+    <p id="page-status" role="status" aria-live="polite">Finding your little stone…</p>
+    <button class="button secondary" id="retry-page" type="button" hidden>Try again</button>
+    <form id="birth-form" hidden>
+      <fieldset id="birth-fields">
+        <section class="birth-panel"><div class="birth-section-heading"><span class="step-number">01</span><div><h2>A name to carry with me.</h2><p>A small introduction, before a big adventure.</p></div></div><div class="birth-input-grid">
+          <label class="field">Name<input name="name" id="stone-name" required maxlength="80" placeholder="What will you call me?" autocomplete="off"></label>
+          <label class="field">Painted by<input name="creator" id="stone-creator" required maxlength="80" placeholder="Your name or nickname" autocomplete="nickname"></label>
+          <label class="field">Find Code<input name="code" id="find-code" required minlength="4" maxlength="32" pattern="[A-Za-z0-9]{4,32}" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-describedby="code-help" placeholder="The code on the stone"></label><p id="code-help" class="birth-help">The Find Code comes with your QR label. It makes sure only someone holding this stone can begin its story.</p>
+        </div></section>
+        <section class="birth-panel"><div class="birth-section-heading"><span class="step-number">02</span><div><h2>A face that feels like me.</h2><p>Choose a portrait for my online story.</p></div></div><p id="portrait-help" class="birth-help">Ten little faces, picked at random. Once yours is born, its portrait belongs only to it.</p><div id="portrait-options" class="portrait-options" role="group" aria-labelledby="portrait-help"></div><div class="portrait-footer"><p id="pool-status" class="birth-help" role="status"></p><button id="refresh-portraits" class="button secondary" type="button">Show another selection ↻</button></div>
+          <label class="field theme-field">Theme<select id="stone-theme" name="theme"><option value="sun">Sun · a little sunshine</option><option value="moon">Moon · a little wonder</option><option value="leaf">Leaf · a little nature</option><option value="heart">Heart · a little kindness</option><option value="wave">Wave · a little adventure</option></select></label>
+        </section>
+        <section class="birth-panel birth-final"><div class="birth-section-heading"><span class="step-number">03</span><div><h2>Here. Today. Hello, world.</h2><p>This is where my first memory begins.</p></div></div><div class="birth-location"><div><span class="birth-help">Born</span><strong id="birth-date"></strong><p class="birth-help">The exact birth date is saved when you finish.</p></div><div><button class="button secondary" type="button" id="use-birth-gps">⌖ Use my phone location</button><p id="location-status" role="status" aria-live="polite">Allow location access to choose my birthplace.</p></div></div><p class="birth-help">Your birthplace and painted-by name will be visible in the stone’s story. Location is requested only when you tap the button.</p><p id="form-status" role="status" aria-live="polite"></p><div class="birth-submit"><span>One little stone.<br>So many stories ahead.</span><button class="button primary" id="give-birth" type="submit" disabled>Let my stone be born ✦</button></div></section>
+      </fieldset>
+    </form>
+    <footer class="birth-footnote">Small stones. Big stories. <a href="../" target="_blank" rel="noopener">Living Stones ↗</a></footer>
+  </main>
+</body>
+</html>

@@ -190,7 +190,11 @@ const stoneRepository = (() => {
         ...(body ? { body: JSON.stringify(body) } : {}),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Please try again.");
+      if (!response.ok) {
+        const error = new Error(data.error || "Please try again.");
+        error.status = response.status;
+        throw error;
+      }
       return data;
     } catch (error) {
       if (error.name === "AbortError" || error instanceof TypeError)
@@ -220,6 +224,11 @@ const stoneRepository = (() => {
     list: () => stones,
     async load() {
       stones = (await request("/api/stones")).stones;
+    },
+    async loadStone(id) {
+      const { stone } = await request(`/api/stones/${encodeURIComponent(id)}`);
+      if (stone.initialized !== false && !stones.some(s => s.id === id)) stones.push(stone);
+      return stone;
     },
     recordHomepage: () => request("/api/page-views", {viewId: crypto.randomUUID()}),
     async recordView(id) {
@@ -1231,6 +1240,19 @@ async function boot() {
   status.textContent = "Our little stories are on their way…";
   try {
     await stoneRepository.load();
+    const requestedId = new URL(location.href).searchParams.get("stone");
+    if (requestedId && !stoneRepository.get(requestedId)) {
+      let stone;
+      try { stone = await stoneRepository.loadStone(requestedId); } catch (error) {
+        if (error.status !== 404) throw error;
+      }
+      if (stone?.initialized === false) {
+        const setupURL = new URL("../initialize/", document.querySelector('script[src*="app.js"]').src);
+        setupURL.search = new URLSearchParams({stone: requestedId});
+        location.replace(setupURL.href);
+        return;
+      }
+    }
     renderOverview();
     syncURL();
     status.hidden = true;

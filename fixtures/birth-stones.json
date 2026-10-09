@@ -1,0 +1,282 @@
+[
+  {
+    "id": "birth-01",
+    "image": "birth-stones/birth-01.svg",
+    "label": "Honey Sun",
+    "theme": "sun",
+    "color": "#ffcf64"
+  },
+  {
+    "id": "birth-02",
+    "image": "birth-stones/birth-02.svg",
+    "label": "Honey Moon",
+    "theme": "moon",
+    "color": "#ffcf64"
+  },
+  {
+    "id": "birth-03",
+    "image": "birth-stones/birth-03.svg",
+    "label": "Honey Leaf",
+    "theme": "leaf",
+    "color": "#ffcf64"
+  },
+  {
+    "id": "birth-04",
+    "image": "birth-stones/birth-04.svg",
+    "label": "Honey Heart",
+    "theme": "heart",
+    "color": "#ffcf64"
+  },
+  {
+    "id": "birth-05",
+    "image": "birth-stones/birth-05.svg",
+    "label": "Honey Wave",
+    "theme": "wave",
+    "color": "#ffcf64"
+  },
+  {
+    "id": "birth-06",
+    "image": "birth-stones/birth-06.svg",
+    "label": "Lavender Sun",
+    "theme": "sun",
+    "color": "#b49aff"
+  },
+  {
+    "id": "birth-07",
+    "image": "birth-stones/birth-07.svg",
+    "label": "Lavender Moon",
+    "theme": "moon",
+    "color": "#b49aff"
+  },
+  {
+    "id": "birth-08",
+    "image": "birth-stones/birth-08.svg",
+    "label": "Lavender Leaf",
+    "theme": "leaf",
+    "color": "#b49aff"
+  },
+  {
+    "id": "birth-09",
+    "image": "birth-stones/birth-09.svg",
+    "label": "Lavender Heart",
+    "theme": "heart",
+    "color": "#b49aff"
+  },
+  {
+    "id": "birth-10",
+    "image": "birth-stones/birth-10.svg",
+    "label": "Lavender Wave",
+    "theme": "wave",
+    "color": "#b49aff"
+  },
+  {
+    "id": "birth-11",
+    "image": "birth-stones/birth-11.svg",
+    "label": "Mint Sun",
+    "theme": "sun",
+    "color": "#62d7cb"
+  },
+  {
+    "id": "birth-12",
+    "image": "birth-stones/birth-12.svg",
+    "label": "Mint Moon",
+    "theme": "moon",
+    "color": "#62d7cb"
+  },
+  {
+    "id": "birth-13",
+    "image": "birth-stones/birth-13.svg",
+    "label": "Mint Leaf",
+    "theme": "leaf",
+    "color": "#62d7cb"
+  },
+  {
+    "id": "birth-14",
+    "image": "birth-stones/birth-14.svg",
+    "label": "Mint Heart",
+    "theme": "heart",
+    "color": "#62d7cb"
+  },
+  {
+    "id": "birth-15",
+    "image": "birth-stones/birth-15.svg",
+    "label": "Mint Wave",
+    "theme": "wave",
+    "color": "#62d7cb"
+  },
+  {
+    "id": "birth-16",
+    "image": "birth-stones/birth-16.svg",
+    "label": "Rose Sun",
+    "theme": "sun",
+    "color": "#ff8c92"
+  },
+  {
+    "id": "birth-17",
+    "image": "birth-stones/birth-17.svg",
+    "label": "Rose Moon",
+    "theme": "moon",
+    "color": "#ff8c92"
+  },
+  {
+    "id": "birth-18",
+    "image": "birth-stones/birth-18.svg",
+    "label": "Rose Leaf",
+    "theme": "leaf",
+    "color": "#ff8c92"
+  },
+  {
+    "id": "birth-19",
+    "image": "birth-stones/birth-19.svg",
+    "label": "Rose Heart",
+    "theme": "heart",
+    "color": "#ff8c92"
+  },
+  {
+    "id": "birth-20",
+    "image": "birth-stones/birth-20.svg",
+    "label": "Rose Wave",
+    "theme": "wave",
+    "color": "#ff8c92"
+  },
+  {
+    "id": "birth-21",
+    "image": "birth-stones/birth-21.svg",
+    "label": "Ocean Sun",
+    "theme": "sun",
+    "color": "#76c9ee"
+  },
+  {
+    "id": "birth-22",
+    "image": "birth-stones/birth-22.svg",
+    "label": "Ocean Moon",
+    "theme": "moon",
+    "color": "#76c9ee"
+  },
+  {
+    "id": "birth-23",
+    "image": "birth-stones/birth-23.svg",
+    "label": "Ocean Leaf",
+    "theme": "leaf",
+    "color": "#76c9ee"
+  },
+  {
+    "id": "birth-24",
+    "image": "birth-stones/birth-24.svg",
+    "label": "Ocean Heart",
+    "theme": "heart",
+    "color": "#76c9ee"
+  },
+  {
+    "id": "birth-25",
+    "image": "birth-stones/birth-25.svg",
+    "label": "Ocean Wave",
+    "theme": "wave",
+    "color": "#76c9ee"
+  },
+  {
+    "id": "birth-26",
+    "image": "birth-stones/birth-26.svg",
+    "label": "Peach Sun",
+    "theme": "sun",
+    "color": "#ffb879"
+  },
+  {
+    "id": "birth-27",
+    "image": "birth-stones/birth-27.svg",
+    "label": "Peach Moon",
+    "theme": "moon",
+    "color": "#ffb879"
+  },
+  {
+    "id": "birth-28",
+    "image": "birth-stones/birth-28.svg",
+    "label": "Peach Leaf",
+    "theme": "leaf",
+    "color": "#ffb879"
+  },
+  {
+    "id": "birth-29",
+    "image": "birth-stones/birth-29.svg",
+    "label": "Peach Heart",
+    "theme": "heart",
+    "color": "#ffb879"
+  },
+  {
+    "id": "birth-30",
+    "image": "birth-stones/birth-30.svg",
+    "label": "Peach Wave",
+    "theme": "wave",
+    "color": "#ffb879"
+  },
+  {
+    "id": "birth-31",
+    "image": "birth-stones/birth-31.svg",
+    "label": "Silver Sun",
+    "theme": "sun",
+    "color": "#b0bac5"
+  },
+  {
+    "id": "birth-32",
+    "image": "birth-stones/birth-32.svg",
+    "label": "Silver Moon",
+    "theme": "moon",
+    "color": "#b0bac5"
+  },
+  {
+    "id": "birth-33",
+    "image": "birth-stones/birth-33.svg",
+    "label": "Silver Leaf",
+    "theme": "leaf",
+    "color": "#b0bac5"
+  },
+  {
+    "id": "birth-34",
+    "image": "birth-stones/birth-34.svg",
+    "label": "Silver Heart",
+    "theme": "heart",
+    "color": "#b0bac5"
+  },
+  {
+    "id": "birth-35",
+    "image": "birth-stones/birth-35.svg",
+    "label": "Silver Wave",
+    "theme": "wave",
+    "color": "#b0bac5"
+  },
+  {
+    "id": "birth-36",
+    "image": "birth-stones/birth-36.svg",
+    "label": "Lilac Sun",
+    "theme": "sun",
+    "color": "#d29cdf"
+  },
+  {
+    "id": "birth-37",
+    "image": "birth-stones/birth-37.svg",
+    "label": "Lilac Moon",
+    "theme": "moon",
+    "color": "#d29cdf"
+  },
+  {
+    "id": "birth-38",
+    "image": "birth-stones/birth-38.svg",
+    "label": "Lilac Leaf",
+    "theme": "leaf",
+    "color": "#d29cdf"
+  },
+  {
+    "id": "birth-39",
+    "image": "birth-stones/birth-39.svg",
+    "label": "Lilac Heart",
+    "theme": "heart",
+    "color": "#d29cdf"
+  },
+  {
+    "id": "birth-40",
+    "image": "birth-stones/birth-40.svg",
+    "label": "Lilac Wave",
+    "theme": "wave",
+    "color": "#d29cdf"
+  }
+]

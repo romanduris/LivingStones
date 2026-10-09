@@ -91,3 +91,5 @@ button:hover { border-color:var(--purple); } button:disabled { opacity:.55; curs
  .admin-brand .admin-brand-name { font-size: 17px; }
  .admin-brand .admin-brand-name > span { display: block; margin: 0; font-size: 11px; }
 }
+.heading-actions { display:flex; flex-wrap:wrap; gap:10px; }
+@media(max-width:700px) { .page-heading { align-items:flex-start; flex-direction:column; } }

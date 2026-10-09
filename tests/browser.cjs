@@ -92,6 +92,10 @@ process.on("exit", () => server?.kill());
           }
         }
       }
+      if (req.method() === "GET" && parts[2] === "stones" && id) {
+        if (stone) result = { stone };
+        else { status = 404; result = { error: "This stone could not be found." }; }
+      }
       if (kind === "finds" && context.dropNextFindReply && status === 200) {
         context.dropNextFindReply = false;
 
