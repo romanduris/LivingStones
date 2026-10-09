@@ -7,7 +7,7 @@ const functions = source.slice(
   source.indexOf("function identifyDevice"),
   source.indexOf("// This repository"),
 );
-const context = vm.createContext({ navigator: { userAgent: "" } });
+const context = vm.createContext({ navigator: { userAgent: "" },t:(key,values=[])=>key.replace(/\{(\d+)\}/g,(_,i)=>values[i]) });
 vm.runInContext(functions, context);
 const data = vm.createContext({});
 vm.runInContext(

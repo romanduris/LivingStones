@@ -18,13 +18,7 @@ const escapeHTML = (value) =>
         c
       ],
   );
-const formatDate = (value) =>
-  new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+const formatDate = value => siteI18n.date(value);
 const daysTravelling = (stone) =>
   Math.max(
     0,
@@ -96,15 +90,16 @@ function formatPlace(properties, accuracy) {
 // The feed header already shows the city and country; keep stored addresses intact.
 function storyAddress(entry) {
   if (!entry.address) {
-    return `Address unavailable — ${entry.lat.toFixed(5)}, ${entry.lon.toFixed(5)}`;
+    return t("Address unavailable — {0}, {1}",[entry.lat.toFixed(5),entry.lon.toFixed(5)]);
   }
+  if(entry.source==='manual'&&entry.address==='Approximate city location')return t('Approximate city location');
   const normalize = (value) => value.trim().replace(/\s+/g, " ").toLocaleLowerCase();
   const headerParts = new Set([entry.city, entry.country].filter(Boolean).map(normalize));
   return entry.address
     .split(",")
     .map((part) => part.trim())
     .filter((part) => part && !headerParts.has(normalize(part)))
-    .join(", ") || "Exact address unavailable";
+    .join(", ") || t("Exact address unavailable");
 }
 // A stone stays alive for 90 days after its latest recorded encounter.
 function journeyStatistics(stones, now = Date.now()) {
@@ -129,8 +124,8 @@ function findRecency(value, now = Date.now()) {
   return {
     days,
     label:
-      days === 0 ? "(today)" : `(${days} ${days === 1 ? "day" : "days"} ago)`,
-    compact: days === 0 ? "(today)" : `(${days}d ago)`,
+      days === 0 ? t("(today)") : t(days===1?"({0} day ago)":"({0} days ago)",[days]),
+    compact: days === 0 ? t("(today)") : t("({0}d ago)",[days]),
   };
 }
 // Keep route points chronological; only the visible story feed is newest first.
@@ -252,7 +247,7 @@ let toastTimer;
 const mapInstances = new Map();
 function toast(message) {
   const el = $("#toast");
-  el.textContent = message;
+  say(el,message);
   el.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
@@ -274,7 +269,7 @@ function updateCardPagination() {
   const shown = isCards ? Math.min(cards.length, columns * collectionState.visibleRows) : cards.length;
   cards.forEach((card, index) => { card.hidden = isCards && index >= shown; });
   $("#stone-pagination").hidden = false;
-  $("#stone-count").textContent = `Showing ${shown} of ${cards.length} ${cards.length === 1 ? "stone" : "stones"}`;
+  say($("#stone-count"),cards.length===1?"Showing {0} of {1} stone":"Showing {0} of {1} stones",[shown,cards.length]);
   $("#show-more-stones").hidden = !isCards || shown >= cards.length;
 }
 function renderCollection() {
@@ -293,13 +288,13 @@ function renderCollection() {
     const recency = last ? findRecency(last.date) : null;
     const place = last ? `${last.city}, ${last.country}` : "Waiting for a first find";
     const id = escapeHTML(stone.id);
-    return `<a class="journey-card" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" aria-label="Explore ${escapeHTML(stone.name)}" style="--stone-color:${escapeHTML(/^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be")}">
-      <span class="card-kind">${stone.demo ? "Demo" : "Real"}</span>
+    return ui`<a class="journey-card" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" aria-label="Explore ${escapeHTML(stone.name)}" style="--stone-color:${escapeHTML(/^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be")}">
+      <span class="card-kind">${uiText(stone.demo ? "Demo" : "Real")}</span>
       <span class="card-age" aria-label="${daysTravelling(stone)} days alive"><span>Age</span><strong>${daysTravelling(stone)} d</strong></span>
-      <span class="card-portrait"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" width="340" height="280"><time class="card-born" datetime="${escapeHTML(stone.started)}" title="Born: ${formatDate(stone.started)}">${formatDate(stone.started)}</time></span>
+      <span class="card-portrait"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || t("Painted stone: {0}",[stone.name]))}" width="340" height="280"><time class="card-born" datetime="${escapeHTML(stone.started)}" title="Born: ${formatDate(stone.started)}">${formatDate(stone.started)}</time></span>
       <h3>${escapeHTML(stone.name)}</h3>
-      <dl class="card-facts"><div><dt>Distance</dt><dd><span aria-hidden="true">⌁</span> ${Math.round(journeyDistance(stone)).toLocaleString("en-GB")} km</dd></div><div><dt>Finds</dt><dd aria-label="${stone.finds.length} ${stone.finds.length === 1 ? "find" : "finds"}">${stone.finds.length}<span class="card-find-unit"> ${stone.finds.length === 1 ? "find" : "finds"}</span></dd></div></dl>
-      <div class="card-location" title="${escapeHTML(place)}"><span>${last ? countryFlagHTML(last.country) : ""}<span class="card-city">${escapeHTML(last?.city || "Awaiting a find")}</span></span>${last ? `<time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)} ${recency.label}">${recency.days === 0 ? "Today" : `${recency.days}d ago`}</time>` : ""}</div>
+      <dl class="card-facts"><div><dt>Distance</dt><dd><span aria-hidden="true">⌁</span> ${Math.round(journeyDistance(stone)).toLocaleString(siteI18n.locale)} km</dd></div><div><dt>Finds</dt><dd aria-label="${stone.finds.length} ${stone.finds.length === 1 ? "find" : "finds"}">${stone.finds.length}<span class="card-find-unit"> ${stone.finds.length === 1 ? "find" : "finds"}</span></dd></div></dl>
+      <div class="card-location" title="${escapeHTML(place)}"><span>${last ? countryFlagHTML(last.country) : ""}<span class="card-city">${escapeHTML(last?.city || "Awaiting a find")}</span></span>${last ? ui`<time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)} ${recency.label}">${uiText(recency.days===0?"Today":"{0}d ago",[recency.days])}</time>` : ""}</div>
     </a>`;
   }).join("");
   $("#stone-cards").hidden = collectionState.view !== "cards";
@@ -313,7 +308,7 @@ function renderCollection() {
   if (collectionState.sort === "age") ageHeading.setAttribute("aria-sort", "descending");
   else ageHeading.removeAttribute("aria-sort");
   heading.setAttribute("aria-sort", collectionState.sort === "recent" ? "descending" : "none");
-  heading.title = collectionState.sort === "recent" ? "Newest finds first" : collectionState.sort === "age" ? "Oldest stones first" : "Stones sorted by distance traveled";
+  setUIAttribute(heading,"title",collectionState.sort === "recent" ? "Newest finds first" : collectionState.sort === "age" ? "Oldest stones first" : "Stones sorted by distance traveled");
   heading.querySelector(".sort-indicator").hidden = collectionState.sort !== "recent";
   $("#stone-rows").innerHTML = stones
     .map((stone) => {
@@ -324,14 +319,14 @@ function renderCollection() {
       const fullBirth = `Born: ${formatDate(stone.started)}, ${birth.country}`;
       const fullPlace = `${last.city}, ${last.country}`;
       const recency = findRecency(last.date);
-      return `<tr class="stone-row" data-stone="${stone.id}">
-        <td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${escapeHTML(stone.name)}, ${escapeHTML(fullBirth)}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || "Painted stone: " + stone.name)}" loading="lazy"></span>${stone.demo ? '<span class="demo-badge">Demo</span>' : '<span class="demo-badge real-badge">Real</span>'}</span><span class="stone-identity"><strong>${escapeHTML(stone.name)}</strong><small class="stone-born" title="${escapeHTML(fullBirth)}" aria-label="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">${formatDate(stone.started)}</span></small></span></a></td>
+      return ui`<tr class="stone-row" data-stone="${stone.id}">
+        <td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${escapeHTML(stone.name)}, ${escapeHTML(fullBirth)}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || t("Painted stone: {0}",[stone.name]))}" loading="lazy"></span>${stone.demo ? ui`<span class="demo-badge">Demo</span>` : ui`<span class="demo-badge real-badge">Real</span>`}</span><span class="stone-identity"><strong>${escapeHTML(stone.name)}</strong><small class="stone-born" title="${escapeHTML(fullBirth)}" aria-label="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">${formatDate(stone.started)}</span></small></span></a></td>
         <td class="overview-start" data-label="Born"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.country)}</small></td>
         <td class="overview-age" data-label="Age (days)"><strong aria-label="${daysTravelling(stone)} days alive">${daysTravelling(stone)} d</strong></td>
         <td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong></td>
         <td class="overview-countries" data-label="Countries"><strong aria-label="${countries} ${countries === 1 ? "country" : "countries"}">${countries}</strong></td>
-        <td class="overview-location" data-label="Last Found"><time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)} ${recency.label}"><span class="last-recency">${recency.days === 0 ? "Today" : `${recency.days}d ago`}</span></time><small class="last-place" title="${escapeHTML(fullPlace)}"><span class="place-name">${escapeHTML(last.city)}</span>${countryFlagHTML(last.country)}</small></td>
-        <td class="overview-latest" data-label="Last Comment"><strong>${escapeHTML(lastComment.nickname)}</strong><small class="latest-note" title="${escapeHTML(lastComment.message)}">${escapeHTML(lastComment.message || "A little hello")}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td>
+        <td class="overview-location" data-label="Last Found"><time datetime="${escapeHTML(last.date)}" title="${formatDate(last.date)} ${recency.label}"><span class="last-recency">${uiText(recency.days===0?"Today":"{0}d ago",[recency.days])}</span></time><small class="last-place" title="${escapeHTML(fullPlace)}"><span class="place-name">${escapeHTML(last.city)}</span>${countryFlagHTML(last.country)}</small></td>
+        <td class="overview-latest" data-label="Last Comment"><strong>${lastComment.nickname?escapeHTML(lastComment.nickname):uiText("A kind stranger")}</strong><small class="latest-note" title="${escapeHTML(lastComment.message)}">${lastComment.message?escapeHTML(lastComment.message):uiText("A little hello")}</small></td><td class="overview-arrow"><span aria-hidden="true">↗</span></td>
       </tr>`;
     })
     .join("");
@@ -340,20 +335,20 @@ function renderOverview() {
   const stones = stoneRepository.list();
   renderCollection();
   const stats = journeyStatistics(stones);
-  $("#total-stones").textContent = stats.created;
-  $("#total-active").textContent = stats.alive;
-  $("#total-finds").textContent = stats.finds;
-  $("#total-countries").textContent = stats.countries;
+  say($("#total-stones"),stats.created);
+  say($("#total-active"),stats.alive);
+  say($("#total-finds"),stats.finds);
+  say($("#total-countries"),stats.countries);
   renderMap($("#world-map"), stones);
 }
 
 function overviewPopupHTML(stone, last) {
   const days = daysTravelling(stone);
-  return `<section class="stone-popup" aria-label="${escapeHTML(stone.name)} summary">
+  return ui`<section class="stone-popup" aria-label="${escapeHTML(stone.name)} summary">
     <div class="stone-popup-heading"><img src="${escapeHTML(stoneImageURL(stone))}" alt="" width="44" height="44"><strong>${escapeHTML(stone.name)}</strong></div>
     <dl class="stone-popup-facts">
       <div><dt>Born</dt><dd>${formatDate(stone.started)}</dd></div>
-      <div><dt>Alive</dt><dd class="stone-popup-age">${days} ${days === 1 ? "day" : "days"}</dd></div>
+      <div><dt>Alive</dt><dd class="stone-popup-age">${uiText(days===1?"{0} day":"{0} days",[days])}</dd></div>
       <div><dt>Last found</dt><dd><time datetime="${escapeHTML(last.date)}">${formatMoment(last.date)}</time><span class="stone-popup-city">${escapeHTML(last.city)}${countryFlagHTML(last.country)}</span></dd></div>
     </dl>
     <a class="map-popup-link stone-popup-action" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${escapeHTML(stone.id)}">Open stone story <span aria-hidden="true">↗</span></a>
@@ -364,7 +359,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
   container.replaceChildren();
   container.parentElement.querySelector(".map-notice")?.remove();
   if (!stones.length && !previewPlace) {
-    container.textContent = "Our first little adventures are on their way.";
+    say(container,"Our first little adventures are on their way.");
     return;
   }
   const points = previewPlace
@@ -382,6 +377,9 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
     markerZoomAnimation: false,
     fadeAnimation: false,
   });
+  for(const [selector,key] of [['.leaflet-control-zoom-in','Zoom in'],['.leaflet-control-zoom-out','Zoom out']]){
+    const control=container.querySelector(selector);if(control){setUIAttribute(control,'title',key);setUIAttribute(control,'aria-label',key);}
+  }
   map.setView([48.1486, 17.1077], 9);
   const tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
@@ -392,7 +390,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
   note.className = "map-notice";
   note.setAttribute("role", "status");
   note.hidden = true;
-  note.textContent = "Map tiles unavailable. Location markers still work.";
+  say(note,"Map tiles unavailable. Location markers still work.");
   container.parentElement.append(note);
   let loaded = 0;
   tiles.on("tileload", () => {
@@ -445,15 +443,15 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
       icon: L.divIcon({
         className: `stone-pin${!journey && !previewPlace ? " stone-dot-pin" : ""}${local ? " is-new" : ""}`,
         html: !journey && !previewPlace
-          ? `<span class="map-stone-dot" style="--stone-color:${color}" aria-hidden="true"></span>`
-          : `<span class="pin-core" style="--stone-color:${color}">${local ? "✦" : index + 1}</span>`,
+          ? ui`<span class="map-stone-dot" style="--stone-color:${color}" aria-hidden="true"></span>`
+          : ui`<span class="pin-core" style="--stone-color:${color}">${local ? "✦" : index + 1}</span>`,
         iconSize: [34, 34],
         iconAnchor: [17, 17],
         popupAnchor: [0, -12],
       }),
     })
       .bindPopup(
-        !journey && !previewPlace ? overviewPopupHTML(stone, find) : `<strong>${escapeHTML(find.city)}</strong><br>${escapeHTML(find.address || find.city + ", " + find.country)}<br><span class="map-popup-note">${previewPlace ? "Location preview — not submitted" : formatDate(find.date)}${find.local ? " · Saved find" : ""}</span>`,
+        !journey && !previewPlace ? overviewPopupHTML(stone, find) : ui`<strong>${escapeHTML(find.city)}</strong><br>${escapeHTML(find.address || find.city + ", " + find.country)}<br><span class="map-popup-note">${previewPlace ? "Location preview — not submitted" : formatDate(find.date)}${find.local ? " · Saved find" : ""}</span>`,
         !journey && !previewPlace ? { maxWidth: 220, autoPanPaddingTopLeft: [16, 80], autoPanPaddingBottomRight: [16, 12], className: "stone-overview-popup" } : {},
       )
       .addTo(map);
@@ -503,7 +501,7 @@ function renderMap(container, stones, journey = false, previewPlace = null) {
 function countryFlagHTML(country) {
   const code = { Slovakia: "sk", Austria: "at", Hungary: "hu", Czechia: "cz", "Czech Republic": "cz", Česko: "cz" }[country];
   return code
-    ? `<img class="country-flag" src="${new URL(`flags/${code}.svg`, assetBase).href}" alt="${escapeHTML(country)}" width="15" height="10">`
+    ? ui`<img class="country-flag" src="${new URL(`flags/${code}.svg`, assetBase).href}" alt="${escapeHTML(country)}" width="15" height="10">`
     : "";
 }
 function formatMoment(value) {
@@ -511,7 +509,7 @@ function formatMoment(value) {
     formatDate(value) +
     (value.includes("T")
       ? " · " +
-        new Intl.DateTimeFormat("en-GB", {
+        new Intl.DateTimeFormat(siteI18n.locale, {
           hour: "2-digit",
           minute: "2-digit",
         }).format(new Date(value))
@@ -524,16 +522,16 @@ function historyHTML(stone) {
       const isFind = entry.type === "find";
       const address = isFind
         ? storyAddress(entry)
-        : "No location shared with this note.";
-      return `<article class="story-entry ${isFind ? "find-entry" : "note-entry"}${entry.local ? " new-find" : ""}" data-entry="${escapeHTML(entry.id)}">
+        : t("No location shared with this note.");
+      return ui`<article class="story-entry ${isFind ? "find-entry" : "note-entry"}${entry.local ? " new-find" : ""}" data-entry="${escapeHTML(entry.id)}">
       <header class="entry-header">
         <div class="entry-place">
-          <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? `<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : '<span class="entry-kind">A little note</span>'}</div>
-          <p class="entry-address">${isFind && entry.source === "gps" ? '<span class="local-badge gps-badge">GPS</span> ' : isFind && entry.source === "manual" ? '<span class="local-badge manual-badge">Manual</span> ' : isFind && entry.source === "demo" ? '<span class="local-badge demo-location-badge">Demo</span> ' : ""}${escapeHTML(address)}</p>
+          <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? ui`<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : ui`<span class="entry-kind">A little note</span>`}</div>
+          <p class="entry-address">${isFind && entry.source === "gps" ? '<span class="local-badge gps-badge">GPS</span> ' : isFind && entry.source === "manual" ? '<span class="local-badge manual-badge">Manual</span> ' : isFind && entry.source === "demo" ? '<span class="local-badge demo-location-badge">Demo</span> ' : ""}${uiText("{0}",[address])}</p>
         </div>
-        <div class="entry-author"><strong class="entry-finder">${escapeHTML(entry.nickname || "A kind stranger")}</strong></div>
+        <div class="entry-author"><strong class="entry-finder">${entry.nickname?escapeHTML(entry.nickname):uiText("A kind stranger")}</strong></div>
       </header>
-      ${entry.message ? `<p class="entry-message">“${escapeHTML(entry.message)}”</p>` : '<p class="entry-message no-message">A little hello, without a note this time.</p>'}
+      ${entry.message ? ui`<p class="entry-message">“${escapeHTML(entry.message)}”</p>` : ui`<p class="entry-message no-message">A little hello, without a note this time.</p>`}
     </article>`;
     })
     .join("");
@@ -542,6 +540,27 @@ function openedFromQR() {
   const params = new URL(location.href).searchParams;
   return params.get("source") === "qr" && params.get("stone") === selectedId;
 }
+function stoneStoryHTML(stone){
+ const birth=stone.finds[0],parts=(birth.address||'').split(',').map(part=>part.trim());
+ const place=stone.demo&&parts.length>2&&parts.at(-1)===birth.city?parts.at(-2):birth.city;
+ const encounters=Math.max(0,stone.finds.length-1);
+ const creator=stone.creator?t('<strong>{0}</strong> painted me',[escapeHTML(stone.creator)]):t('My story began');
+ const travel=encounters?t(encounters===1?' Since I was born, I’ve been found <strong>{0} time</strong> and travelled <strong>{1} km</strong>.':' Since I was born, I’ve been found <strong>{0} times</strong> and travelled <strong>{1} km</strong>.',[encounters,Math.round(journeyDistance(stone)).toLocaleString(siteI18n.locale)]):'';
+ return t('I’m a little painted stone called <strong>{0}</strong>. {1} on <strong>{2}</strong>. I was born in <span class="birth-place"><strong>{3}, {4}</strong>{5}</span>.{6} Every person I meet brings me a little more to life. Take me on a trip, then leave me somewhere safe for my next friend. 😊',[escapeHTML(stone.name),creator,formatDate(stone.started),escapeHTML(place),escapeHTML(birth.country),countryFlagHTML(birth.country),travel]);
+}
+function setUIAttribute(node,attribute,key){node.setAttribute('data-site-'+attribute,JSON.stringify({key,values:[]}));node.setAttribute(attribute,t(key));}
+document.addEventListener('site-language-change',()=>{
+ renderCollection();
+ const stone=stoneRepository.get(selectedId);
+ if(stone&&$('#stone-dialog').open){
+  $('.detail-story').innerHTML=stoneStoryHTML(stone);$('#stone-notes').innerHTML=historyHTML(stone);
+  if(flow?.place&&!flow.busy&&$('#location-status'))say($('#location-status'),placeLabel(flow.place));
+ }
+ for(const instance of mapInstances.values())for(const marker of instance.markers){
+  const id=marker.getPopup()?.getContent()?.match(/data-stone="([A-Za-z0-9_-]+)"/)?.[1],found=stoneRepository.get(id);
+  if(found)marker.setPopupContent(overviewPopupHTML(found,found.finds.at(-1)));
+ }
+});
 function renderDetail() {
   const stone = stoneRepository.get(selectedId);
   if (!stone) return;
@@ -553,29 +572,16 @@ function renderDetail() {
     finds = stone.finds.length;
   // The first location records birth, rather than a later encounter.
   const encounters = Math.max(0, finds - 1);
-  const travelSummary = encounters
-    ? ` Since I was born, I’ve been found <strong>${encounters} ${encounters === 1 ? "time" : "times"}</strong> and travelled <strong>${Math.round(journeyDistance(stone)).toLocaleString("en-GB")} km</strong>.`
-    : "";
-  const birthParts = (birth.address || "")
-    .split(",")
-    .map((part) => part.trim());
-  const paintedPlace =
-    stone.demo && birthParts.length > 2 && birthParts.at(-1) === birth.city
-      ? birthParts.at(-2)
-      : birth.city;
-  const creator = stone.creator
-    ? `<strong>${escapeHTML(stone.creator)}</strong> painted me`
-    : "My story began";
   const shareIcon =
-    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>';
-  $("#stone-detail").innerHTML = `
+    ui`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"/></svg>`;
+  $("#stone-detail").innerHTML = ui`
     <div class="detail-topbar"><h2 id="detail-title"><img class="detail-pebble" src="${escapeHTML(stoneImageURL(stone))}" alt="" width="48" height="48"><span class="detail-title-copy"><span>${escapeHTML(stone.name)}</span></span></h2><div class="detail-header-actions"><div class="language-picker"><button class="language-switch" type="button" popovertarget="detail-language-menu" aria-expanded="false" aria-label="Choose language. Current language: English" title="Choose language"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12"><span class="language-label">EN</span></button><div id="detail-language-menu" class="language-menu" popover="auto" role="group" aria-label="Languages"><button type="button" data-language="en" aria-current="true" autofocus><span class="language-name"><img class="language-flag" src="${assetBase}flags/gb.svg" alt="" width="18" height="12">English</span><span class="language-code">EN</span></button><button type="button" data-language="sk"><span class="language-name"><img class="language-flag" src="${assetBase}flags/sk.svg" alt="" width="18" height="12">Slovenčina</span><span class="language-code">SK</span></button><button type="button" data-language="hu"><span class="language-name"><img class="language-flag" src="${assetBase}flags/hu.svg" alt="" width="18" height="12">Magyar</span><span class="language-code">HU</span></button><button type="button" data-language="de"><span class="language-name"><img class="language-flag" src="${assetBase}flags/de.svg" alt="" width="18" height="12">Deutsch</span><span class="language-code">DE</span></button></div></div><button class="icon-button" id="close-detail" aria-label="Close stone detail">×</button></div></div>
     <div class="detail-body">
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
-        <p class="detail-story">I’m a little painted stone called <strong>${escapeHTML(stone.name)}</strong>. ${creator} on <strong>${formatDate(stone.started)}</strong>. I was born in <span class="birth-place"><strong>${escapeHTML(paintedPlace)}, ${escapeHTML(birth.country)}</strong>${countryFlagHTML(birth.country)}</span>.${travelSummary} Every person I meet brings me a little more to life. Take me on a trip, then leave me somewhere safe for my next friend. 😊</p>
-        ${openedFromQR() ? `<p class="find-help">${supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Scan my QR code on your phone to help my story grow."}</p>` : ""}
-        <div class="detail-actions">${openedFromQR() && supportsPreciseLocation() ? '<button class="button primary" id="start-find">I found this stone</button>' : ""}<button class="button secondary" id="other-stones">Explore more stones ↗</button><button class="icon-button" id="watch-stone" type="button" aria-label="Watchdog: watch this stone" title="Watchdog: watch this stone" aria-expanded="false" aria-controls="watchdog-panel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="M12 2V1"/></svg></button><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
+        <p class="detail-story">${stoneStoryHTML(stone)}</p>
+        ${openedFromQR() ? ui`<p class="find-help">${uiText(supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Scan my QR code on your phone to help my story grow.")}</p>` : ""}
+        <div class="detail-actions">${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find">I found this stone</button>` : ""}<button class="button secondary" id="other-stones">Explore more stones ↗</button><button class="icon-button" id="watch-stone" type="button" aria-label="Watchdog: watch this stone" title="Watchdog: watch this stone" aria-expanded="false" aria-controls="watchdog-panel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="M12 2V1"/></svg></button><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
         <div id="share-fallback" class="share-fallback" hidden></div>
       </section>
       <div id="find-container"></div>
@@ -593,12 +599,13 @@ function renderDetail() {
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
         <p class="journey-explanation">Follow my journey.</p>
         <div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div>
-        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? '<span class="new-find-key">✦ Your new find · saved</span>' : ""}<span class="stone-views" title="Story openings since view tracking began">Views: <strong>${stone.views || 0}</strong></span></span></div>
-        <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${encounters}</strong> ${encounters === 1 ? "Find" : "Finds"}</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
+        <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? ui`<span class="new-find-key">✦ Your new find · saved</span>` : ""}<span class="stone-views" title="Story openings since view tracking began">Views: <strong>${stone.views || 0}</strong></span></span></div>
+        <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${encounters}</strong> ${uiText(encounters===1?"Find":"Finds")}</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>
       <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">My activity <span class="activity-description">(Every find and message is part of my story.)</span></h3></div><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
-      <p class="detail-footnote">${stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story."} Looking never records a find.</p>
+      <p class="detail-footnote">${uiText(stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story.")} Looking never records a find.</p>
     </div>`;
+  siteI18n.apply($("#stone-detail"));
   renderMap($("#journey-map"), [stone], true);
   $("#close-detail").addEventListener("click", closeDetail);
   $("#share-stone").addEventListener("click", shareStone);
@@ -627,18 +634,18 @@ function renderDetail() {
     const email = watchEmail.value.trim();
     watchSubmit.disabled = true;
     watchEmail.disabled = true;
-    watchSubmit.textContent = "Saving…";
-    watchStatus.textContent = "";
+    say(watchSubmit,"Saving…");
+    say(watchStatus,"");
     try {
       await stoneRepository.watch(stone.id, email);
       watchForm.reset();
-      watchStatus.textContent = "Your email is saved for this stone. Notifications are not active yet; no emails will be sent.";
+      say(watchStatus,"Your email is saved for this stone. Notifications are not active yet; no emails will be sent.");
     } catch (error) {
-      watchStatus.textContent = error.message;
+      say(watchStatus,error.message);
     } finally {
       watchSubmit.disabled = false;
       watchEmail.disabled = false;
-      watchSubmit.textContent = "Save my email";
+      say(watchSubmit,"Save my email");
     }
   });
   $("#start-find")?.addEventListener("click", () => {
@@ -758,7 +765,7 @@ async function shareStone() {
   } catch {
     const target = $("#share-fallback");
     target.hidden = false;
-    target.innerHTML = `<label class="field">Copy this story link<input readonly value="${escapeHTML(url.href)}" aria-label="Story link"></label>`;
+    target.innerHTML = ui`<label class="field">Copy this story link<input readonly value="${escapeHTML(url.href)}" aria-label="Story link"></label>`;
     target.querySelector("input").select();
   }
 }
@@ -773,8 +780,8 @@ function renderFlow() {
   const stone = stoneRepository.get(flow.id);
   if (flow.step === 4) {
     const nickname = flow.nickname.trim();
-    const thanks = nickname ? `${escapeHTML(nickname)} 👏, you’ve made my day.` : "You’ve made my day. 👏";
-    target.innerHTML = `<section class="find-panel success-panel" aria-labelledby="success-title"><div class="success-heading"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">${thanks}</h3></div><p>Take me along, then leave me somewhere new for my next friend.</p><p>Your moment is saved in my story.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
+    const thanks=nickname?uiText("{0} 👏, you’ve made my day.",[nickname]):uiText("You’ve made my day. 👏");
+    target.innerHTML = ui`<section class="find-panel success-panel" aria-labelledby="success-title"><div class="success-heading"><span class="success-icon" aria-hidden="true">✓</span><h3 id="success-title" tabindex="-1">${thanks}</h3></div><p>Take me along, then leave me somewhere new for my next friend.</p><p>Your moment is saved in my story.</p><button class="button primary" id="finish-find">See our little moment <span aria-hidden="true">↓</span></button></section>`;
     $("#finish-find").addEventListener("click", () => {
       flow = null;
       renderFlow();
@@ -785,15 +792,15 @@ function renderFlow() {
     });
     return;
   }
-  const steps = `<div class="find-steps" aria-label="Find progress">${["The Find Code", "Your location", "Your moment"].map((title, i) => `<span class="${flow.step === i + 1 ? "active" : flow.step > i + 1 ? "done" : ""}" ${flow.step === i + 1 ? 'aria-current="step"' : ""}>${i + 1}. ${title}</span>`).join("")}</div>`;
+  const steps = ui`<div class="find-steps" aria-label="Find progress">${["The Find Code", "Your location", "Your moment"].map((title, i) => ui`<span class="${flow.step === i + 1 ? "active" : flow.step > i + 1 ? "done" : ""}" ${flow.step === i + 1 ? 'aria-current="step"' : ""}>${i + 1}. ${uiText(title)}</span>`).join("")}</div>`;
   let content = "";
   if (flow.step === 1)
-    content = `<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="32" inputmode="${/^\d+$/.test(stone.code || "") ? "numeric" : "text"}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">My code is on the back. ${stone.demo ? `Try <strong>${escapeHTML(stone.code)}</strong> for this demo stone.` : ""} Continue to request your phone’s location, or choose your city if GPS is unavailable.</p><div class="form-actions"><button class="button primary" type="submit">Continue &amp; locate <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+    content = ui`<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="32" inputmode="${/^\d+$/.test(stone.code || "") ? "numeric" : "text"}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">My code is on the back. ${stone.demo ? ui`Try <strong>${escapeHTML(stone.code)}</strong> for this demo stone.` : ""} Continue to request your phone’s location, or choose your city if GPS is unavailable.</p><div class="form-actions"><button class="button primary" type="submit">Continue &amp; locate <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
   if (flow.step === 2)
-    content = `<p class="location-consent">Your phone needs permission to find our meeting place. Coordinates go to Photon for the address. If GPS is unavailable, you can choose your city instead.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : "No location selected yet."}</p><div class="map-frame location-preview-frame" id="location-preview-frame" ${flow.place ? "" : "hidden"}><div class="map-panel location-preview-map" id="location-preview" role="region" aria-label="Preview of your find location"></div></div><button class="manual-location-toggle" id="choose-city" type="button" aria-expanded="${Boolean(flow.manualOpen)}" aria-controls="manual-location">Location not working? Choose a city</button><div id="manual-location" ${flow.manualOpen ? "" : "hidden"}><label class="field" for="manual-city">City<input id="manual-city" maxlength="120" autocomplete="off" placeholder="Start typing a city…" value="${flow.place?.source === "manual" ? escapeHTML(flow.place.city) : ""}" aria-describedby="city-search-status"></label><p class="field-hint">Choose a result to mark the approximate city location. City searches go to Photon.</p><p class="field-hint" id="city-search-status" role="status"></p><div id="city-results" class="city-results" aria-label="Matching cities"></div></div><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
+    content = ui`<p class="location-consent">Your phone needs permission to find our meeting place. Coordinates go to Photon for the address. If GPS is unavailable, you can choose your city instead.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : uiText("No location selected yet.")}</p><div class="map-frame location-preview-frame" id="location-preview-frame" ${flow.place ? "" : "hidden"}><div class="map-panel location-preview-map" id="location-preview" role="region" aria-label="Preview of your find location"></div></div><button class="manual-location-toggle" id="choose-city" type="button" aria-expanded="${Boolean(flow.manualOpen)}" aria-controls="manual-location">Location not working? Choose a city</button><div id="manual-location" ${flow.manualOpen ? "" : "hidden"}><label class="field" for="manual-city">City<input id="manual-city" maxlength="120" autocomplete="off" placeholder="Start typing a city…" value="${flow.place?.source === "manual" ? escapeHTML(flow.place.city) : ""}" aria-describedby="city-search-status"></label><p class="field-hint">Choose a result to mark the approximate city location. City searches go to Photon.</p><p class="field-hint" id="city-search-status" role="status"></p><div id="city-results" class="city-results" aria-label="Matching cities"></div></div><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
   if (flow.step === 3)
-    content = `<div class="review-location">⌖ ${escapeHTML(flow.place.source === "manual" ? flow.place.city + ", " + flow.place.country : flow.place.address || flow.place.city + ", " + flow.place.country)}${flow.place.source === "manual" ? " · Manual city location" : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">Your find and note will become a public part of my story. Take me somewhere new for my next friend.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
-  target.innerHTML = `<section class="find-panel" aria-labelledby="find-title"><h3 id="find-title" tabindex="-1">I’m glad you found me.</h3><p>Take me along, enjoy my company, then leave me safely in another town for my next friend.</p>${steps}<form id="find-form">${content}<p id="find-error" class="error" role="alert"></p></form></section>`;
+    content = ui`<div class="review-location">⌖ ${escapeHTML(flow.place.source === "manual" ? flow.place.city + ", " + flow.place.country : flow.place.address || flow.place.city + ", " + flow.place.country)}${flow.place.source === "manual" ? uiText(" · Manual city location") : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">Your find and note will become a public part of my story. Take me somewhere new for my next friend.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+  target.innerHTML = ui`<section class="find-panel" aria-labelledby="find-title"><h3 id="find-title" tabindex="-1">I’m glad you found me.</h3><p>Take me along, enjoy my company, then leave me safely in another town for my next friend.</p>${steps}<form id="find-form">${content}<p id="find-error" class="error" role="alert"></p></form></section>`;
   $("#cancel-find").addEventListener("click", () => {
     flow = null;
     renderFlow();
@@ -821,7 +828,7 @@ function renderFlow() {
         if (flow !== activeFlow) return;
         flow.busy = false;
         submit.disabled = false;
-        $("#find-error").textContent = error.message;
+        say($("#find-error"),error.message);
         $("#find-code").setAttribute("aria-invalid", "true");
         $("#find-code").focus();
         return;
@@ -855,7 +862,7 @@ function renderFlow() {
       $("#find-form")
         .querySelectorAll("button, input, textarea")
         .forEach((el) => (el.disabled = true));
-      $("#find-error").textContent = "Saving our little moment…";
+      say($("#find-error"),"Saving our little moment…");
       try {
         await stoneRepository.addFind(flow.id, flow.submission, flow.requestId);
       } catch (error) {
@@ -864,7 +871,7 @@ function renderFlow() {
         $("#find-form")
           .querySelectorAll("button, input, textarea")
           .forEach((el) => (el.disabled = false));
-        $("#find-error").textContent = error.message;
+        say($("#find-error"),error.message);
         return;
       }
       if (flow !== activeFlow) {
@@ -896,7 +903,7 @@ function bindCitySearch() {
   const cancel = () => { clearTimeout(timer); controller?.abort(); };
   const updatePlace = (place) => {
     flow.place = place;
-    $("#location-status").textContent = place ? placeLabel(place) : "Choose a city from the suggestions.";
+    say($("#location-status"),place ? placeLabel(place) : "Choose a city from the suggestions.");
     $("#location-status").classList.toggle("ready", Boolean(place));
     $("#location-next").disabled = !place;
     renderLocationPreview();
@@ -918,7 +925,7 @@ function bindCitySearch() {
     results.replaceChildren();
     updatePlace(null);
     const query = input.value.trim();
-    status.textContent = query.length < 2 ? "Type at least two letters." : "Searching cities…";
+    say(status,query.length < 2 ? "Type at least two letters." : "Searching cities…");
     if (query.length < 2) return;
     timer = setTimeout(async () => {
       if (!current()) return;
@@ -951,14 +958,14 @@ function bindCitySearch() {
             activeFlow.locationRun = (activeFlow.locationRun || 0) + 1;
             input.value = city;
             results.replaceChildren();
-            status.textContent = "City selected — approximate location.";
+            say(status,"City selected — approximate location.");
             updatePlace({ city, country, lat, lon, address: "Approximate city location", source: "manual", accuracy: null });
           };
           results.append(button);
         }
-        status.textContent = results.children.length ? "Choose your city below." : "No matching cities. Try a different spelling.";
+        say(status,results.children.length ? "Choose your city below." : "No matching cities. Try a different spelling.");
       } catch {
-        if (valid()) status.textContent = "City search is unavailable. Try typing again or use GPS.";
+        if (valid()) say(status,"City search is unavailable. Try typing again or use GPS.");
       } finally { clearTimeout(timeout); }
     }, 350);
   });
@@ -1000,7 +1007,8 @@ function saveDraft() {
   }
 }
 function placeLabel(place) {
-  return `${place.source === "manual" ? "Manual city location" : "Device location"}: ${place.source === "manual" ? place.city + ", " + place.country + " · approximate location" : place.address || place.city + ", " + place.country}${place.accuracy != null ? ` · accuracy ~${Math.round(place.accuracy)} m` : ""}`;
+  if(place.source==='manual')return t('Manual city location: {0}, {1} · approximate location',[place.city,place.country]);
+  return t('Device location: {0}{1}',[place.address||place.city+', '+place.country,place.accuracy!=null?t(' · accuracy ~{0} m',[Math.round(place.accuracy)]):'']);
 }
 const placeCache = new Map();
 async function lookupPlace(coords) {
@@ -1051,14 +1059,14 @@ function requestLocation() {
   const current = () =>
     flow === activeFlow && flow.step === 2 && $("#use-gps") === button && activeFlow.locationRun === run;
   if (!navigator.geolocation) {
-    status.textContent = "GPS is unavailable in this browser. Choose a city to continue.";
+    say(status,"GPS is unavailable in this browser. Choose a city to continue.");
     return;
   }
   activeFlow.busy = true;
   button.disabled = true;
   $("#location-next").disabled = true;
   $("#manual-city").disabled = true;
-  status.textContent = "Waiting for permission and your location…";
+  say(status,"Waiting for permission and your location…");
   const unlock = () => {
     activeFlow.busy = false;
     if (current()) {
@@ -1069,13 +1077,12 @@ function requestLocation() {
   };
   const fail = (error) => {
     if (!current()) return;
-    status.textContent =
-      {
+    say(status,{
         1: "Location permission was denied. You can enable it in browser settings, or choose a city.",
         2: "Your location is unavailable. Try again or choose a city.",
         3: "Location took too long. Try again or choose a city.",
       }[error.code] ||
-      "Could not get your location. Choose a city to continue.";
+      "Could not get your location. Choose a city to continue.");
     unlock();
   };
   try {
@@ -1091,7 +1098,7 @@ function requestLocation() {
           fail({ code: 2 });
           return;
         }
-        status.textContent = "Location found. Looking up the area name…";
+        say(status,"Location found. Looking up the area name…");
         const place = await lookupPlace(coords);
         if (!current()) return;
         flow.place = {
@@ -1103,7 +1110,7 @@ function requestLocation() {
         };
         $("#manual-city").value = "";
         $("#city-results").replaceChildren();
-        status.textContent = placeLabel(flow.place);
+        say(status,placeLabel(flow.place));
         status.classList.add("ready");
         renderLocationPreview();
         unlock();
@@ -1115,7 +1122,7 @@ function requestLocation() {
     fail({});
   }
 }
-// Language choices are a UI preview; English remains the active language.
+// Language changes update marked UI only; forms, location requests and visitor copy stay intact.
 function positionLanguageMenu(menu) {
   const button = document.querySelector(`[popovertarget="${menu.id}"]`);
   if (!button) return;
@@ -1137,8 +1144,8 @@ $("#map-toggle").addEventListener("click", () => {
   const body = $("#world-map-body");
   body.hidden = !body.hidden;
   button.setAttribute("aria-expanded", String(!body.hidden));
-  button.setAttribute("aria-label", body.hidden ? "Show map" : "Hide map");
-  button.title = body.hidden ? "Show map" : "Hide map";
+  setUIAttribute(button,"aria-label",body.hidden?"Show map":"Hide map");
+  setUIAttribute(button,"title",body.hidden?"Show map":"Hide map");
   if (!body.hidden) requestAnimationFrame(() => {
     const instance = mapInstances.get("world-map");
     instance?.map.invalidateSize({ pan: false });
@@ -1153,8 +1160,8 @@ $("#filters-toggle").addEventListener("click", () => {
   const body = $("#stone-filter-body");
   body.hidden = !body.hidden;
   button.setAttribute("aria-expanded", String(!body.hidden));
-  button.setAttribute("aria-label", body.hidden ? "Show filters" : "Hide filters");
-  button.title = body.hidden ? "Show filters" : "Hide filters";
+  setUIAttribute(button,"aria-label",body.hidden?"Show filters":"Hide filters");
+  setUIAttribute(button,"title",body.hidden?"Show filters":"Hide filters");
 });
 $("#stone-search").addEventListener("input", event => {
   collectionState.search = event.target.value;
@@ -1189,6 +1196,7 @@ window.addEventListener("resize", () => {
 document.addEventListener("click", (event) => {
   const choice = event.target.closest("[data-language]");
   if (choice) {
+    siteI18n.setLanguage(choice.dataset.language);
     const menu = choice.closest(".language-menu");
     menu.hidePopover();
     document.querySelector(`[popovertarget="${menu.id}"]`)?.focus({ preventScroll: true });
@@ -1237,7 +1245,7 @@ async function boot() {
   }
   const status = $("#data-status");
   status.hidden = false;
-  status.textContent = "Our little stories are on their way…";
+  say(status,"Our little stories are on their way…");
   try {
     await stoneRepository.load();
     const requestedId = new URL(location.href).searchParams.get("stone");
@@ -1257,7 +1265,7 @@ async function boot() {
     syncURL();
     status.hidden = true;
   } catch (error) {
-    status.innerHTML = `<span>${escapeHTML(error.message)}</span> <button class="button secondary" id="retry-load">Try again</button>`;
+    status.innerHTML = ui`<span>${uiText(error.message)}</span> <button class="button secondary" id="retry-load">Try again</button>`;
     $("#retry-load").addEventListener("click", boot);
   }
 }

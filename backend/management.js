@@ -112,15 +112,14 @@ export async function handleManagement(request, env, listStones) {
       if (!/^(?:(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:svg|png|jpe?g|webp)|https:\/\/[^\s<>"']+)$/i.test(image)) fail(400, 'Use a stone asset path or an HTTPS image URL.');
       if (!['sun','moon','leaf','heart','wave'].includes(theme) || !/^#[a-f0-9]{6}$/i.test(color) || typeof body.demo !== 'boolean') fail(400, 'Choose a valid appearance and stone type.');
       const code = text(body.code,32).toUpperCase();
-      if (code && !/^\d{4}$/.test(code)) fail(400, 'Find Codes need exactly 4 digits.');
-      if (!body.demo && stone.is_demo && (!code || await sha256(code) === stone.code_hash)) fail(400, 'Choose a new private Find Code when converting a Demo stone to Real.');
-      if (body.demo && !code && !stone.demo_code) fail(400, 'Enter a Find Code before marking a real stone as Demo.');
+      if(code && await sha256(code)!==stone.code_hash)fail(409,'The printed Find Code cannot be changed.');
+      if(body.demo!==Boolean(stone.is_demo))fail(409,'Create a new stone for a different type. The printed Find Code cannot change.');
       const first = await env.DB.prepare('SELECT * FROM finds WHERE stone_id=? ORDER BY occurred_at,id LIMIT 1').bind(id).first();
       const second = await env.DB.prepare('SELECT occurred_at FROM finds WHERE stone_id=? ORDER BY occurred_at,id LIMIT 1 OFFSET 1').bind(id).first();
       if (!first) fail(409, 'A stone must have its birth location.');
       const birthMoment = born !== stone.born ? born+'T00:00:00.000Z' : first.occurred_at;
       if (second && Date.parse(birthMoment) >= Date.parse(second.occurred_at)) fail(400, 'Birth must be before the next find.');
-      statements.push(env.DB.prepare('UPDATE stones SET name=?,creator=?,born=?,image=?,theme=?,color=?,is_demo=?,code_hash=?,demo_code=?,label_code=? WHERE id=?').bind(name,creator,born,image,theme,color,body.demo?1:0,code?await sha256(code):stone.code_hash,body.demo?(code||stone.demo_code):null,code||stone.label_code,id));
+      statements.push(env.DB.prepare('UPDATE stones SET name=?,creator=?,born=?,image=?,theme=?,color=?,is_demo=? WHERE id=?').bind(name,creator,born,image,theme,color,body.demo?1:0,id));
       if(!body.demo)statements.push(env.DB.prepare('INSERT INTO stone_numbers(stone_id) SELECT ? WHERE NOT EXISTS(SELECT 1 FROM stone_numbers WHERE stone_id=?)').bind(id,id));
       statements.push(env.DB.prepare('UPDATE traffic_targets SET name=? WHERE target=?').bind(name,'stone:'+id));
       if (born !== stone.born) {

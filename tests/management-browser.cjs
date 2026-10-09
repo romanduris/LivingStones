@@ -62,6 +62,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
 
    assert.equal(await page.locator('.qr-link').getAttribute('href'),'https://livingstones.rodulab.com/?stone=A1&source=qr');
    assert.equal(await page.locator('.editor-top a').getAttribute('href'),'../?stone=A1');
+   assert.equal(await page.locator('#stone-find-code').inputValue(),'8451');assert.equal(await page.locator('#stone-find-code').getAttribute('readonly'),'');assert.equal(await page.locator('#stone-form [name=code]').count(),0);
    assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'8451');
    assert.ok(await page.locator('.stone-qr .qr-code-value').evaluate(el=>Number(el.getAttribute('font-size'))>=39));
    const qrSizes=await page.locator('.qr-previews').evaluate(el=>{const [large,small]=el.children;return {large:large.getBoundingClientRect().width,small:small.getBoundingClientRect().width,left:large.getBoundingClientRect().left,right:small.getBoundingClientRect().left};});

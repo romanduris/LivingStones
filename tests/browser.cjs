@@ -175,9 +175,10 @@ process.on("exit", () => server?.kill());
       assert.deepEqual(await page.locator('#main-language-menu [data-language]').evaluateAll(els=>els.map(el=>el.dataset.language)), ["en", "sk", "hu", "de"]);
       await page.locator(`#main-language-menu [data-language="${code}"]`).click();
       assert.equal(await page.locator('#main-language-menu:popover-open').count(), 0);
-      assert.equal(await page.locator('.site-header .language-label').textContent(), "EN");
-      assert.equal(await page.locator('html').getAttribute('lang'), "en");
+      assert.equal(await page.locator('.site-header .language-label').textContent(), code.toUpperCase());
+      assert.equal(await page.locator('html').getAttribute('lang'), code);
     }
+    await page.locator('.site-header .language-switch').click();await page.locator('#main-language-menu [data-language=en]').click();
     await page.locator('.site-header .language-switch').focus();
     await page.keyboard.press('Enter');
     await page.locator('#main-language-menu:popover-open').waitFor();
@@ -428,13 +429,14 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.locator(".detail-topbar .language-switch").isEnabled(), true);
     await phone.locator('.detail-topbar .language-switch').click();
     await phone.locator('#detail-language-menu [data-language="de"]').click();
-    assert.equal(await phone.locator('.detail-topbar .language-label').textContent(), "EN");
+    assert.equal(await phone.locator('.detail-topbar .language-label').textContent(), "DE");
     assert.equal(await phone.locator('dialog[open]').count(), 1);
     await phone.locator('.detail-topbar .language-switch').click();
     await phone.keyboard.press('Escape');
     assert.equal(await phone.locator('#detail-language-menu:popover-open').count(), 0);
     assert.equal(await phone.locator('dialog[open]').count(), 1);
     assert.equal(await phone.locator(".site-header .language-switch").isEnabled(), true);
+    await phone.locator('.detail-topbar .language-switch').click();await phone.locator('#detail-language-menu [data-language=en]').click();
     assert.equal(await phone.locator("#detail-title small").count(), 0);
     assert.equal(await phone.locator("#find-code").getAttribute("inputmode"), "numeric");
     await phone.locator("#find-code").click();
@@ -844,7 +846,7 @@ process.on("exit", () => server?.kill());
       assert.equal(await page.locator(".stone-table .country-flag").count(), 14);
       assert.equal(await page.locator('.country-key').count(),0);
       assert.equal(await page.locator('.last-date').count(),0);
-      assert.ok(await page.locator('.heading-copy').evaluate(el=>{const text=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);const range=document.createRange();range.selectNodeContents(text);return range.getClientRects().length===1&&el.closest('th').scrollWidth<=el.closest('th').clientWidth;}), `Last Found fits on one line at ${width}`);
+      assert.ok(await page.locator('.heading-copy').evaluate(el=>{const text=[...el.childNodes].find(n=>n.nodeType===Node.TEXT_NODE)||el.querySelector('[data-site-key]').firstChild;const range=document.createRange();range.selectNodeContents(text);return range.getClientRects().length===1&&el.closest('th').scrollWidth<=el.closest('th').clientWidth;}), `Last Found fits on one line at ${width}`);
       for (const [selector, alignment] of [
         [".overview-stone", "left"],
         [".overview-location", width > 1100 ? "center" : "right"],
