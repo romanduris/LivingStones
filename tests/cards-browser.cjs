@@ -96,14 +96,14 @@ process.on('exit', () => server.kill());
     assert.equal(await page.locator('#stone-empty').isVisible(), true);
     assert.equal(await page.locator('#total-stones').textContent(), '14', 'Search never changes overall statistics');
     await page.locator('#stone-search').fill('');
-    await page.locator('[data-stone-sort="age"]').click();
-    assert.equal(await page.locator('[data-stone-sort="age"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('#stone-sort').selectOption('age:desc');
+    assert.equal(await page.locator('#stone-sort').inputValue(), 'age:desc');
     assert.deepEqual(await page.locator('.journey-card').evaluateAll(cards => cards.map(card => card.dataset.stone)), ['J10', 'A1', 'N14', 'D4', 'F6', 'I9', 'B2', 'G7', 'E5', 'L12', 'H8', 'K11', 'M13', 'C3']);
     await page.locator('[data-stone-view="list"]').click();
     assert.equal(await page.locator('.stone-table th').nth(2).getAttribute('aria-sort'), 'descending');
     assert.deepEqual(await page.locator('.stone-row').evaluateAll(rows => rows.map(row => row.dataset.stone)), ['J10', 'A1', 'N14', 'D4', 'F6', 'I9', 'B2', 'G7', 'E5', 'L12', 'H8', 'K11', 'M13', 'C3']);
     await page.locator('[data-stone-view="cards"]').click();
-    await page.locator('[data-stone-sort="distance"]').click();
+    await page.locator('#stone-sort').selectOption('distance:desc');
     assert.ok(await page.evaluate(() => {
       const distances = [...document.querySelectorAll('.card-facts > div:first-child dd')].map(el => Number(el.textContent.replace(/[^\d]/g, '')));
       return distances.every((distance, index) => !index || distance <= distances[index - 1]);
@@ -113,7 +113,7 @@ process.on('exit', () => server.kill());
     assert.equal(await page.locator('#stone-cards').isVisible(), false);
     assert.equal(await page.locator('th[aria-sort="none"]').count(), 1);
     await page.locator('[data-stone-view="cards"]').click();
-    await page.locator('[data-stone-sort="recent"]').click();
+    await page.locator('#stone-sort').selectOption('recent:desc');
     assert.equal(await page.locator('.journey-card h3').first().textContent(), 'Mountain Whisper');
     await page.locator('.journey-card').first().locator('.card-facts').click();
     await page.locator('dialog[open]').waitFor();
@@ -157,10 +157,17 @@ process.on('exit', () => server.kill());
     });
     assert.equal(await page.locator('#total-active').textContent(), '3', 'Alive total excludes demos and lost stones');
     assert.equal(await page.locator('.status-legend-row').count(), 5);
+    const selectStatuses = async selected => {
+      for (const status of ['demo', 'alive', 'journey', 'quiet', 'lost']) {
+        const button = page.locator(`[data-stone-status="${status}"]`);
+        if ((await button.getAttribute('aria-pressed') === 'true') !== selected.includes(status)) await button.click();
+      }
+    };
+    assert.equal(await page.locator('[data-stone-status="all"]').count(), 0);
     for (const [status, count] of [['demo', 10], ['alive', 1], ['journey', 1], ['quiet', 1], ['lost', 1]]) {
       const filter = page.locator(`[data-stone-status="${status}"]`);
       assert.equal(await filter.locator('.status-count').textContent(), String(count));
-      await filter.click();
+      await selectStatuses([status]);
       assert.equal(await page.locator('.journey-card').count(), count);
       assert.equal(await page.locator(`.journey-card .status-${status}`).count(), count);
       const sample = page.locator(`.journey-card .status-${status}`).first();
@@ -170,13 +177,11 @@ process.on('exit', () => server.kill());
       assert.equal(await page.locator(`.stone-row .status-${status}`).count(), count);
       await page.locator('[data-stone-view="cards"]').click();
     }
-    await page.locator('[data-stone-status="all"]').click();
+    await selectStatuses(['demo', 'alive', 'journey', 'quiet', 'lost']);
     for (const sort of ['finds', 'distance', 'age', 'recent']) {
-      // Selecting a different sort starts descending; clicking again reverses it.
-      if (await page.locator(`[data-stone-sort="${sort}"]`).getAttribute('aria-pressed') === 'true') await page.locator('[data-stone-sort="distance"]').click();
-      await page.locator(`[data-stone-sort="${sort}"]`).click();
       for (const direction of ['desc', 'asc']) {
-        assert.equal(await page.locator(`[data-stone-sort="${sort}"] .sort-direction`).textContent(), direction === 'desc' ? '↓' : '↑');
+        await page.locator("#stone-sort").selectOption(sort + ":" + direction);
+        assert.equal(await page.locator("#stone-sort").inputValue(), sort + ":" + direction);
         assert.ok(await page.evaluate(({sort, direction}) => {
           const values = [...document.querySelectorAll('.journey-card')].map(el => {
             const stone = stoneRepository.get(el.dataset.stone);
@@ -184,7 +189,6 @@ process.on('exit', () => server.kill());
           });
           return values.every((value, i) => !i || (direction === 'desc' ? values[i-1] >= value : values[i-1] <= value));
         }, {sort, direction}));
-        if (direction === 'desc') await page.locator(`[data-stone-sort="${sort}"]`).click();
       }
     }
     for (const lang of ['en', 'sk', 'hu', 'de']) {
@@ -194,15 +198,23 @@ process.on('exit', () => server.kill());
         await page.setViewportSize({width, height: 900});
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Filter and legend fit ${lang} at ${width}`);
         assert.ok(await page.locator('.journey-card').evaluateAll(cards => cards.every(card => card.scrollWidth <= card.clientWidth)));
+        assert.ok(await page.locator('.status-legend-row').evaluateAll(rows => rows.every(row => {
+          const description = row.children[1];
+          const range = document.createRange();
+          range.selectNodeContents(description.querySelector('[data-site-key]') || description);
+          return range.getClientRects().length === 1 && description.scrollWidth <= description.clientWidth;
+        })), `Each legend explanation fits one line in ${lang} at ${width}`);
+        assert.equal(await page.locator('.status-legend-row').first().evaluate(el => getComputedStyle(el).fontSize), width <= 700 ? '11px' : '12px');
+
       }
       const missing = await page.evaluate(() => [...new Set([...document.querySelectorAll('[data-site-key]')].map(el => el.dataset.siteKey))].filter(key => /[A-Za-z]/.test(key) && !(key in SITE_TRANSLATIONS.sk)));
       assert.deepEqual(missing, []);
     }
-    await page.locator('[data-stone-status="alive"]').click();
+    await selectStatuses(['alive']);
     const aliveName = await page.locator('.journey-card h3').first().textContent();
     await page.locator('#stone-search').fill(aliveName);
     assert.equal(await page.locator('.journey-card').count(), 1, 'Search combines with status');
-    await page.locator('[data-stone-status="lost"]').click();
+    await selectStatuses(['lost']);
     assert.equal(await page.locator('.journey-card').count(), 0);
     assert.equal(await page.locator('#stone-empty').isVisible(), true);
     await page.locator('#stone-search').fill('');
@@ -213,8 +225,36 @@ process.on('exit', () => server.kill());
     });
     assert.equal(await page.locator('.journey-card').count(), 0, 'A new find leaves the Lost filter');
     assert.equal(await page.locator('#total-active').textContent(), '4');
-    await page.locator('[data-stone-status="alive"]').click();
+    await selectStatuses(['alive']);
     assert.equal(await page.locator('.journey-card').count(), 2);
+    await selectStatuses(['alive', 'journey']);
+    assert.equal(await page.locator('.journey-card').count(), 3, 'Multiple selected statuses are combined');
+    await selectStatuses([]);
+    assert.equal(await page.locator('.journey-card').count(), 0, 'An empty selection shows no stones');
+    await page.reload();
+    await page.locator('#stone-empty').waitFor();
+    assert.equal(await page.locator('[data-stone-status][aria-pressed="true"]').count(), 0, 'Empty selection survives reload');
+    await page.locator('#filters-toggle').click();
+    await selectStatuses(['alive', 'journey']);
+    await page.locator('#stone-sort').selectOption('finds:asc');
+    await page.reload();
+    await page.locator('#stone-empty').waitFor();
+    assert.deepEqual(await page.locator('[data-stone-status][aria-pressed="true"]').evaluateAll(buttons => buttons.map(b => b.dataset.stoneStatus)), ['alive', 'journey']);
+    assert.equal(await page.locator('#stone-sort').inputValue(), 'finds:asc', 'Sort survives reload');
+    await page.evaluate(() => localStorage.setItem('livingstones.collection.v1', '{invalid'));
+    await page.reload();
+    await page.locator('.journey-card').first().waitFor();
+    assert.equal(await page.locator('[data-stone-status][aria-pressed="true"]').count(), 5, 'Malformed preferences fall back to all states');
+    assert.equal(await page.locator('#stone-sort').inputValue(), 'recent:desc');
+    await context.addInitScript(() => {
+      Storage.prototype.getItem = () => { throw new Error('Storage blocked'); };
+      Storage.prototype.setItem = () => { throw new Error('Storage blocked'); };
+    });
+    await page.reload();
+    await page.locator('.journey-card').first().waitFor();
+    await page.locator('#filters-toggle').click();
+    await selectStatuses([]);
+    assert.equal(await page.locator('.journey-card').count(), 0, 'Filters work without storage');
     assert.deepEqual(errors, []);
     console.log('Status transitions, filter counts/search, both sorting directions, translated legends, card grid, age/distance/recency sorting, map without name labels, view switches and whole-card mouse/keyboard navigation and Czech flags passed at eight widths, with phone rotation and compact statistics.');
   } finally { await browser.close(); server.kill(); }

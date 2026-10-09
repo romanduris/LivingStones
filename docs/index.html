@@ -25,12 +25,12 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=78" />
+    <link rel="stylesheet" href="style.css?v=79" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="config.js?v=1" defer></script>
-    <script src="translations.js?v=2" defer></script>
+    <script src="translations.js?v=3" defer></script>
     <script src="i18n.js?v=1" defer></script>
-    <script src="app.js?v=72" defer></script>
+    <script src="app.js?v=73" defer></script>
   </head>
   <body>
     <svg class="map-tone-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="map-petrol-tone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 0 0 0 1 0" result="inverted"/><feComponentTransfer in="inverted" result="petrol"><feFuncR type="table" tableValues=".075 .18 .5 .76 .94"/><feFuncG type="table" tableValues=".155 .28 .56 .76 .90"/><feFuncB type="table" tableValues=".17 .29 .46 .60 .72"/></feComponentTransfer><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 .82 0 0 0 0 .70 0 0 0 0 .43 0 -6 6 0 -.25" result="border-colors"/><feComponentTransfer in="border-colors" result="borders"><feFuncA type="discrete" tableValues="0 0 0 0 .75"/></feComponentTransfer><feMerge><feMergeNode in="petrol"/><feMergeNode in="borders"/></feMerge></filter></defs></svg>
@@ -129,19 +129,25 @@
           <div id="stone-filter-body" hidden>
             <div class="stone-toolbar" aria-label="Explore stones">
               <label class="stone-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search stones</span><input id="stone-search" type="search" placeholder="Search stones…" autocomplete="off"></label>
-              <div class="stone-filters" role="group" aria-label="Sort stones">
-                <button type="button" data-stone-sort="recent" aria-pressed="true"><span>Recently found</span> <span class="sort-direction" aria-hidden="true">↓</span></button>
-                <button type="button" data-stone-sort="finds" aria-pressed="false"><span>Most finds</span> <span class="sort-direction" aria-hidden="true">↕</span></button>
-                <button type="button" data-stone-sort="distance" aria-pressed="false"><span>Most kilometres</span> <span class="sort-direction" aria-hidden="true">↕</span></button>
-                <button type="button" data-stone-sort="age" aria-pressed="false"><span>Age</span> <span class="sort-direction" aria-hidden="true">↕</span></button>
-              </div>
+              <label class="stone-sort" for="stone-sort"><span>Sort by</span>
+                <select id="stone-sort">
+                  <option value="recent:desc">Recently found</option>
+                  <option value="recent:asc">Oldest finds first</option>
+                  <option value="finds:desc">Most finds</option>
+                  <option value="finds:asc">Fewest finds</option>
+                  <option value="distance:desc">Most kilometres</option>
+                  <option value="distance:asc">Fewest kilometres</option>
+                  <option value="age:desc">Oldest stones first</option>
+                  <option value="age:asc">Youngest stones first</option>
+                </select>
+              </label>
               <div class="stone-status-filters" role="group" aria-label="Filter by stone status">
-                <button type="button" data-stone-status="all" aria-pressed="true"><span>All stones</span> <span class="status-count">0</span></button>
-                <button type="button" data-stone-status="demo" aria-pressed="false"><span>Demo</span> <span class="status-count">0</span></button>
-                <button type="button" data-stone-status="alive" aria-pressed="false"><span>Alive</span> <span class="status-count">0</span></button>
-                <button type="button" data-stone-status="journey" aria-pressed="false"><span>On a journey</span> <span class="status-count">0</span></button>
-                <button type="button" data-stone-status="quiet" aria-pressed="false"><span>Quiet</span> <span class="status-count">0</span></button>
-                <button type="button" data-stone-status="lost" aria-pressed="false"><span>Lost</span> <span class="status-count">0</span></button>
+                <span class="filter-label">Show statuses</span>
+                <button type="button" data-stone-status="demo" aria-pressed="true"><span>Demo</span> <span class="status-count">0</span></button>
+                <button type="button" data-stone-status="alive" aria-pressed="true"><span>Alive</span> <span class="status-count">0</span></button>
+                <button type="button" data-stone-status="journey" aria-pressed="true"><span>On a journey</span> <span class="status-count">0</span></button>
+                <button type="button" data-stone-status="quiet" aria-pressed="true"><span>Quiet</span> <span class="status-count">0</span></button>
+                <button type="button" data-stone-status="lost" aria-pressed="true"><span>Lost</span> <span class="status-count">0</span></button>
               </div>
               <div class="stone-view-switch" role="group" aria-label="Stone view">
                 <button type="button" data-stone-view="cards" aria-pressed="true" aria-controls="stone-cards">Cards</button>
@@ -182,13 +188,13 @@
           <button id="show-more-stones" class="button secondary" type="button" aria-controls="stone-cards" hidden>Show more stones <span aria-hidden="true">↓</span></button>
         </div>
         <section class="status-legend" aria-labelledby="status-legend-title">
-          <h3 id="status-legend-title">Every stone has its own pace</h3>
-          <p>The status follows the last recorded location, starting with birth. A new find brings a stone back to Alive.</p>
-          <div class="status-legend-row"><span class="status-badge status-alive">Alive</span><span>0–5 days · A fresh hello! Someone has recorded this stone recently.</span></div>
-          <div class="status-legend-row"><span class="status-badge status-journey">On a journey</span><span>6–14 days · Out on an adventure, waiting for its next hello.</span></div>
-          <div class="status-legend-row"><span class="status-badge status-quiet">Quiet</span><span>15–29 days · It has been quiet for a while. Perhaps someone will find it soon.</span></div>
-          <div class="status-legend-row"><span class="status-badge status-lost">Lost</span><span>30+ days · No recent news. It can still return whenever someone finds it.</span></div>
-          <div class="status-legend-row"><span class="status-badge status-demo">Demo</span><span>A sample story to explore. Demo stones keep this label and do not count as alive.</span></div>
+          <h3 id="status-legend-title">Stone statuses</h3>
+          <p>Based on the last recorded location. A new find restores Alive.</p>
+          <div class="status-legend-row"><span class="status-badge status-alive">Alive</span><span>0–5 days · Recently found</span></div>
+          <div class="status-legend-row"><span class="status-badge status-journey">On a journey</span><span>6–14 days · Awaiting a find</span></div>
+          <div class="status-legend-row"><span class="status-badge status-quiet">Quiet</span><span>15–29 days · No recent news</span></div>
+          <div class="status-legend-row"><span class="status-badge status-lost">Lost</span><span>30+ days · No new record</span></div>
+          <div class="status-legend-row"><span class="status-badge status-demo">Demo</span><span>A sample stone</span></div>
         </section>
 
       </section>

@@ -274,7 +274,24 @@ function disposeMap(id) {
   instance.map.remove();
   mapInstances.delete(id);
 }
-const collectionState = { view: "cards", sort: "recent", direction: "desc", status: "all", search: "", visibleRows: 3 };
+const collectionStatuses = ["demo", "alive", "journey", "quiet", "lost"];
+const collectionPreferencesKey = "livingstones.collection.v1";
+const collectionState = { view: "cards", sort: "recent", direction: "desc", statuses: [...collectionStatuses], search: "", visibleRows: 3 };
+try {
+  const saved = JSON.parse(localStorage.getItem(collectionPreferencesKey));
+  if (saved && typeof saved === "object") {
+    if (["recent", "finds", "distance", "age"].includes(saved.sort)) collectionState.sort = saved.sort;
+    if (["asc", "desc"].includes(saved.direction)) collectionState.direction = saved.direction;
+    if (Array.isArray(saved.statuses) && saved.statuses.every(status => collectionStatuses.includes(status))) {
+      collectionState.statuses = [...new Set(saved.statuses)];
+    }
+  }
+} catch { /* Filtering still works when browser storage is unavailable. */ }
+function saveCollectionPreferences() {
+  try {
+    localStorage.setItem(collectionPreferencesKey, JSON.stringify({sort: collectionState.sort, direction: collectionState.direction, statuses: collectionState.statuses}));
+  } catch { /* Keep this visit's choices even if storage is blocked or full. */ }
+}
 function updateCardPagination() {
   const cards = [...document.querySelectorAll("#stone-cards .journey-card")];
   const isCards = collectionState.view === "cards";
@@ -300,7 +317,7 @@ function renderCollection() {
     const last = stone.finds.at(-1);
     return !query || [stone.name, stone.id, last?.city, last?.country].some(value => String(value || "").toLocaleLowerCase().includes(query));
   });
-  const visible = matching.filter(stone => collectionState.status === "all" || stoneStatus(stone, now) === collectionState.status);
+  const visible = matching.filter(stone => collectionState.statuses.includes(stoneStatus(stone, now)));
   const stones = sortCollection(visible, collectionState.sort, collectionState.direction);
   $("#stone-cards").innerHTML = stones.map(stone => {
     const last = stone.finds.at(-1);
@@ -320,15 +337,11 @@ function renderCollection() {
   $("#stone-list").hidden = collectionState.view !== "list" || !stones.length;
   $("#stone-empty").hidden = stones.length !== 0;
   updateCardPagination();
-  document.querySelectorAll("[data-stone-sort]").forEach(button => {
-    const active = button.dataset.stoneSort === collectionState.sort;
-    button.setAttribute("aria-pressed", String(active));
-    button.querySelector(".sort-direction").textContent = active ? collectionState.direction === "desc" ? "↓" : "↑" : "↕";
-  });
+  $("#stone-sort").value = collectionState.sort + ":" + collectionState.direction;
   document.querySelectorAll("[data-stone-status]").forEach(button => {
     const status = button.dataset.stoneStatus;
-    button.setAttribute("aria-pressed", String(status === collectionState.status));
-    button.querySelector(".status-count").textContent = matching.filter(stone => status === "all" || stoneStatus(stone, now) === status).length;
+    button.setAttribute("aria-pressed", String(collectionState.statuses.includes(status)));
+    button.querySelector(".status-count").textContent = matching.filter(stone => stoneStatus(stone, now) === status).length;
   });
   document.querySelectorAll("[data-stone-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneView === collectionState.view)));
   const heading = $('.stone-table th:nth-child(6)');
@@ -1202,15 +1215,22 @@ document.querySelector(".stone-toolbar").addEventListener("click", event => {
     collectionState.view = button.dataset.stoneView;
     collectionState.visibleRows = 3;
   }
-  if (button.dataset.stoneSort) {
-    collectionState.direction = button.dataset.stoneSort === collectionState.sort && collectionState.direction === "desc" ? "asc" : "desc";
-    collectionState.sort = button.dataset.stoneSort;
-    collectionState.visibleRows = 3;
-  }
   if (button.dataset.stoneStatus) {
-    collectionState.status = button.dataset.stoneStatus;
+    const status = button.dataset.stoneStatus;
+    collectionState.statuses = collectionState.statuses.includes(status)
+      ? collectionState.statuses.filter(value => value !== status)
+      : [...collectionState.statuses, status];
     collectionState.visibleRows = 3;
+    saveCollectionPreferences();
   }
+  renderCollection();
+});
+$("#stone-sort").addEventListener("change", event => {
+  const [sort, direction] = event.target.value.split(":");
+  collectionState.sort = sort;
+  collectionState.direction = direction;
+  collectionState.visibleRows = 3;
+  saveCollectionPreferences();
   renderCollection();
 });
 $("#show-more-stones").addEventListener("click", () => {

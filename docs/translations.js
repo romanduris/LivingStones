@@ -249,7 +249,19 @@ const SITE_TRANSLATIONS = {
     "A demo stone for trying the story.": "A demo stone for trying the story.",
     "No recorded location yet.": "No recorded location yet.",
     "Last recorded location: {0} days ago.": "Last recorded location: {0} days ago.",
-    "All stones": "All stones"
+    "All stones": "All stones",
+    "Sort by": "Sort by",
+    "Show statuses": "Show statuses",
+    "Fewest finds": "Fewest finds",
+    "Fewest kilometres": "Fewest kilometres",
+    "Youngest stones first": "Youngest stones first",
+    "Stone statuses": "Stone statuses",
+    "Based on the last recorded location. A new find restores Alive.": "Based on the last recorded location. A new find restores Alive.",
+    "0–5 days · Recently found": "0–5 days · Recently found",
+    "6–14 days · Awaiting a find": "6–14 days · Awaiting a find",
+    "15–29 days · No recent news": "15–29 days · No recent news",
+    "30+ days · No new record": "30+ days · No new record",
+    "A sample stone": "A sample stone"
   },
   "sk": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
@@ -499,7 +511,19 @@ const SITE_TRANSLATIONS = {
     "A demo stone for trying the story.": "Demo kamienok na vyskúšanie príbehu.",
     "No recorded location yet.": "Zatiaľ bez zaznamenanej polohy.",
     "Last recorded location: {0} days ago.": "Posledná zaznamenaná poloha: pred {0} dňami.",
-    "All stones": "Všetky kamienky"
+    "All stones": "Všetky kamienky",
+    "Sort by": "Zoradiť podľa",
+    "Show statuses": "Zobraziť stavy",
+    "Fewest finds": "Najmenej nájdení",
+    "Fewest kilometres": "Najmenej kilometrov",
+    "Youngest stones first": "Najmladšie kamienky",
+    "Stone statuses": "Stavy kamienkov",
+    "Based on the last recorded location. A new find restores Alive.": "Podľa posledného záznamu polohy. Nové nájdenie obnoví stav Živý.",
+    "0–5 days · Recently found": "0–5 dní · Nedávno nájdený",
+    "6–14 days · Awaiting a find": "6–14 dní · Čaká na nájdenie",
+    "15–29 days · No recent news": "15–29 dní · Dlhšie bez správy",
+    "30+ days · No new record": "30+ dní · Bez nového záznamu",
+    "A sample stone": "Ukážkový kamienok"
   },
   "hu": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
@@ -749,7 +773,19 @@ const SITE_TRANSLATIONS = {
     "A demo stone for trying the story.": "Demókavics a történet kipróbálásához.",
     "No recorded location yet.": "Még nincs rögzített hely.",
     "Last recorded location: {0} days ago.": "Utoljára rögzített hely: {0} napja.",
-    "All stones": "Összes kavics"
+    "All stones": "Összes kavics",
+    "Sort by": "Rendezés",
+    "Show statuses": "Megjelenített állapotok",
+    "Fewest finds": "Legkevesebb megtalálás",
+    "Fewest kilometres": "Legkevesebb kilométer",
+    "Youngest stones first": "Legfiatalabb kavicsok",
+    "Stone statuses": "Kavicsok állapota",
+    "Based on the last recorded location. A new find restores Alive.": "Az utolsó rögzített hely alapján. Egy új megtalálás visszaállítja az Élő állapotot.",
+    "0–5 days · Recently found": "0–5 nap · Friss találat",
+    "6–14 days · Awaiting a find": "6–14 nap · Találatra vár",
+    "15–29 days · No recent news": "15–29 nap · Nincs friss hír",
+    "30+ days · No new record": "30+ nap · Nincs új bejegyzés",
+    "A sample stone": "Mintakavics"
   },
   "de": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
@@ -999,6 +1035,18 @@ const SITE_TRANSLATIONS = {
     "A demo stone for trying the story.": "Ein Demo-Stein zum Ausprobieren der Geschichte.",
     "No recorded location yet.": "Noch kein Standort erfasst.",
     "Last recorded location: {0} days ago.": "Letzter erfasster Standort: vor {0} Tagen.",
-    "All stones": "Alle Steine"
+    "All stones": "Alle Steine",
+    "Sort by": "Sortieren nach",
+    "Show statuses": "Status anzeigen",
+    "Fewest finds": "Wenigste Funde",
+    "Fewest kilometres": "Wenigste Kilometer",
+    "Youngest stones first": "Jüngste Steine zuerst",
+    "Stone statuses": "Steinstatus",
+    "Based on the last recorded location. A new find restores Alive.": "Nach dem letzten erfassten Standort. Ein neuer Fund macht den Stein wieder Lebendig.",
+    "0–5 days · Recently found": "0–5 Tage · Kürzlich gefunden",
+    "6–14 days · Awaiting a find": "6–14 Tage · Wartet auf Fund",
+    "15–29 days · No recent news": "15–29 Tage · Keine Neuigkeit",
+    "30+ days · No new record": "30+ Tage · Kein neuer Eintrag",
+    "A sample stone": "Ein Beispielstein"
   }
 };
