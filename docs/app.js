@@ -643,7 +643,7 @@ function renderDetail() {
         <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${encounters}</strong> ${uiText(encounters===1?"Find":"Finds")}</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>
       <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">My activity <span class="activity-description">(Every find and message is part of my story.)</span></h3></div><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
-      <p class="detail-footnote">${uiText(stone.demo ? "Demo stone, real shared moments." : "A real stone, a growing story.")} Looking never records a find.</p>
+      <p class="detail-footnote">From one hand to another, my story goes on.</p>
     </div>`;
   siteI18n.apply($("#stone-detail"));
   renderMap($("#journey-map"), [stone], true);

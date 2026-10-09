@@ -197,6 +197,14 @@ process.on('exit', () => server.kill());
       for (const width of [320, 375, 1024]) {
         await page.setViewportSize({width, height: 900});
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Filter and legend fit ${lang} at ${width}`);
+        assert.ok(await page.locator('.stone-status-filters').evaluate(group => {
+          const buttons = [...group.querySelectorAll('button')], bounds = group.getBoundingClientRect();
+          return buttons.every(button => {
+            const rect = button.getBoundingClientRect();
+            return Math.abs(rect.top - buttons[0].getBoundingClientRect().top) < 1 && rect.left >= bounds.left && rect.right <= bounds.right + 1 && getComputedStyle(button, '::before').content === 'none';
+          });
+        }), `Five status toggles fit one row without checkbox icons in ${lang} at ${width}`);
+        assert.equal(await page.locator('.filter-label').count(), 0);
         assert.ok(await page.locator('.journey-card').evaluateAll(cards => cards.every(card => card.scrollWidth <= card.clientWidth)));
         assert.ok(await page.locator('.status-legend-row').evaluateAll(rows => rows.every(row => {
           const description = row.children[1];

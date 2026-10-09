@@ -261,7 +261,8 @@ const SITE_TRANSLATIONS = {
     "6–14 days · Awaiting a find": "6–14 days · Awaiting a find",
     "15–29 days · No recent news": "15–29 days · No recent news",
     "30+ days · No new record": "30+ days · No new record",
-    "A sample stone": "A sample stone"
+    "A sample stone": "A sample stone",
+    "From one hand to another, my story goes on.": "From one hand to another, my story goes on."
   },
   "sk": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
@@ -523,7 +524,8 @@ const SITE_TRANSLATIONS = {
     "6–14 days · Awaiting a find": "6–14 dní · Čaká na nájdenie",
     "15–29 days · No recent news": "15–29 dní · Dlhšie bez správy",
     "30+ days · No new record": "30+ dní · Bez nového záznamu",
-    "A sample stone": "Ukážkový kamienok"
+    "A sample stone": "Ukážkový kamienok",
+    "From one hand to another, my story goes on.": "Z ruky do ruky môj príbeh pokračuje."
   },
   "hu": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
@@ -785,7 +787,8 @@ const SITE_TRANSLATIONS = {
     "6–14 days · Awaiting a find": "6–14 nap · Találatra vár",
     "15–29 days · No recent news": "15–29 nap · Nincs friss hír",
     "30+ days · No new record": "30+ nap · Nincs új bejegyzés",
-    "A sample stone": "Mintakavics"
+    "A sample stone": "Mintakavics",
+    "From one hand to another, my story goes on.": "Kézről kézre járva folytatódik a történetem."
   },
   "de": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
@@ -1047,6 +1050,7 @@ const SITE_TRANSLATIONS = {
     "6–14 days · Awaiting a find": "6–14 Tage · Wartet auf Fund",
     "15–29 days · No recent news": "15–29 Tage · Keine Neuigkeit",
     "30+ days · No new record": "30+ Tage · Kein neuer Eintrag",
-    "A sample stone": "Ein Beispielstein"
+    "A sample stone": "Ein Beispielstein",
+    "From one hand to another, my story goes on.": "Von Hand zu Hand geht meine Geschichte weiter."
   }
 };

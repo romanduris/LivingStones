@@ -1971,14 +1971,11 @@ body:has(dialog[open]) {
 .stone-search:focus-within { outline: 2px solid var(--purple); outline-offset: 2px; }
 .stone-search input:focus-visible { outline: none; }
 .stone-status-filters, .stone-view-switch { display: flex; align-items: center; gap: 4px; }
-.stone-status-filters { flex-wrap: wrap; flex-basis: 100%; order: 4; }
-.filter-label { flex-basis: 100%; margin: 2px 0 4px; font-size: 12px; color: var(--muted); }
+.stone-status-filters { flex-wrap: nowrap; flex-basis: 100%; min-width: 0; order: 4; }
 .stone-sort { display: flex; align-items: center; gap: 8px; min-width: 0; order: 3; font-size: 12px; color: var(--muted); }
 .stone-sort > span { white-space: nowrap; }
 .stone-sort select { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; }
 .stone-sort select:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
-.stone-status-filters button::before { content: ""; display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; margin-right: 5px; border: 1px solid #8a91a0; border-radius: 3px; vertical-align: -2px; font-size: 10px; line-height: 1; }
-.stone-status-filters button[aria-pressed="true"]::before { content: "✓"; color: #eee5ff; border-color: #b69be0; background: #79629c; }
 .status-count { font-size: 10px; opacity: .8; margin-left: 3px; }
 .stone-view-switch { margin-left: auto; border: 1px solid var(--line); border-radius: 24px; padding: 3px; background: var(--surface); }
 .stone-toolbar button, .stone-view-switch a { border: 1px solid transparent; border-radius: 22px; padding: 8px 12px; color: var(--muted); background: var(--surface); font-size: 12px; white-space: nowrap; transition: background .18s, color .18s; }
@@ -2043,6 +2040,9 @@ body:has(dialog[open]) {
   .stone-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 }
 @media (max-width: 480px), (orientation: landscape) and (max-height: 500px) and (max-width: 1000px) {
+  .stone-status-filters { gap: 3px; }
+  .stone-toolbar .stone-status-filters button { padding: 8px 3px; font-size: 10px; min-height: 36px; }
+  .stone-status-filters .status-count { font-size: 9px; margin-left: 2px; }
   .stone-search { min-width: 120px; }
   .stone-toolbar button, .stone-view-switch a { padding-inline: 8px; }
   .stone-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
@@ -2063,6 +2063,11 @@ body:has(dialog[open]) {
   .card-location .country-flag { width: 12px; height: 8px; }
   .card-location time { font-size: 9px; }
 }
+/* Keep all five status names visible on the narrowest phones. */
+@media (max-width: 360px) {
+  .stone-status-filters .status-count { display: none; }
+}
+
 /* Five compact cards when a phone turns sideways. */
 @media (orientation: landscape) and (max-height: 500px) and (max-width: 1000px) {
   .stone-card-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
