@@ -1494,6 +1494,7 @@ body:has(dialog[open]) {
   font-weight: 600;
 }
 .find-help {
+  text-align: center;
   font-size: 12px;
   line-height: 1.7;
   color: var(--purple);
