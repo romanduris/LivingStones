@@ -20,26 +20,32 @@ process.on('exit',()=>server.kill());
    let available=[...catalog],selection=0,firstConflict=true,loseReply=true,birthKey=null,birthWrites=0;
    let createAttempts=0,createKey=null;
    const token='b'.repeat(64);
+   await context.route('https://photon.komoot.io/api/**',route=>{
+    const q=new URL(route.request().url()).searchParams.get('q');
+    if(q==='failure')return route.fulfill({status:503,body:'Unavailable'});
+    return route.fulfill({contentType:'application/json',body:JSON.stringify({features:q.toLowerCase().startsWith('ban')?[{geometry:{type:'Point',coordinates:[19.1457338,48.735429]},properties:{name:'Banská Bystrica',state:'Banskobystrický kraj',country:'Slovakia'}}]:[]})});
+   });
    await context.route('https://photon.komoot.io/reverse**',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({features:[{properties:{city:'Bratislava',country:'Slovakia',street:'Birth street',housenumber:'1'}}]})}));
    await context.route('http://127.0.0.1:8787/**',async route=>{
-    const req=route.request(),parts=new URL(req.url()).pathname.split('/'),kind=parts[4],body=req.method()==='POST'?req.postDataJSON():null;
+    const req=route.request(),parts=new URL(req.url()).pathname.split('/'),kind=parts[4],body=['POST','PATCH'].includes(req.method())?req.postDataJSON():null;
     let result={stones:[...stones,...(stone.initialized?[stone]:[])]},status=200;
     if(parts[2]==='admin'){
      if(parts[3]==='login')result={token,expiresAt:Math.floor(Date.now()/1000)+14400};
      else if(req.headers().authorization!=='Bearer '+token){status=401;result={error:'Please sign in.'};}
      else if(parts[3]==='logout')result={ok:true};
+     else if(kind===stone.id&&parts[5]==='note'){stone.adminNote=body.note;result={stone};}
      else if(req.method()==='POST'){
       createAttempts++;assert.ok(req.headers()['idempotency-key']);
       if(createKey)assert.equal(req.headers()['idempotency-key'],createKey);else createKey=req.headers()['idempotency-key'];
       if(createAttempts===1)return route.abort('failed');
-      result={stone,code:'ABCDEF123456'};
-     }else result={stones:[...stones,stone]};
+      result={stone,code:'0372'};
+     }else result={stones:[...stones,stone],imagesAvailable:available.length};
     }else if(parts[2]==='page-views')result={ok:true};
     else if(kind==='images'){
      const offset=selection++%Math.max(1,available.length-10);
      result={images:available.slice(offset,offset+10),available:available.length};
     }else if(kind==='verify'){
-     if(body.code!=='ABCDEF123456'){status=403;result={error:'That Find Code does not match.'};}else result={ok:true};
+     if(body.code!=='0372'){status=403;result={error:'That Find Code does not match.'};}else result={ok:true};
     }else if(kind==='initialize'){
      if(firstConflict){
       firstConflict=false;available=available.filter(a=>a.id!==body.imageId);status=409;result={error:'Someone just chose that portrait. Please choose another one.'};
@@ -65,13 +71,18 @@ process.on('exit',()=>server.kill());
    // A failed create response can be retried without creating two labels.
    await page.goto('http://127.0.0.1:8137/management/');
    await page.locator('#password').fill('test-only');await page.locator('#login-form button').click();
-   await page.locator('#create-stone').waitFor();await page.locator('#create-stone').click();
+   await page.locator('#create-stone').waitFor();assert.equal(await page.locator('#available-images').textContent(),'40');await page.locator('#create-stone').click();
    await page.locator('#notice.error').waitFor();await page.locator('#create-stone').click();
    await page.locator('.stone-qr').waitFor();
-   assert.equal(createAttempts,2);assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'ABCDEF123456');
+   assert.equal(createAttempts,2);assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');
    assert.equal(await page.locator('#stone-form').count(),0);
    assert.equal(await page.locator('.qr-link').getAttribute('href'),'https://livingstones.rodulab.com/?stone=SNEW123&source=qr');
    assert.equal(await page.locator('a[href="../initialize/?stone=SNEW123"]').count(),1);
+   const note='Private <script>test()</script>\nRemember this little stone';
+   await page.locator('#admin-note').fill(note);await page.locator('#private-note-form button').click();
+   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Private note saved.');
+   await page.reload();await page.locator('#private-note-form').waitFor();
+   assert.equal(await page.locator('#admin-note').inputValue(),note);assert.equal(await page.locator('.private-note-panel script').count(),0);
    await page.locator('[data-action=back]').click();await page.locator('#type-filter').selectOption('new');assert.equal(await page.locator('.admin-stone-card').count(),1);
    assert.match(await page.locator('.admin-stone-card').innerText(),/awaiting birth/);
    await page.locator('#logout').click();
@@ -86,7 +97,7 @@ process.on('exit',()=>server.kill());
    await page.locator('#find-code').fill('WRONG');await page.locator('#use-birth-gps').click();
    await page.waitForFunction(()=>document.querySelector('#location-status').textContent.includes('does not match'));
    assert.equal(await page.evaluate(()=>window.__gpsRequests),0);
-   await page.locator('#find-code').fill('ABCDEF123456');
+   await page.locator('#find-code').fill('0372');
    // A declined GPS request preserves the form and can be retried.
    await page.evaluate(()=>{const original=navigator.geolocation.getCurrentPosition;navigator.geolocation.getCurrentPosition=(ok,bad)=>{navigator.geolocation.getCurrentPosition=original;bad({code:1});};});
    await page.locator('#use-birth-gps').click();
@@ -96,6 +107,22 @@ process.on('exit',()=>server.kill());
    await page.waitForFunction(()=>document.querySelector('#location-status').textContent.includes('Bratislava'));
    await page.locator('.portrait-option input').first().check();
    await page.locator('#stone-theme').selectOption('heart');
+   assert.match(await page.locator('#theme-swatch').getAttribute('class'),/theme-heart/);
+   assert.match(await page.locator('#theme-preview-copy').textContent(),/rose/);
+   assert.equal(await page.locator('#theme-portrait').getAttribute('src'),await page.locator('#hero-portrait').getAttribute('src'));
+   assert.equal(await page.locator('#manual-location').isVisible(),false);
+   if(width===390){
+    await page.locator('#choose-city').click();assert.equal(await page.locator('#give-birth').isDisabled(),true);
+    await page.locator('#manual-city').fill('nowhere');await page.waitForFunction(()=>document.querySelector('#city-search-status').textContent.includes('No matching'));
+    await page.locator('#manual-city').fill('failure');await page.waitForFunction(()=>document.querySelector('#city-search-status').textContent.includes('unavailable'));
+    await page.locator('#manual-city').fill('Banská');await page.locator('.city-result').waitFor();
+    assert.equal(await page.locator('#give-birth').isDisabled(),true,'typing alone is not a birthplace');
+    await page.locator('#manual-city').press('ArrowDown');await page.keyboard.press('Enter');
+    assert.match(await page.locator('#location-status').textContent(),/Manual city location.*Banská/);
+    assert.equal(await page.locator('#birth-location-preview').isVisible(),true);
+    await page.locator('#manual-city').fill('Bansk');assert.equal(await page.locator('#give-birth').isDisabled(),true);
+    await page.locator('.city-result').waitFor();await page.locator('.city-result').click();
+   }
    assert.equal(await page.locator('#give-birth').isEnabled(),true);
    await page.waitForFunction(()=>[...document.querySelectorAll('.portrait-option img')].every(img=>img.complete&&img.naturalWidth>0));
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -111,6 +138,9 @@ process.on('exit',()=>server.kill());
    await page.locator('#give-birth').click();
    await page.waitForURL('**/?stone=SNEW123&source=qr');await page.locator('#stone-dialog[open]').waitFor();
    assert.equal(birthWrites,1);assert.match(await page.locator('#detail-title').innerText(),/Pebble <hello>/);
+   assert.equal(stone.finds[0].source,width===390?'manual':'gps');
+   assert.equal(await page.locator('.private-note-panel').count(),0);
+   if(width===390)assert.equal(await page.locator('.manual-badge').count(),1);
    assert.equal(await page.locator('#detail-title hello').count(),0);
    assert.match(await page.locator('.detail-story').innerText(),/Painter <friend>/);
    assert.equal(await page.locator('.story-entry').count(),1);

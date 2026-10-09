@@ -53,11 +53,14 @@ function field(name,label,value,type='text',extra='') {
 function selectField(name,label,options,value) {
   return `<label>${label}<select name="${name}">${options.map(([v,l])=>`<option value="${v}" ${v===value?'selected':''}>${l}</option>`).join('')}</select></label>`;
 }
+function notePanel(stone) {
+  return `<section class="panel private-note-panel"><h2>My private note</h2><p id="private-note-help" class="form-hint">Only you can read and edit this in management. It never appears in the public story.</p><form id="private-note-form"><label for="admin-note">Owner’s note<textarea id="admin-note" name="note" maxlength="2000" aria-describedby="private-note-help" placeholder="Anything you’d like to remember about this stone…">${escapeHTML(stone.adminNote||'')}</textarea></label><div class="form-actions"><button class="primary" type="submit">Save private note</button></div></form></section>`;
+}
 function renderEditor() {
   const s=stones.find(s=>s.id===selected);if(!s){showList();return;}
   $('#editor').hidden=false;$('#dashboard').hidden=true;
   if(s.initialized===false) {
-    $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>A new little adventure</h1><span class="stone-type real">New · awaiting birth</span></div><button class="danger" data-action="delete-stone">Delete stone</button></div><div class="editor-grid"><section class="panel"><p class="eyebrow">READY TO MEET ITS CREATOR</p><h2>The label comes first. The story comes next.</h2><p>Print the QR label and Find Code for this stone. Its creator can scan the QR, name it, choose a portrait and theme, and give it a birthplace using their phone.</p><p class="form-hint">ID: ${escapeHTML(s.id)} · Not visible in the public collection until it is born.</p><a class="button primary" href="../initialize/?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open setup page ↗</a><p class="form-hint">Keep the Find Code on the physical stone. The same QR opens its story after setup.</p></section><div>${qrPanel(s)}</div></div>`;
+    $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>A new little adventure</h1><span class="stone-type real">New · awaiting birth</span></div><button class="danger" data-action="delete-stone">Delete stone</button></div><div class="editor-grid"><div><section class="panel"><p class="eyebrow">READY TO MEET ITS CREATOR</p><h2>The label comes first. The story comes next.</h2><p>Print the QR label and Find Code for this stone. Its creator can scan the QR, name it, choose a portrait and theme, and give it a birthplace using their phone.</p><p class="form-hint">ID: ${escapeHTML(s.id)} · Not visible in the public collection until it is born.</p><a class="button primary" href="../initialize/?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open setup page ↗</a><p class="form-hint">Keep the Find Code on the physical stone. The same QR opens its story after setup.</p></section>${notePanel(s)}</div><div>${qrPanel(s)}</div></div>`;
     return;
   }
   $('#editor').innerHTML=`<div class="editor-top"><button data-action="back">← All stones</button><img src="${escapeHTML(imageURL(s))}" alt=""><div><h1>${escapeHTML(s.name)}</h1><a href="../?stone=${encodeURIComponent(s.id)}" target="_blank" rel="noopener">Open public story ↗</a></div><button class="danger" data-action="delete-stone">Delete stone</button></div>
@@ -65,8 +68,8 @@ function renderEditor() {
     ${field('name','Name',s.name,'text','required maxlength="80"')}${field('creator','Painted by',s.creator,'text','required maxlength="80"')}${field('started','Born',s.started,'date','required')}${selectField('demo','Type',[['demo','Demo'],['real','Real']],s.demo?'demo':'real')}
     <label class="wide">Image path or HTTPS URL<input name="image" value="${escapeHTML(s.image)}" required maxlength="300"></label>
     ${selectField('theme','Theme',[['sun','Sun'],['moon','Moon'],['leaf','Leaf'],['heart','Heart'],['wave','Wave']],s.theme)}${field('color','Map pin colour',s.color,'color')}
-    <label class="wide">${s.demo?'Find Code':'New private Find Code (optional)'}<input name="code" type="text" value="${s.demo?escapeHTML(s.code):''}" autocomplete="off" maxlength="32" pattern="[A-Za-z0-9]{4,32}"></label>
-    </div><p class="form-hint">A blank code keeps the current one. Demo codes are public. When changing Demo to Real, enter a new private code.</p><div class="form-actions"><button type="submit" class="primary">Save stone</button></div></form></section>${qrPanel(s)}<section class="panel"><h2>The journey in numbers</h2><div class="admin-stats">${statsHTML([[Math.max(0,Math.floor((Date.now()-Date.parse(s.started))/86400000)),'Days alive'],[s.finds.length,'Finds'],[new Set(s.finds.map(f=>f.country)).size,'Countries'],[s.views||0,'Views']])}</div><p class="form-hint">Views count story openings, including repeat visits. Existing example counts were not imported.</p></section></div>
+    <label class="wide">${s.demo?'Find Code':'New private Find Code (optional)'}<input name="code" type="text" value="${s.demo?escapeHTML(s.code):''}" autocomplete="off" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"></label>
+    </div><p class="form-hint">Use exactly 4 digits for a new code. A blank code keeps the current one. Demo codes are public. When changing Demo to Real, enter a new private code.</p><div class="form-actions"><button type="submit" class="primary">Save stone</button></div></form></section>${notePanel(s)}${qrPanel(s)}<section class="panel"><h2>The journey in numbers</h2><div class="admin-stats">${statsHTML([[Math.max(0,Math.floor((Date.now()-Date.parse(s.started))/86400000)),'Days alive'],[s.finds.length,'Finds'],[new Set(s.finds.map(f=>f.country)).size,'Countries'],[s.views||0,'Views']])}</div><p class="form-hint">Views count story openings, including repeat visits. Existing example counts were not imported.</p></section></div>
     <section class="panel"><h2>Their memories</h2><div class="record-buttons"><button data-tab="finds" ${tab==='finds'?'class="primary"':''}>Finds (${s.finds.length})</button><button data-tab="comments" ${tab==='comments'?'class="primary"':''}>Comments (${s.comments.length})</button></div><div id="records">${recordsHTML(s)}</div></section></div>`;
 }
 function recordsHTML(s) {
@@ -86,7 +89,7 @@ function updateSection() {
   }
 }
 async function load() {
-  const data=await api('stones');stones=data.stones;
+  const data=await api('stones');stones=data.stones;$('#available-images').textContent=data.imagesAvailable??'—';
   $('#login').hidden=true;$('#logout').hidden=false;$('#admin-tabs').hidden=false;
   const params=new URLSearchParams(location.hash.slice(1));
   section=params.get('tab')==='stats'?'stats':'management';
@@ -182,7 +185,7 @@ function renderStats(){
   $('#tracking-note').textContent='Homepage tracking started '+formatDate(statsData.since)+'. Counts are opens, not unique people. Days use UTC. Stone totals retain earlier recorded views.';
   history.replaceState(null,'','#'+new URLSearchParams({tab:'stats',period:statsPeriod,target:statsTarget}));
 }
-function updateStone(data) {if(data.stone)stones=stones.map(s=>s.id===data.stone.id?data.stone:s);renderEditor();}
+function updateStone(data) {if(data.imagesAvailable!=null)$('#available-images').textContent=data.imagesAvailable;if(data.stone)stones=stones.map(s=>s.id===data.stone.id?data.stone:s);renderEditor();}
 async function withButton(button,action) {
   if(button.disabled)return;button.disabled=true;
   try {await action();}catch(e){notice(e.message,true);}finally{if(button.isConnected)button.disabled=false;}
@@ -227,6 +230,15 @@ $('#record-form').addEventListener('submit',async event=>{
   try {const data=await api(`stones/${selected}/${record.kind}/${record.id}`,'PATCH',body);$('#record-dialog').close();updateStone(data);notice('Changes saved.');}catch(e){$('#record-error').textContent=e.message;$('#record-error').hidden=false;}finally{button.disabled=false;}
 });
 $('#editor').addEventListener('submit',event=>{
+  if(event.target.id==='private-note-form'){
+    event.preventDefault();const stoneId=selected,note=new FormData(event.target).get('note');
+    withButton(event.submitter,async()=>{
+      const data=await api('stones/'+stoneId+'/note','PATCH',{note});
+      stones=stones.map(s=>s.id===stoneId?data.stone:s);
+      if(selected===stoneId&&$('#admin-note'))$('#admin-note').value=data.stone.adminNote;
+      notice('Private note saved.');
+    });return;
+  }
   if(event.target.id==='qr-code-form'){
     event.preventDefault();withButton(event.submitter,async()=>{const code=new FormData(event.target).get('code');const data=await api('stones/'+selected+'/label-code','POST',{code});qrLabelCodes.set(selected,data.code);renderEditor();});return;
   }

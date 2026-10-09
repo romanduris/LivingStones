@@ -93,3 +93,6 @@ button:hover { border-color:var(--purple); } button:disabled { opacity:.55; curs
 }
 .heading-actions { display:flex; flex-wrap:wrap; gap:10px; }
 @media(max-width:700px) { .page-heading { align-items:flex-start; flex-direction:column; } }
+.inventory-summary { color:var(--muted); font-size:13px; margin:0 0 22px; }
+.inventory-summary strong { color:var(--teal); font-size:18px; margin:0 3px; }
+.private-note-panel textarea { min-height:130px; }

@@ -28,7 +28,7 @@
 .portrait-options { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin:20px 0; }
 .portrait-option { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; cursor:pointer; border:1px solid var(--line); border-radius:12px; background:var(--bg); padding:8px 6px 12px; text-align:center; transition:border-color .15s,background .15s; }
 .portrait-option img { width:100%; height:auto; aspect-ratio:340/280; object-fit:contain; }
-.portrait-option span { font-size:11px; color:var(--muted); }
+.portrait-option span { max-width:100%; overflow-wrap:anywhere; font-size:11px; color:var(--muted); }
 .portrait-option input { position:absolute; top:8px; right:8px; width:15px; height:15px; accent-color:var(--purple); padding:0; }
 .portrait-option:has(input:checked) { border:2px solid var(--purple); background:#b49aff15; padding:7px 5px 11px; }
 .portrait-option:has(input:checked) span { color:var(--ink); }
@@ -49,3 +49,9 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .birth-footnote a { margin-left:10px; }
 @media(max-width:650px) { .birth-header { padding:16px; gap:10px; } .birth-header .wordmark { font-size:20px; } .birth-header > a:last-child { max-width:110px; text-align:right; font-size:11px; } .birth-wrap { padding:28px 16px; } .birth-intro { grid-template-columns:1fr; gap:10px; } .birth-hero-stone img { width:180px; height:160px; } .birth-hero-stone { margin:10px 0; } .birth-steps { gap:10px; justify-content:space-between; margin:26px 0; } .birth-steps li { font-size:11px; gap:6px; } .birth-steps span { width:23px; height:23px; } .birth-panel { padding:20px 16px; } .birth-section-heading h2 { font-size:21px; } .birth-input-grid,.birth-location { grid-template-columns:1fr; gap:16px; } .portrait-options { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .birth-submit { flex-direction:column; align-items:stretch; } .birth-submit span { text-align:center; } }
 @media(prefers-reduced-motion:reduce) { .portrait-option { transition:none; } }
+.theme-preview { display:flex; align-items:center; gap:18px; margin-top:20px; padding-top:20px; border-top:1px solid var(--line); }
+.theme-swatch { flex:none; width:136px; height:112px; border-radius:12px; display:grid; place-items:center; }
+.theme-swatch img { width:100%; height:auto; }
+.theme-preview strong { color:var(--purple); font-size:14px; }
+#birth-location-preview-frame { margin:18px 0; }
+@media(max-width:650px) { .theme-preview { align-items:flex-start; gap:12px; } .theme-swatch { width:100px; height:90px; } }

@@ -13,7 +13,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    stones.forEach((s,index)=>{s.views=index+4;s.creator=s.finds[0].nickname;s.finds.forEach((f,i)=>f.id='find-'+s.id+'-'+i);s.comments=s.finds.map((f,i)=>({id:'comment-'+s.id+'-'+i,findId:f.id,date:f.date,nickname:f.nickname,message:f.message}));});
    const token='a'.repeat(64);let valid=true;
    await context.route('http://127.0.0.1:8787/api/admin/**',async route=>{
-    const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones},status=200;
+    const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones,imagesAvailable:40},status=200;
     if(parts[3]==='login'){
      if(req.postDataJSON().password==='test-only-password'){valid=true;result={token,expiresAt:Math.floor(Date.now()/1000)+14400};}else{status=401;result={error:'That password is not correct.'};}
     }else if(!valid||req.headers().authorization!=='Bearer '+token){status=401;result={error:'Please sign in to management.'};}
@@ -23,6 +23,10 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
      result={period,since:today,timezone:'UTC',range:{from:period==='all'?today:new Date(Date.parse(today)-(Number(period)-1)*86400000).toISOString().slice(0,10),to:today},targets:[{key:'home',name:'Homepage',kind:'home',totalViews:10,beforeRange:0},...stones.map(s=>({key:'stone:'+s.id,name:s.name,kind:'stone',totalViews:s.views,beforeRange:0}))],days:[{day:today,target:'home',views:10},...stones.map(s=>({day:today,target:'stone:'+s.id,views:s.views}))]};
     }else if(parts[4]){
      const s=stones.find(s=>s.id===parts[4]);
+     if(parts[5]==='note'){
+      s.adminNote=req.postDataJSON().note;
+      return route.fulfill({contentType:'application/json',body:JSON.stringify({stone:s})});
+     }
      if(parts[5]==='label-code'){
       if(req.postDataJSON().code==='PRIVATE9876')result={code:'PRIVATE9876'};else{status=403;result={error:'That Find Code does not match this stone.'};}
       return route.fulfill({status,contentType:'application/json',body:JSON.stringify(result)});
@@ -49,6 +53,13 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#sort').selectOption('views');assert.match(await page.locator('.admin-stone-card').first().innerText(),/Forest Friend/);
    await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
    assert.equal(await page.locator('[name=story]').count(),0);
+   const ownerNote='My private <script>note()</script>\nA second line';
+   await page.locator('#admin-note').fill(ownerNote);await page.locator('#private-note-form button').click();
+   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Private note saved.');
+   await page.reload();await page.locator('#stone-form').waitFor();
+   assert.equal(await page.locator('#admin-note').inputValue(),ownerNote);assert.equal(await page.locator('.private-note-panel script').count(),0);
+   assert.equal(await page.locator('#available-images').textContent(),'40');
+
    assert.equal(await page.locator('.qr-link').getAttribute('href'),'https://livingstones.rodulab.com/?stone=A1&source=qr');
    assert.equal(await page.locator('.editor-top a').getAttribute('href'),'../?stone=A1');
    assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'8451');

@@ -1,5 +1,6 @@
 import { trafficStatistics } from './traffic.js';
 import { fail, sha256, text, requireOrigin, jsonBody, limit } from './common.js';
+import { availableImageCount, returnedImageStatements } from './initialization.js';
 const hours = 4 * 3600;
 function constantEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -46,7 +47,7 @@ export async function handleManagement(request, env, listStones) {
   }
   if (path === 'stats' && request.method === 'GET') return trafficStatistics(request, env);
   if (path === 'session' && request.method === 'GET') return { ok: true };
-  if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true) };
+  if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true), imagesAvailable: await availableImageCount(env.DB) };
   if (path === 'stones' && request.method === 'POST') {
     await jsonBody(request);
     await limit(request, env, 'admin-create-stone', 40);
@@ -54,11 +55,19 @@ export async function handleManagement(request, env, listStones) {
     if (!key || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) fail(400, 'Please retry from the create button.');
     // Stable retries recover the label without storing a plaintext private code.
     const id = 'S' + (await sha256('stone-id:' + key)).slice(0,16).toUpperCase();
-    const code = (await sha256('stone-code:' + env.ADMIN_PASSWORD_HASH + ':' + key)).slice(0,12).toUpperCase();
+    const digest = await sha256('stone-code:' + env.ADMIN_PASSWORD_HASH + ':' + key);
+    const code = String(parseInt(digest.slice(0,8),16) % 10000).padStart(4,'0');
     await env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key).run();
     const saved = await env.DB.prepare('SELECT id,code_hash FROM stones WHERE creation_key=?').bind(key).first();
     const stone = (await listStones(env.DB,saved.id,true))[0];
     return { stone, ...(saved.code_hash === await sha256(code) ? { code } : {}) };
+  }
+  const noteMatch=path.match(/^stones\/([A-Za-z0-9_-]{1,32})\/note$/);
+  if(noteMatch && request.method==='PATCH') {
+    const body=await jsonBody(request),note=text(body.note,2000);
+    const result=await env.DB.prepare('UPDATE stones SET admin_note=? WHERE id=?').bind(note,noteMatch[1]).run();
+    if(!result.meta.changes)fail(404,'This stone could not be found.');
+    return {stone:(await listStones(env.DB,noteMatch[1],true))[0]};
   }
   const labelMatch=path.match(/^stones\/([A-Za-z0-9_-]{1,32})\/label-code$/);
   if(labelMatch && request.method==='POST') {
@@ -79,6 +88,7 @@ export async function handleManagement(request, env, listStones) {
   const statements = [];
   if (!kind) {
     if (request.method === 'DELETE') {
+      statements.push(...await returnedImageStatements(env.DB,stone));
       // Explicit order respects foreign keys and removes orphaned replay/view events.
       for (const table of ['comments','submissions','stone_views','finds']) statements.push(env.DB.prepare(`DELETE FROM ${table} WHERE stone_id=?`).bind(id));
       statements.push(env.DB.prepare('UPDATE traffic_targets SET deleted=1 WHERE target=?').bind('stone:'+id));
@@ -92,7 +102,7 @@ export async function handleManagement(request, env, listStones) {
       if (!/^(?:(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.(?:svg|png|jpe?g|webp)|https:\/\/[^\s<>"']+)$/i.test(image)) fail(400, 'Use a stone asset path or an HTTPS image URL.');
       if (!['sun','moon','leaf','heart','wave'].includes(theme) || !/^#[a-f0-9]{6}$/i.test(color) || typeof body.demo !== 'boolean') fail(400, 'Choose a valid appearance and stone type.');
       const code = text(body.code,32).toUpperCase();
-      if (code && !/^[A-Z0-9]{4,32}$/.test(code)) fail(400, 'Find Codes need 4–32 letters or digits.');
+      if (code && !/^\d{4}$/.test(code)) fail(400, 'Find Codes need exactly 4 digits.');
       if (!body.demo && stone.is_demo && (!code || await sha256(code) === stone.code_hash)) fail(400, 'Choose a new private Find Code when converting a Demo stone to Real.');
       if (body.demo && !code && !stone.demo_code) fail(400, 'Enter a Find Code before marking a real stone as Demo.');
       const first = await env.DB.prepare('SELECT * FROM finds WHERE stone_id=? ORDER BY occurred_at,id LIMIT 1').bind(id).first();
@@ -145,5 +155,5 @@ export async function handleManagement(request, env, listStones) {
     }
   }
   await env.DB.batch(statements);
-  return { ok: true, ...(!(request.method==='DELETE'&&!kind) ? {stone:(await listStones(env.DB,id,true))[0]} : {}) };
+  return { ok: true, imagesAvailable:await availableImageCount(env.DB), ...(!(request.method==='DELETE'&&!kind) ? {stone:(await listStones(env.DB,id,true))[0]} : {}) };
 }

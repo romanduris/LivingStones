@@ -6,9 +6,15 @@ try{
  for(const file of fs.readdirSync('backend/migrations').filter(f=>Number(f.slice(0,4))<=6))fs.copyFileSync('backend/migrations/'+file,path.join(migrations,file));
  cli(['migrations','apply','migration-db']);
  cli(['execute','migration-db','--command',"INSERT INTO stones(id,name,story,born,image,theme,color,is_demo,code_hash,demo_code,creator,views) VALUES ('A1','Sunny','Old story','2025-04-12','sun.svg','sun','#ffffff',1,'dummy','8451','Nina',9); INSERT INTO finds(id,stone_id,occurred_at,lat,lon,city,country,address,nickname,source) VALUES ('f1','A1','2025-04-12T00:00:00Z',48,17,'Bratislava','Slovakia','Park','Nina','seed'); INSERT INTO comments(id,stone_id,find_id,created_at,nickname,message) VALUES ('c1','A1','f1','2025-04-12T00:00:00Z','Nina','Keep this note'); INSERT INTO stone_views(id,stone_id,created_at) VALUES ('one','A1','2026-10-04T00:00:00Z'),('two','A1','2026-10-04T01:00:00Z'),('three','A1','2026-10-05T00:00:00Z');"]);
- for(const file of fs.readdirSync('backend/migrations').filter(f=>Number(f.slice(0,4))>6))fs.copyFileSync('backend/migrations/'+file,path.join(migrations,file));
+ for(const file of fs.readdirSync('backend/migrations').filter(f=>Number(f.slice(0,4))>6&&Number(f.slice(0,4))<=10))fs.copyFileSync('backend/migrations/'+file,path.join(migrations,file));
  cli(['migrations','apply','migration-db']);
+ cli(['execute','migration-db','--command',"UPDATE stones SET image='birth-stones/birth-02.svg' WHERE id='A1'; UPDATE stone_image_pool SET claimed_at='2026-10-09T00:00:00Z' WHERE id IN ('birth-01','birth-02');"]);
+ for(const file of fs.readdirSync('backend/migrations').filter(f=>Number(f.slice(0,4))>10))fs.copyFileSync('backend/migrations/'+file,path.join(migrations,file));
+ cli(['migrations','apply','migration-db']);
+ const reclaimed=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT id,claimed_at FROM stone_image_pool WHERE id IN ('birth-01','birth-02') ORDER BY id; SELECT admin_note FROM stones;"]));
+ assert.deepEqual(reclaimed[0].results,[{id:'birth-01',claimed_at:null},{id:'birth-02',claimed_at:'2026-10-09T00:00:00Z'}]);
+ assert.equal(reclaimed[1].results[0].admin_note,'');
  const result=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT views,creator FROM stones; SELECT baseline_views FROM traffic_targets WHERE target='stone:A1'; SELECT day,views FROM traffic_daily ORDER BY day; SELECT message FROM comments; PRAGMA table_info(stones); SELECT COUNT(*) AS finds FROM finds;"]));
  assert.equal(result[0].results[0].views,9);assert.equal(result[0].results[0].creator,'Nina');assert.equal(result[1].results[0].baseline_views,6);assert.deepEqual(result[2].results,[{day:'2026-10-04',views:2},{day:'2026-10-05',views:1}]);assert.equal(result[3].results[0].message,'Keep this note');assert.ok(!result[4].results.some(c=>c.name==='story'));assert.equal(result[5].results[0].finds,1);
- console.log('Passed: traffic migration backfills dated events, retains undated totals and removes Story without losing finds or comments.');
+ console.log('Passed: traffic migration backfills dated events, retains undated totals and removes Story, adds private notes and reclaims only unused orphan portraits without losing finds or comments.');
 }finally{fs.rmSync(dir,{recursive:true,force:true});}
