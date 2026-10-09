@@ -1565,6 +1565,15 @@ body:has(dialog[open]) {
   white-space: nowrap;
 }
 @media (max-width: 700px) {
+  #watchdog-form .form-actions {
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+  #watchdog-form .form-actions .button {
+    min-width: 0;
+    padding-inline: 10px;
+    font-size: 12px;
+  }
   .detail-intro #start-find {
     width: 100%;
     margin-top: 9px;

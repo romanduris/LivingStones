@@ -23,6 +23,9 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   assert.equal(await page.locator('#detail-title .detail-title-copy').innerText(),'Map');assert.match(await page.locator('.detail-story').innerText(),/Finds/);
   assert.equal(await page.locator('[data-entry="'+stones[0].finds[0].id+'"] .entry-message').innerText(),'“Close”');
   await page.locator('#watch-stone').click();await page.locator('#watchdog-email').fill('draft@example.invalid');
+  await page.setViewportSize({width:320,height:844});
+  assert.ok(await page.evaluate(()=>{const save=document.querySelector('#save-watchdog').getBoundingClientRect(),close=document.querySelector('#close-watchdog').getBoundingClientRect();return Math.abs(save.top-close.top)<1&&close.left>save.right;}),'Watchdog buttons share a row at 320px in '+expected);
+  await page.setViewportSize({width:390,height:844});
   await page.locator('[popovertarget=detail-language-menu]').click();await page.locator('#detail-language-menu [data-language=de]').click();
   assert.equal(await page.locator('#watchdog-email').inputValue(),'draft@example.invalid');assert.equal(await page.locator('#watchdog-panel').isVisible(),true);
   assert.equal(await page.locator('#save-watchdog').innerText(),'E-Mail speichern');assert.equal(await page.locator('.site-header .language-label').textContent(),'DE');
