@@ -289,7 +289,7 @@ function renderCollection() {
     const place = last ? `${last.city}, ${last.country}` : "Waiting for a first find";
     const id = escapeHTML(stone.id);
     return ui`<a class="journey-card" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" aria-label="Explore ${escapeHTML(stone.name)}" style="--stone-color:${escapeHTML(/^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be")}">
-      <span class="card-kind">${uiText(stone.demo ? "Demo" : "Real")}</span>
+      <span class="card-kind${stone.demo ? "" : " is-real"}">${uiText(stone.demo ? "Demo" : "Real")}</span>
       <span class="card-age" aria-label="${daysTravelling(stone)} days alive"><span>Age</span><strong>${daysTravelling(stone)} d</strong></span>
       <span class="card-portrait"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || t("Painted stone: {0}",[stone.name]))}" width="340" height="280"><time class="card-born" datetime="${escapeHTML(stone.started)}" title="Born: ${formatDate(stone.started)}">${formatDate(stone.started)}</time></span>
       <h3>${escapeHTML(stone.name)}</h3>
