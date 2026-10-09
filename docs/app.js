@@ -617,10 +617,9 @@ function renderDetail() {
         <p id="watchdog-help">Leave your email to follow <strong>${escapeHTML(stone.name)}</strong>. Watchdog will let you know when a new find is recorded or I move to a new place. Your email stays private.</p>
         <form id="watchdog-form">
           <label class="field" for="watchdog-email">Your email<input id="watchdog-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="watchdog-help watchdog-status"></label>
-          <div class="form-actions"><button class="button primary" id="save-watchdog" type="submit">Save my email</button></div>
+          <div class="form-actions"><button class="button primary" id="save-watchdog" type="submit">Save my email</button><button class="button secondary" id="close-watchdog" type="button">Close</button></div>
         </form>
         <p id="watchdog-status" role="status" aria-live="polite"></p>
-        <button class="button secondary" id="close-watchdog" type="button">Close</button>
       </section>
       <section class="detail-journey" aria-labelledby="journey-title">
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>

@@ -33,6 +33,7 @@ process.on('exit', () => server.kill());
       assert.equal(await page.locator('#show-more-stones').isVisible(), columns * 3 < 14);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `No overflow at ${width}`);
       assert.ok(await page.locator('.journey-card').evaluateAll(cards => cards.every(card => card.scrollWidth <= card.clientWidth)), `Cards fit at ${width}`);
+      assert.ok(await page.locator('.journey-card:visible .card-facts > div:first-child dd').evaluateAll(values => values.every(el => /\d[\s\S]*km/.test(el.innerText))), `Distance values remain visible at ${width}`);
       await page.locator('.journey-card:visible').last().scrollIntoViewIfNeeded();
       await page.waitForFunction(() => [...document.querySelectorAll('.journey-card:not([hidden]) .card-portrait img')].every(img => img.complete && img.naturalWidth > 0));
       if ([1440, 1098, 375, 320].includes(width)) await page.locator('#explore').screenshot({ style: ".site-header, .skip-link { visibility: hidden !important; }", path: `/tmp/livingstones-cards-${width}.png` });

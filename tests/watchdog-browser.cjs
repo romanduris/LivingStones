@@ -39,6 +39,11 @@ process.on('exit', () => server.kill());
       assert.equal(await page.locator('#watch-stone').getAttribute('aria-expanded'), 'true');
       assert.equal(await page.evaluate(() => document.activeElement.id), 'watchdog-title');
       assert.match(await page.locator('#watchdog-panel').innerText(), /Leave your email to follow.*Your email stays private/s);
+      assert.ok(await page.evaluate(() => {
+        const save = document.querySelector('#save-watchdog').getBoundingClientRect();
+        const close = document.querySelector('#close-watchdog').getBoundingClientRect();
+        return Math.abs(save.top - close.top) < 1 && close.left > save.right;
+      }), `Save and Close are side by side at ${width}`);
       await page.locator('#watchdog-email').fill('invalid');
       await page.locator('#save-watchdog').click();
       assert.equal(submissions.length, 0, 'Invalid emails do not submit');

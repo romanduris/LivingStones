@@ -1511,6 +1511,19 @@ body:has(dialog[open]) {
   min-height: 42px;
 }
 .detail-actions .icon-button { flex-shrink: 0; width: 42px; height: 42px; }
+.detail-actions .button,
+.detail-actions .icon-button {
+  background: #514366;
+  border-color: #9c7cc9;
+  color: #eee5ff;
+  transition: background .18s, border-color .18s;
+}
+.detail-actions .button:hover,
+.detail-actions .icon-button:hover,
+.detail-actions .icon-button[aria-expanded="true"] {
+  background: #66517f;
+  border-color: #bea2eb;
+}
 .detail-history-heading {
   display: flex;
   align-items: center;
@@ -2028,7 +2041,8 @@ body:has(dialog[open]) {
   .card-facts { margin: 0 4px 7px; padding: 6px 0; border-radius: 7px; }
   .card-facts dt { font-size: 8px; margin-bottom: 2px; }
   .card-facts dd { font-size: 10px; }
-  .card-facts dd span { display: none; }
+  .card-facts dd > [aria-hidden="true"],
+  .card-facts dd .card-find-unit { display: none; }
   .card-born { right: 3px; bottom: 4px; font-size: 7px; letter-spacing: 0; }
   .card-location { flex-direction: row; align-items: center; padding: 6px 5px; gap: 3px; font-size: 9px; }
   .card-location > span { gap: 3px; max-width: 100%; }
