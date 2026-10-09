@@ -603,7 +603,14 @@ process.on("exit", () => server?.kill());
     const gpsEntry = phone.locator(rows).first();
     assert.equal(await gpsEntry.locator(".entry-address .gps-badge").count(), 1);
     assert.equal(await gpsEntry.locator(".entry-author .local-badge").count(), 0);
-    assert.equal(await gpsEntry.locator(".entry-address").innerText(), "GPS Ľanová 8, Ružinov");
+    assert.ok(await gpsEntry.evaluate(entry => {
+      const badge = entry.querySelector('.gps-badge'), address = entry.querySelector('.entry-address'), message = entry.querySelector('.entry-message');
+      return address.firstElementChild === badge && getComputedStyle(badge).borderRadius === '12px' &&
+        getComputedStyle(badge).borderTopStyle === 'solid' && parseFloat(getComputedStyle(badge).fontSize) < parseFloat(getComputedStyle(address).fontSize) &&
+        parseFloat(getComputedStyle(address).fontSize) < parseFloat(getComputedStyle(message).fontSize);
+    }), 'Small outlined location badge starts the address line, with a larger message');
+
+    assert.equal((await gpsEntry.locator(".entry-address").innerText()).replace(/\s+/g, " "), "GPS Ľanová 8, Ružinov");
     assert.match(
       await phone.locator(rows).first().innerText(),
       /GPS/,

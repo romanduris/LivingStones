@@ -1407,11 +1407,12 @@ body:has(dialog[open]) {
 .entry-address {
   margin-top: 5px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.7;
 }
 .entry-message {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.75;
   color: var(--ink);
   white-space: pre-wrap;
@@ -1420,6 +1421,7 @@ body:has(dialog[open]) {
 .entry-message.no-message {
   color: var(--muted);
   font-size: 13px;
+  font-weight: 400;
 }
 .entry-kind {
   font-size: 11px;
@@ -1580,9 +1582,9 @@ body:has(dialog[open]) {
   }
 }
 
-.entry-address .local-badge {
+.entry-address .location-badge {
   margin: 0 6px 0 0;
-  font-size: 10px;
+  font-size: 9px;
   white-space: nowrap;
   vertical-align: baseline;
 }
@@ -1946,17 +1948,31 @@ body:has(dialog[open]) {
 .stone-search input::placeholder { color: var(--muted); opacity: 1; }
 .stone-search:focus-within { outline: 2px solid var(--purple); outline-offset: 2px; }
 .stone-search input:focus-visible { outline: none; }
-.stone-filters, .stone-view-switch { display: flex; align-items: center; gap: 4px; }
+.stone-filters, .stone-status-filters, .stone-view-switch { display: flex; align-items: center; gap: 4px; }
+.stone-filters, .stone-status-filters { flex-wrap: wrap; }
+.stone-status-filters { flex-basis: 100%; }
+.status-count { font-size: 10px; opacity: .8; margin-left: 3px; }
+.sort-direction { margin-left: 3px; }
 .stone-view-switch { margin-left: auto; border: 1px solid var(--line); border-radius: 24px; padding: 3px; background: var(--surface); }
 .stone-toolbar button, .stone-view-switch a { border: 1px solid transparent; border-radius: 22px; padding: 8px 12px; color: var(--muted); background: var(--surface); font-size: 12px; white-space: nowrap; transition: background .18s, color .18s; }
-.stone-filters button { border-color: var(--line); }
+.stone-filters button, .stone-status-filters button { border-color: var(--line); }
 .stone-toolbar button:hover, .stone-view-switch a:hover { color: var(--ink); background: #3c4653; }
 .stone-toolbar button[aria-pressed="true"] { background: #514864; color: #eee5ff; border-color: #88739e; }
 .stone-card-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .journey-card { display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden; border: 1px solid #4a5965; border-radius: 12px; background: radial-gradient(ellipse at 50% 23%, color-mix(in srgb, var(--stone-color) 24%, transparent), transparent 67%), linear-gradient(145deg, #273d46, #202c36 72%); box-shadow: 0 6px 15px #10191f50, inset 0 1px 0 #ffffff12; }
 .journey-card:focus-visible { border-color: #8c829f; }
-.card-kind { position: absolute; z-index: 1; top: 12px; left: 12px; border: 1px solid #89739b; color: #dccce9; background: #433c50b3; font-size: 10px; border-radius: 12px; padding: 1px 7px; }
-.card-kind.is-real { border-color: #6ba98a; color: #c5eed8; background: #284d3cb3; }
+.status-badge, .location-badge { display: inline-flex; align-items: center; border: 1px solid #89739b; color: #dccce9; background: #433c50b3; font-size: 10px; line-height: 1.4; border-radius: 12px; padding: 1px 7px; white-space: nowrap; }
+.status-badge.status-alive { border-color: #6ba98a; color: #c5eed8; background: #284d3cb3; }
+.status-badge.status-journey { border-color: #689fbe; color: #c4e5f7; background: #29485bb3; }
+.status-badge.status-quiet { border-color: #c09661; color: #f2d6af; background: #59452eb3; }
+.status-badge.status-lost { border-color: #7e8b94; color: #c8d0d5; background: #3d464db3; }
+.card-kind { position: absolute; z-index: 1; top: 12px; left: 12px; }
+.stone-table .status-badge { font-size: 7px; line-height: 1.25; padding: 0 3px; }
+.status-legend { margin-top: 24px; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.status-legend h3 { font-size: 16px; }
+.status-legend > p { margin: 7px 0 14px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+.status-legend-row { display: grid; grid-template-columns: 115px minmax(0, 1fr); align-items: start; gap: 10px; margin-top: 10px; font-size: 12px; line-height: 1.7; color: var(--muted); }
+.status-legend-row .status-badge { justify-self: start; margin-top: 2px; }
 .card-age { position: absolute; z-index: 1; top: 0; right: 12px; display: grid; gap: 1px; padding: 9px 10px 15px; text-align: center; font-size: 11px; color: #243039; background: linear-gradient(135deg, #e0e8e8, #94a7b1); clip-path: polygon(0 0,100% 0,100% 82%,50% 100%,0 82%); filter: drop-shadow(0 2px 3px #1118); }
 .card-age strong { font-size: 13px; }
 .card-portrait { position: relative; display: block; padding: 20px 20px 0; }
@@ -1991,8 +2007,12 @@ body:has(dialog[open]) {
 @media (max-width: 700px) {
   .stone-toolbar { gap: 8px; }
   .stone-search { max-width: none; }
-  .stone-filters { order: 3; width: 100%; }
-  .stone-filters button { flex: 1; padding-inline: 6px; }
+  .stone-filters { order: 3; width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stone-filters button { padding-inline: 6px; white-space: normal; }
+  .stone-status-filters { order: 4; }
+  .status-legend { padding: 12px; }
+  .status-legend-row { grid-template-columns: 90px minmax(0, 1fr); gap: 8px; font-size: 11px; }
+  .status-legend-row .status-badge { font-size: 9px; }
   .stone-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 }
 @media (max-width: 480px), (orientation: landscape) and (max-height: 500px) and (max-width: 1000px) {

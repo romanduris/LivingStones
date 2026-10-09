@@ -101,16 +101,29 @@ function storyAddress(entry) {
     .filter((part) => part && !headerParts.has(normalize(part)))
     .join(", ") || t("Exact address unavailable");
 }
-// A stone stays alive for 90 days after its latest recorded encounter.
+// Public status follows the latest find, or birth before any later find exists.
+function stoneStatus(stone, now = Date.now()) {
+  if (stone.demo) return "demo";
+  const recorded = Date.parse(stone.finds.at(-1)?.date || stone.started);
+  if (!Number.isFinite(recorded) || recorded > now) return "lost";
+  const days = Math.floor((now - recorded) / 86400000);
+  return days <= 5 ? "alive" : days < 15 ? "journey" : days < 30 ? "quiet" : "lost";
+}
+function statusLabel(status) {
+  return { demo: "Demo", alive: "Alive", journey: "On a journey", quiet: "Quiet", lost: "Lost" }[status];
+}
+function sortCollection(stones, sort, direction = "desc") {
+  const value = stone => sort === "finds" ? stone.finds.length
+    : sort === "distance" ? journeyDistance(stone)
+    : sort === "age" ? -(Date.parse(stone.started) || 0)
+    : Date.parse(stone.finds.at(-1)?.date || stone.started) || 0;
+  return [...stones].sort((a, b) => (value(b) - value(a)) * (direction === "asc" ? -1 : 1) || a.id.localeCompare(b.id));
+}
 function journeyStatistics(stones, now = Date.now()) {
-  const cutoff = now - 90 * 86400000;
   const finds = stones.flatMap((stone) => stone.finds);
   return {
     created: stones.length,
-    alive: stones.filter((stone) => {
-      const lastSeen = Date.parse(stone.finds.at(-1)?.date);
-      return lastSeen >= cutoff && lastSeen <= now;
-    }).length,
+    alive: stones.filter(stone => ["alive", "journey", "quiet"].includes(stoneStatus(stone, now))).length,
     finds: finds.length,
     countries: new Set(finds.map((find) => find.country).filter(Boolean)).size,
   };
@@ -261,7 +274,7 @@ function disposeMap(id) {
   instance.map.remove();
   mapInstances.delete(id);
 }
-const collectionState = { view: "cards", sort: "recent", search: "", visibleRows: 3 };
+const collectionState = { view: "cards", sort: "recent", direction: "desc", status: "all", search: "", visibleRows: 3 };
 function updateCardPagination() {
   const cards = [...document.querySelectorAll("#stone-cards .journey-card")];
   const isCards = collectionState.view === "cards";
@@ -272,24 +285,30 @@ function updateCardPagination() {
   say($("#stone-count"),cards.length===1?"Showing {0} of {1} stone":"Showing {0} of {1} stones",[shown,cards.length]);
   $("#show-more-stones").hidden = !isCards || shown >= cards.length;
 }
+function statusBadge(stone, className, now = Date.now()) {
+  const status = stoneStatus(stone, now);
+  const recorded = Date.parse(stone.finds.at(-1)?.date || stone.started);
+  const days = Number.isFinite(recorded) ? Math.max(0, Math.floor((now - recorded) / 86400000)) : null;
+  const explanation = status === "demo" ? t("A demo stone for trying the story.")
+    : days === null ? t("No recorded location yet.") : t("Last recorded location: {0} days ago.", [days]);
+  return ui`<span class="status-badge status-${status} ${className}" title="${escapeHTML(explanation)}">${uiText(statusLabel(status))}</span>`;
+}
 function renderCollection() {
   const query = collectionState.search.trim().toLocaleLowerCase();
-  const visible = stoneRepository.list().filter(stone => {
+  const now = Date.now();
+  const matching = stoneRepository.list().filter(stone => {
     const last = stone.finds.at(-1);
-    return (!query || [stone.name, stone.id, last?.city, last?.country].some(value => String(value || "").toLocaleLowerCase().includes(query)));
+    return !query || [stone.name, stone.id, last?.city, last?.country].some(value => String(value || "").toLocaleLowerCase().includes(query));
   });
-  const stones = collectionState.sort === "distance"
-    ? [...visible].sort((a, b) => journeyDistance(b) - journeyDistance(a) || a.id.localeCompare(b.id))
-    : collectionState.sort === "age"
-      ? [...visible].sort((a, b) => Date.parse(a.started) - Date.parse(b.started) || a.id.localeCompare(b.id))
-      : sortStonesByLastFound(visible);
+  const visible = matching.filter(stone => collectionState.status === "all" || stoneStatus(stone, now) === collectionState.status);
+  const stones = sortCollection(visible, collectionState.sort, collectionState.direction);
   $("#stone-cards").innerHTML = stones.map(stone => {
     const last = stone.finds.at(-1);
     const recency = last ? findRecency(last.date) : null;
     const place = last ? `${last.city}, ${last.country}` : "Waiting for a first find";
     const id = escapeHTML(stone.id);
     return ui`<a class="journey-card" href="?stone=${encodeURIComponent(stone.id)}" data-stone="${id}" aria-label="Explore ${escapeHTML(stone.name)}" style="--stone-color:${escapeHTML(/^#[0-9a-f]{6}$/i.test(stone.color) ? stone.color : "#9290be")}">
-      <span class="card-kind${stone.demo ? "" : " is-real"}">${uiText(stone.demo ? "Demo" : "Real")}</span>
+      ${statusBadge(stone, "card-kind", now)}
       <span class="card-age" aria-label="${daysTravelling(stone)} days alive"><span>Age</span><strong>${daysTravelling(stone)} d</strong></span>
       <span class="card-portrait"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || t("Painted stone: {0}",[stone.name]))}" width="340" height="280"><time class="card-born" datetime="${escapeHTML(stone.started)}" title="Born: ${formatDate(stone.started)}">${formatDate(stone.started)}</time></span>
       <h3>${escapeHTML(stone.name)}</h3>
@@ -301,15 +320,24 @@ function renderCollection() {
   $("#stone-list").hidden = collectionState.view !== "list" || !stones.length;
   $("#stone-empty").hidden = stones.length !== 0;
   updateCardPagination();
-  document.querySelectorAll("[data-stone-sort]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneSort === collectionState.sort)));
+  document.querySelectorAll("[data-stone-sort]").forEach(button => {
+    const active = button.dataset.stoneSort === collectionState.sort;
+    button.setAttribute("aria-pressed", String(active));
+    button.querySelector(".sort-direction").textContent = active ? collectionState.direction === "desc" ? "↓" : "↑" : "↕";
+  });
+  document.querySelectorAll("[data-stone-status]").forEach(button => {
+    const status = button.dataset.stoneStatus;
+    button.setAttribute("aria-pressed", String(status === collectionState.status));
+    button.querySelector(".status-count").textContent = matching.filter(stone => status === "all" || stoneStatus(stone, now) === status).length;
+  });
   document.querySelectorAll("[data-stone-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.stoneView === collectionState.view)));
   const heading = $('.stone-table th:nth-child(6)');
-  const ageHeading = $('.stone-table th:nth-child(3)');
-  if (collectionState.sort === "age") ageHeading.setAttribute("aria-sort", "descending");
-  else ageHeading.removeAttribute("aria-sort");
-  heading.setAttribute("aria-sort", collectionState.sort === "recent" ? "descending" : "none");
-  setUIAttribute(heading,"title",collectionState.sort === "recent" ? "Newest finds first" : collectionState.sort === "age" ? "Oldest stones first" : "Stones sorted by distance traveled");
+  const sortHeading = $('.stone-table th:nth-child(' + ({age: 3, finds: 4, recent: 6}[collectionState.sort] || 6) + ')');
+  document.querySelectorAll('.stone-table th').forEach(th => th.removeAttribute('aria-sort'));
+  sortHeading.setAttribute("aria-sort", collectionState.sort === "distance" ? "none" : collectionState.direction === "desc" ? "descending" : "ascending");
+  setUIAttribute(heading, "title", collectionState.sort === "recent" && collectionState.direction === "asc" ? "Oldest finds first" : "Newest finds first");
   heading.querySelector(".sort-indicator").hidden = collectionState.sort !== "recent";
+  heading.querySelector(".sort-indicator").textContent = collectionState.direction === "desc" ? "↓" : "↑";
   $("#stone-rows").innerHTML = stones
     .map((stone) => {
       const last = stone.finds.at(-1),
@@ -320,7 +348,7 @@ function renderCollection() {
       const fullPlace = `${last.city}, ${last.country}`;
       const recency = findRecency(last.date);
       return ui`<tr class="stone-row" data-stone="${stone.id}">
-        <td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${escapeHTML(stone.name)}, ${escapeHTML(fullBirth)}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || t("Painted stone: {0}",[stone.name]))}" loading="lazy"></span>${stone.demo ? ui`<span class="demo-badge">Demo</span>` : ui`<span class="demo-badge real-badge">Real</span>`}</span><span class="stone-identity"><strong>${escapeHTML(stone.name)}</strong><small class="stone-born" title="${escapeHTML(fullBirth)}" aria-label="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">${formatDate(stone.started)}</span></small></span></a></td>
+        <td class="overview-stone"><a class="stone-link" href="?stone=${stone.id}" data-stone="${stone.id}" aria-label="Explore ${escapeHTML(stone.name)}, ${escapeHTML(fullBirth)}, ${stone.finds.length} finds, last seen in ${escapeHTML(fullPlace)}"><span class="stone-visual"><span class="stone-thumbnail theme-${stone.theme}"><img src="${escapeHTML(stoneImageURL(stone))}" alt="${escapeHTML(stone.imageAlt || t("Painted stone: {0}",[stone.name]))}" loading="lazy"></span>${statusBadge(stone, "demo-badge", now)}</span><span class="stone-identity"><strong>${escapeHTML(stone.name)}</strong><small class="stone-born" title="${escapeHTML(fullBirth)}" aria-label="${escapeHTML(fullBirth)}"><span class="born-full">${escapeHTML(fullBirth)}</span><span class="born-compact" aria-hidden="true">${formatDate(stone.started)}</span></small></span></a></td>
         <td class="overview-start" data-label="Born"><time datetime="${stone.started}">${formatDate(stone.started)}</time><small>${escapeHTML(birth.country)}</small></td>
         <td class="overview-age" data-label="Age (days)"><strong aria-label="${daysTravelling(stone)} days alive">${daysTravelling(stone)} d</strong></td>
         <td class="overview-finds" data-label="Finds"><strong>${stone.finds.length}</strong></td>
@@ -527,7 +555,7 @@ function historyHTML(stone) {
       <header class="entry-header">
         <div class="entry-place">
           <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? ui`<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : ui`<span class="entry-kind">A little note</span>`}</div>
-          <p class="entry-address">${isFind && entry.source === "gps" ? '<span class="local-badge gps-badge">GPS</span> ' : isFind && entry.source === "manual" ? '<span class="local-badge manual-badge">Manual</span> ' : isFind && entry.source === "demo" ? '<span class="local-badge demo-location-badge">Demo</span> ' : ""}${uiText("{0}",[address])}</p>
+          <p class="entry-address">${isFind && entry.source === "gps" ? ui`<span class="location-badge gps-badge">GPS</span>` : isFind && entry.source === "manual" ? ui`<span class="location-badge manual-badge">Manual</span>` : isFind && entry.source === "demo" ? ui`<span class="location-badge demo-location-badge">Demo</span>` : ""} ${uiText("{0}",[address])}</p>
         </div>
         <div class="entry-author"><strong class="entry-finder">${entry.nickname?escapeHTML(entry.nickname):uiText("A kind stranger")}</strong></div>
       </header>
@@ -1175,8 +1203,13 @@ document.querySelector(".stone-toolbar").addEventListener("click", event => {
     collectionState.view = button.dataset.stoneView;
     collectionState.visibleRows = 3;
   }
-  if (button.dataset.stoneSort && button.dataset.stoneSort !== collectionState.sort) {
+  if (button.dataset.stoneSort) {
+    collectionState.direction = button.dataset.stoneSort === collectionState.sort && collectionState.direction === "desc" ? "asc" : "desc";
     collectionState.sort = button.dataset.stoneSort;
+    collectionState.visibleRows = 3;
+  }
+  if (button.dataset.stoneStatus) {
+    collectionState.status = button.dataset.stoneStatus;
     collectionState.visibleRows = 3;
   }
   renderCollection();
@@ -1270,3 +1303,13 @@ async function boot() {
   }
 }
 boot();
+
+// Keep the status current on pages left open, without recording any activity.
+let statusSnapshot = "";
+setInterval(() => {
+  const snapshot = stoneRepository.list().map(stone => stone.id + ":" + stoneStatus(stone)).join("|");
+  if (snapshot === statusSnapshot) return;
+  statusSnapshot = snapshot;
+  renderCollection();
+  say($("#total-active"), journeyStatistics(stoneRepository.list()).alive);
+}, 60000);

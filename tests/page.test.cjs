@@ -141,7 +141,7 @@ test("a house number is included only with a sufficiently accurate street", () =
   );
 });
 
-test("alive stones use an inclusive 90-day window and statistics follow added stones and finds", () => {
+test("alive totals use a strict 30-day window, exclude demos and follow new finds", () => {
   const now = Date.parse("2026-10-05T12:00:00Z");
   const day = 86400000;
   const stoneAt = (timestamp, country) => ({
@@ -149,8 +149,8 @@ test("alive stones use an inclusive 90-day window and statistics follow added st
   });
   const stones = [
     stoneAt(now, "Slovakia"),
-    stoneAt(now - 90 * day, "Austria"),
-    stoneAt(now - 90 * day - 1, "Hungary"),
+    stoneAt(now - 30 * day + 1, "Austria"),
+    stoneAt(now - 30 * day, "Hungary"),
     stoneAt(now + 1, "Slovakia"),
     { finds: [] },
   ];
@@ -255,4 +255,35 @@ test("route estimate applies a 1.5 coefficient to every leg, handles a round tri
   assert.equal(context.journeyDistance({finds:[]}), 0);
   assert.equal(context.journeyDistance({finds:[{lat:0,lon:0}]}), 0);
   assert.equal(JSON.stringify(route), original);
+});
+
+test("real status changes at 6, 15 and 30 elapsed days; a new find revives a lost stone", () => {
+  const now = Date.parse("2026-10-09T12:00:00Z"), day = 86400000;
+  const stone = { id: "S0001", started: new Date(now - 60 * day).toISOString(), finds: [] };
+  for (const [elapsed, expected] of [[0,"alive"],[5*day,"alive"],[6*day-1,"alive"],[6*day,"journey"],[15*day-1,"journey"],[15*day,"quiet"],[30*day-1,"quiet"],[30*day,"lost"],[60*day,"lost"]]) {
+    stone.finds = [{date: new Date(now-elapsed).toISOString()}];
+    assert.equal(context.stoneStatus(stone, now), expected);
+  }
+  stone.finds.push({date:new Date(now).toISOString()});
+  assert.equal(context.stoneStatus(stone, now), "alive");
+  stone.demo = true;
+  assert.equal(context.stoneStatus(stone, now), "demo");
+  assert.equal(context.journeyStatistics([stone], now).alive, 0);
+  stone.demo = false; stone.finds = [];
+  assert.equal(context.stoneStatus(stone, now), "lost", "Birth is the fallback");
+  stone.started = new Date(now).toISOString();
+  assert.equal(context.stoneStatus(stone, now), "alive");
+  stone.started = "invalid";
+  assert.equal(context.stoneStatus(stone, now), "lost");
+});
+
+test("collection sorting supports both directions and leaves journey data intact", () => {
+  const stones = data.stones;
+  for (const sort of ["recent", "age", "finds", "distance"]) {
+    const desc = context.sortCollection(stones, sort, "desc"), asc = context.sortCollection(stones, sort, "asc");
+    const value = stone => sort === "finds" ? stone.finds.length : sort === "distance" ? context.journeyDistance(stone) : sort === "age" ? -Date.parse(stone.started) : Date.parse(stone.finds.at(-1).date);
+    assert.ok(desc.every((stone,i) => !i || value(desc[i-1]) >= value(stone)));
+    assert.ok(asc.every((stone,i) => !i || value(asc[i-1]) <= value(stone)));
+    assert.equal(desc.length, stones.length);
+  }
 });

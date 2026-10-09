@@ -146,7 +146,75 @@ process.on('exit', () => server.kill());
     assert.doesNotMatch(await page.locator('#world-map').innerText(), /undefined/);
     await page.keyboard.press('Enter');
     await page.locator('.stone-overview-popup').waitFor();
+    await page.evaluate(() => {
+      stoneRepository.list().slice(0, 4).forEach((stone, i) => {
+        stone.demo = false;
+        stone.finds = stone.finds.slice(0, i + 1);
+        stone.finds.at(-1).date = new Date(Date.now() - [0, 6, 15, 30][i] * 86400000).toISOString();
+      });
+      renderOverview();
+    });
+    assert.equal(await page.locator('#total-active').textContent(), '3', 'Alive total excludes demos and lost stones');
+    assert.equal(await page.locator('.status-legend-row').count(), 5);
+    for (const [status, count] of [['demo', 10], ['alive', 1], ['journey', 1], ['quiet', 1], ['lost', 1]]) {
+      const filter = page.locator(`[data-stone-status="${status}"]`);
+      assert.equal(await filter.locator('.status-count').textContent(), String(count));
+      await filter.click();
+      assert.equal(await page.locator('.journey-card').count(), count);
+      assert.equal(await page.locator(`.journey-card .status-${status}`).count(), count);
+      const sample = page.locator(`.journey-card .status-${status}`).first();
+      assert.equal(await sample.evaluate(el => getComputedStyle(el).backgroundColor), await page.locator(`.status-legend .status-${status}`).evaluate(el => getComputedStyle(el).backgroundColor));
+      assert.doesNotMatch(await sample.getAttribute('title'), /<span/);
+      await page.locator('[data-stone-view="list"]').click();
+      assert.equal(await page.locator(`.stone-row .status-${status}`).count(), count);
+      await page.locator('[data-stone-view="cards"]').click();
+    }
+    await page.locator('[data-stone-status="all"]').click();
+    for (const sort of ['finds', 'distance', 'age', 'recent']) {
+      // Selecting a different sort starts descending; clicking again reverses it.
+      if (await page.locator(`[data-stone-sort="${sort}"]`).getAttribute('aria-pressed') === 'true') await page.locator('[data-stone-sort="distance"]').click();
+      await page.locator(`[data-stone-sort="${sort}"]`).click();
+      for (const direction of ['desc', 'asc']) {
+        assert.equal(await page.locator(`[data-stone-sort="${sort}"] .sort-direction`).textContent(), direction === 'desc' ? '↓' : '↑');
+        assert.ok(await page.evaluate(({sort, direction}) => {
+          const values = [...document.querySelectorAll('.journey-card')].map(el => {
+            const stone = stoneRepository.get(el.dataset.stone);
+            return sort === 'finds' ? stone.finds.length : sort === 'distance' ? journeyDistance(stone) : sort === 'age' ? -Date.parse(stone.started) : Date.parse(stone.finds.at(-1).date);
+          });
+          return values.every((value, i) => !i || (direction === 'desc' ? values[i-1] >= value : values[i-1] <= value));
+        }, {sort, direction}));
+        if (direction === 'desc') await page.locator(`[data-stone-sort="${sort}"]`).click();
+      }
+    }
+    for (const lang of ['en', 'sk', 'hu', 'de']) {
+      await page.locator('.site-header .language-switch').click();
+      await page.locator(`#main-language-menu [data-language="${lang}"]`).click();
+      for (const width of [320, 375, 1024]) {
+        await page.setViewportSize({width, height: 900});
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Filter and legend fit ${lang} at ${width}`);
+        assert.ok(await page.locator('.journey-card').evaluateAll(cards => cards.every(card => card.scrollWidth <= card.clientWidth)));
+      }
+      const missing = await page.evaluate(() => [...new Set([...document.querySelectorAll('[data-site-key]')].map(el => el.dataset.siteKey))].filter(key => /[A-Za-z]/.test(key) && !(key in SITE_TRANSLATIONS.sk)));
+      assert.deepEqual(missing, []);
+    }
+    await page.locator('[data-stone-status="alive"]').click();
+    const aliveName = await page.locator('.journey-card h3').first().textContent();
+    await page.locator('#stone-search').fill(aliveName);
+    assert.equal(await page.locator('.journey-card').count(), 1, 'Search combines with status');
+    await page.locator('[data-stone-status="lost"]').click();
+    assert.equal(await page.locator('.journey-card').count(), 0);
+    assert.equal(await page.locator('#stone-empty').isVisible(), true);
+    await page.locator('#stone-search').fill('');
+    await page.evaluate(() => {
+      const lost = stoneRepository.list().find(stone => stoneStatus(stone) === 'lost');
+      lost.finds.push({...lost.finds.at(-1), date: new Date(Date.now()).toISOString()});
+      renderOverview();
+    });
+    assert.equal(await page.locator('.journey-card').count(), 0, 'A new find leaves the Lost filter');
+    assert.equal(await page.locator('#total-active').textContent(), '4');
+    await page.locator('[data-stone-status="alive"]').click();
+    assert.equal(await page.locator('.journey-card').count(), 2);
     assert.deepEqual(errors, []);
-    console.log('Card grid, search, age/distance/recency sorting, map without name labels, view switches and whole-card mouse/keyboard navigation and Czech flags passed at eight widths, with phone rotation and compact statistics.');
+    console.log('Status transitions, filter counts/search, both sorting directions, translated legends, card grid, age/distance/recency sorting, map without name labels, view switches and whole-card mouse/keyboard navigation and Czech flags passed at eight widths, with phone rotation and compact statistics.');
   } finally { await browser.close(); server.kill(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
