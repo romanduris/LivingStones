@@ -21,6 +21,17 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   await page.goto('http://127.0.0.1:8137/?stone='+stones[0].id+'&source=qr');await page.locator('#stone-dialog[open]').waitFor();
   const expected=locale==='fr-FR'?'en':locale.slice(0,2);assert.equal(await page.locator('html').getAttribute('lang'),expected);
   assert.equal(await page.locator('.detail-footnote').innerText(),await page.evaluate(()=>t('From one hand to another, my story goes on.')));
+  assert.equal(await page.locator('.find-action-invitation').innerText(),await page.evaluate(()=>t('Let’s keep its story going →')));
+  await page.setViewportSize({width:320,height:844});
+  assert.ok(await page.locator('#start-find').evaluate(button=>{
+    const title=button.querySelector('.find-action-title'),invitation=button.querySelector('.find-action-invitation');
+    const lines=element=>{const range=document.createRange();range.selectNodeContents(element.querySelector('[data-site-key]')||element);return range.getClientRects().length;};
+    return lines(title)===1&&lines(invitation)===1&&invitation.getBoundingClientRect().top>=title.getBoundingClientRect().bottom&&
+      parseFloat(getComputedStyle(title).fontSize)>parseFloat(getComputedStyle(invitation).fontSize)&&
+      parseInt(getComputedStyle(title).fontWeight)>parseInt(getComputedStyle(invitation).fontWeight)&&
+      button.scrollWidth<=button.clientWidth;
+  }),'Two clear action lines fit at 320px in '+expected);
+  await page.setViewportSize({width:390,height:844});
   assert.equal(await page.locator('#detail-title .detail-title-copy').innerText(),'Map');assert.match(await page.locator('.detail-story').innerText(),/Finds/);
   assert.equal(await page.locator('[data-entry="'+stones[0].finds[0].id+'"] .entry-message').innerText(),'“Close”');
   await page.locator('#watch-stone').click();await page.locator('#watchdog-email').fill('draft@example.invalid');

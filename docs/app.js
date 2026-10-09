@@ -622,7 +622,7 @@ function renderDetail() {
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
         <p class="detail-story">${stoneStoryHTML(stone)}</p>
         ${openedFromQR() ? ui`<p class="find-help">${uiText(supportsPreciseLocation() ? "Found me? Tap below to help my story grow." : "Found me? Scan my QR code on your phone to help my story grow.")}</p>` : ""}
-        ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find">I found this stone</button>` : ""}
+        ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find"><span class="find-action-title">I found this stone</span><span class="find-action-invitation">Let’s keep its story going →</span></button>` : ""}
       </section>
       <div id="find-container"></div>
       <section id="watchdog-panel" class="find-panel" aria-labelledby="watchdog-title" hidden>

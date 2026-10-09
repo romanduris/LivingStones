@@ -262,7 +262,8 @@ const SITE_TRANSLATIONS = {
     "15–29 days · No recent news": "15–29 days · No recent news",
     "30+ days · No new record": "30+ days · No new record",
     "A sample stone": "A sample stone",
-    "From one hand to another, my story goes on.": "From one hand to another, my story goes on."
+    "From one hand to another, my story goes on.": "From one hand to another, my story goes on.",
+    "Let’s keep its story going →": "Let’s keep its story going →"
   },
   "sk": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
@@ -525,7 +526,8 @@ const SITE_TRANSLATIONS = {
     "15–29 days · No recent news": "15–29 dní · Dlhšie bez správy",
     "30+ days · No new record": "30+ dní · Bez nového záznamu",
     "A sample stone": "Ukážkový kamienok",
-    "From one hand to another, my story goes on.": "Z ruky do ruky môj príbeh pokračuje."
+    "From one hand to another, my story goes on.": "Z ruky do ruky môj príbeh pokračuje.",
+    "Let’s keep its story going →": "Pomôžem jeho príbehu pokračovať →"
   },
   "hu": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
@@ -788,7 +790,8 @@ const SITE_TRANSLATIONS = {
     "15–29 days · No recent news": "15–29 nap · Nincs friss hír",
     "30+ days · No new record": "30+ nap · Nincs új bejegyzés",
     "A sample stone": "Mintakavics",
-    "From one hand to another, my story goes on.": "Kézről kézre járva folytatódik a történetem."
+    "From one hand to another, my story goes on.": "Kézről kézre járva folytatódik a történetem.",
+    "Let’s keep its story going →": "Folytassuk a történetét →"
   },
   "de": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
@@ -1051,6 +1054,7 @@ const SITE_TRANSLATIONS = {
     "15–29 days · No recent news": "15–29 Tage · Keine Neuigkeit",
     "30+ days · No new record": "30+ Tage · Kein neuer Eintrag",
     "A sample stone": "Ein Beispielstein",
-    "From one hand to another, my story goes on.": "Von Hand zu Hand geht meine Geschichte weiter."
+    "From one hand to another, my story goes on.": "Von Hand zu Hand geht meine Geschichte weiter.",
+    "Let’s keep its story going →": "Schreiben wir seine Geschichte weiter →"
   }
 };
