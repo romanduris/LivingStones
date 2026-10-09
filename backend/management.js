@@ -60,7 +60,13 @@ export async function handleManagement(request, env, listStones) {
     if(path==='stone-drafts') {
       return { draft:true, code, stone:{id,name:'New stone',creator:'',started:'',image:'brand-stone.svg',theme:'sun',color:'#b49aff',demo:false,initialized:false,adminNote:note,views:0,finds:[],comments:[]} };
     }
-    await env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key,admin_note,label_code) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?,?,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key, note, code).run();
+    const existing=await env.DB.prepare('SELECT id FROM stones WHERE creation_key=?').bind(key).first();
+    const sequence=await env.DB.prepare("SELECT seq FROM sqlite_sequence WHERE name='stone_numbers'").first();
+    if(!existing && sequence?.seq>=9999)fail(409,'All 9999 stone numbers have been used.');
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key,admin_note,label_code) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?,?,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key, note, code),
+      env.DB.prepare('INSERT INTO stone_numbers(stone_id) SELECT ? WHERE NOT EXISTS(SELECT 1 FROM stone_numbers WHERE stone_id=?)').bind(id,id),
+    ]);
     const saved = await env.DB.prepare('SELECT id,code_hash FROM stones WHERE creation_key=?').bind(key).first();
     const stone = (await listStones(env.DB,saved.id,true))[0];
     return { stone, ...(saved.code_hash === await sha256(code) ? { code } : {}) };
@@ -115,6 +121,7 @@ export async function handleManagement(request, env, listStones) {
       const birthMoment = born !== stone.born ? born+'T00:00:00.000Z' : first.occurred_at;
       if (second && Date.parse(birthMoment) >= Date.parse(second.occurred_at)) fail(400, 'Birth must be before the next find.');
       statements.push(env.DB.prepare('UPDATE stones SET name=?,creator=?,born=?,image=?,theme=?,color=?,is_demo=?,code_hash=?,demo_code=?,label_code=? WHERE id=?').bind(name,creator,born,image,theme,color,body.demo?1:0,code?await sha256(code):stone.code_hash,body.demo?(code||stone.demo_code):null,code||stone.label_code,id));
+      if(!body.demo)statements.push(env.DB.prepare('INSERT INTO stone_numbers(stone_id) SELECT ? WHERE NOT EXISTS(SELECT 1 FROM stone_numbers WHERE stone_id=?)').bind(id,id));
       statements.push(env.DB.prepare('UPDATE traffic_targets SET name=? WHERE target=?').bind(name,'stone:'+id));
       if (born !== stone.born) {
         statements.push(env.DB.prepare('UPDATE finds SET occurred_at=? WHERE id=?').bind(birthMoment,first.id));

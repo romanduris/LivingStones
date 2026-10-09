@@ -29,7 +29,7 @@ const BIRTH_TRANSLATIONS = {
     "codeHelp": "The four-digit Find Code comes with your QR label. It makes sure only someone holding this stone can begin its story.",
     "lookHeading": "A face that feels like me.",
     "lookHelp": "Choose a portrait for my online story.",
-    "portraitHelp": "Ten little faces, picked at random. Once yours is born, its portrait belongs only to it.",
+    "portraitHelp": "Twelve little faces, picked at random. Once yours is born, its portrait belongs only to it.",
     "portraitAlt": "Painted stone: {label}",
     "pool": "{available} unique portraits available · showing {shown}",
     "poolEmpty": "All portraits are currently assigned. Please contact the Living Stones owner for more portraits.",
@@ -114,7 +114,10 @@ const BIRTH_TRANSLATIONS = {
     "paletteOcean": "Ocean",
     "palettePeach": "Peach",
     "paletteSilver": "Silver",
-    "paletteLilac": "Lilac"
+    "paletteLilac": "Lilac",
+    "wish": "A wish for my journey (optional)",
+    "wishPlaceholder": "What do you wish this little stone in life?",
+    "wishHelp": "Your wish will be shared in my first memory, alongside my birthplace."
   },
   "sk": {
     "pageTitle": "Kamienok sa rodí · Living Stones",
@@ -144,7 +147,7 @@ const BIRTH_TRANSLATIONS = {
     "codeHelp": "Štvormiestny kód nájdeš na QR štítku. Vďaka nemu môže príbeh začať iba človek, ktorý má kamienok pri sebe.",
     "lookHeading": "Podoba, ktorá mi pristane.",
     "lookHelp": "Vyber obrázok pre môj online príbeh.",
-    "portraitHelp": "Desať náhodne vybraných obrázkov. Po narodení bude vybraný obrázok patriť iba tvojmu kamienku.",
+    "portraitHelp": "Dvanásť náhodne vybraných tváričiek. Po narodení bude vybraný obrázok patriť iba tvojmu kamienku.",
     "portraitAlt": "Namaľovaný kamienok: {label}",
     "pool": "Dostupných obrázkov: {available} · zobrazených: {shown}",
     "poolEmpty": "Všetky obrázky sú momentálne pridelené. Pre ďalšie obrázky kontaktuj správcu Living Stones.",
@@ -229,7 +232,10 @@ const BIRTH_TRANSLATIONS = {
     "paletteOcean": "Oceánová",
     "palettePeach": "Broskyňová",
     "paletteSilver": "Strieborná",
-    "paletteLilac": "Orgovánová"
+    "paletteLilac": "Orgovánová",
+    "wish": "Prianie na moju cestu (nepovinné)",
+    "wishPlaceholder": "Čo praješ tomuto kamienku do života?",
+    "wishHelp": "Tvoje prianie bude verejnou súčasťou mojej prvej spomienky spolu s miestom narodenia."
   },
   "hu": {
     "pageTitle": "Egy kis kő születik · Living Stones",
@@ -259,7 +265,7 @@ const BIRTH_TRANSLATIONS = {
     "codeHelp": "A négyjegyű kód a QR-címkén található. Így csak az indíthatja el a történetet, akinél a kő van.",
     "lookHeading": "Egy arc, ami igazán én vagyok.",
     "lookHelp": "Válassz egy képet az online történetemhez.",
-    "portraitHelp": "Tíz véletlenszerűen kiválasztott kép. A születés után a választott kép csak a te kövedé lesz.",
+    "portraitHelp": "Tizenkét véletlenszerűen kiválasztott arc. Születésem után a választott kép csak az enyém lesz.",
     "portraitAlt": "Festett kő: {label}",
     "pool": "{available} egyedi kép elérhető · {shown} látható",
     "poolEmpty": "Jelenleg minden kép foglalt. További képekért keresd a Living Stones gazdáját.",
@@ -344,7 +350,10 @@ const BIRTH_TRANSLATIONS = {
     "paletteOcean": "Óceán",
     "palettePeach": "Barack",
     "paletteSilver": "Ezüst",
-    "paletteLilac": "Orgona"
+    "paletteLilac": "Orgona",
+    "wish": "Jókívánság az utamra (nem kötelező)",
+    "wishPlaceholder": "Mit kívánsz ennek a kis kőnek az életben?",
+    "wishHelp": "Jókívánságod a születési helyem mellett, az első emlékemben lesz nyilvánosan látható."
   },
   "de": {
     "pageTitle": "Ein kleiner Stein wird geboren · Living Stones",
@@ -374,7 +383,7 @@ const BIRTH_TRANSLATIONS = {
     "codeHelp": "Der vierstellige Fundcode steht auf dem QR-Etikett. So kann nur jemand, der den Stein bei sich hat, seine Geschichte beginnen.",
     "lookHeading": "Ein Gesicht, das zu mir passt.",
     "lookHelp": "Wähle ein Bild für meine Online-Geschichte.",
-    "portraitHelp": "Zehn zufällig ausgewählte Bilder. Nach der Geburt gehört das gewählte Bild nur deinem Stein.",
+    "portraitHelp": "Zwölf zufällig ausgewählte Gesichter. Nach meiner Geburt gehört mein Bild nur mir.",
     "portraitAlt": "Bemalter Stein: {label}",
     "pool": "{available} einzigartige Bilder verfügbar · {shown} angezeigt",
     "poolEmpty": "Alle Bilder sind derzeit vergeben. Wende dich für weitere Bilder an den Betreiber von Living Stones.",
@@ -459,6 +468,9 @@ const BIRTH_TRANSLATIONS = {
     "paletteOcean": "Ozean",
     "palettePeach": "Pfirsich",
     "paletteSilver": "Silber",
-    "paletteLilac": "Flieder"
+    "paletteLilac": "Flieder",
+    "wish": "Ein Wunsch für meine Reise (optional)",
+    "wishPlaceholder": "Was wünschst du diesem kleinen Stein fürs Leben?",
+    "wishHelp": "Dein Wunsch erscheint öffentlich in meiner ersten Erinnerung, zusammen mit meinem Geburtsort."
   }
 };

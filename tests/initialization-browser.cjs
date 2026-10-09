@@ -12,7 +12,7 @@ process.on('exit',()=>server.kill());
  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);server.once('exit',code=>reject(Error('Server exited '+code)));});
  const browser=await chromium.launch({headless:true});
  try{
-  for(const width of [390,1280]){
+  for(const width of [320,390,1280]){
    const context=await browser.newContext({...(width===390?devices['iPhone 13']:{}),viewport:{width,height:900},permissions:['geolocation'],geolocation:{latitude:48.148,longitude:17.107,accuracy:9}});
    const stones=JSON.parse(JSON.stringify(fixture.stones));
    stones.forEach(s=>{s.initialized=true;s.creator=s.finds[0].nickname;s.comments=[];});
@@ -42,14 +42,14 @@ process.on('exit',()=>server.kill());
       result={draft:true,stone:created?{...stone,id:'SNEXT456',adminNote:'',privateCode:undefined}:stone,code:created?'1594':'0372'};
      }else if(req.method()==='POST'){
       assert.equal(req.headers()['idempotency-key'],createKey);
-      if(!created){created=true;createWrites++;stone.adminNote=body.note;stone.privateCode='0372';}
+      if(!created){created=true;createWrites++;stone.adminNote=body.note;stone.privateCode='0372';stone.shortId='S0001';}
       if(loseCreateReply){loseCreateReply=false;return route.abort('failed');}
       result={stone,code:'0372'};
      }else result={stones:[...stones,...(created?[stone]:[])],imagesAvailable:available.length};
     }else if(parts[2]==='page-views')result={ok:true};
     else if(kind==='images'){
-     const offset=selection++%Math.max(1,available.length-10);
-     result={images:available.slice(offset,offset+10),available:available.length};
+     const offset=selection++%Math.max(1,available.length-12);
+     result={images:available.slice(offset,offset+12),available:available.length};
     }else if(kind==='verify'){
      if(body.code!=='0372'){status=403;result={error:'That Find Code does not match.'};}else result={ok:true};
     }else if(kind==='initialize'){
@@ -60,7 +60,7 @@ process.on('exit',()=>server.kill());
       else{
        birthKey=req.headers()['idempotency-key'];birthWrites++;
        const image=catalog.find(a=>a.id===body.imageId),date=new Date().toISOString();
-       Object.assign(stone,{initialized:true,name:body.name,creator:body.creator,image:image.image,theme:body.theme,color:image.color,started:date.slice(0,10),finds:[{...body.place,id:'birth-'+stone.id,date,nickname:body.creator,message:''}]});
+       Object.assign(stone,{initialized:true,name:body.name,creator:body.creator,image:image.image,theme:body.theme,color:image.color,started:date.slice(0,10),finds:[{...body.place,id:'birth-'+stone.id,date,nickname:body.creator,message:body.message||''}],comments:body.message?[{id:'birth-wish-'+stone.id,findId:'birth-'+stone.id,date,nickname:body.creator,message:body.message}]:[]});
        result={stone,replayed:false};
       }
       if(loseReply){loseReply=false;return route.abort('failed');}
@@ -90,14 +90,17 @@ process.on('exit',()=>server.kill());
    await page.locator('#notice.error').waitFor();assert.equal(createWrites,1);
    await page.locator('#draft-create-form button').click();
    await page.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Stone created'));
-   assert.equal(createWrites,1);assert.equal(await page.locator('.stone-qr').innerHTML(),draftQR);
+   assert.equal(createWrites,1);assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(await page.locator('#dashboard').isVisible(),true);
+   assert.equal(new URL(page.url()).hash,'');
+   await page.locator('[data-stone=SNEW123]').click();
+   assert.equal(await page.locator('.stone-qr').innerHTML(),draftQR);
    assert.equal(await page.locator('.qr-link').getAttribute('href'),'https://livingstones.rodulab.com/?stone=SNEW123&source=qr');
    assert.equal(await page.locator('a[href="../initialize/?stone=SNEW123"]').count(),1);
    await page.reload();await page.locator('#private-note-form').waitFor();
    assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');assert.equal(await page.locator('#qr-code-form').count(),0);
    assert.equal(await page.locator('#admin-note').inputValue(),note);assert.equal(await page.locator('.private-note-panel script').count(),0);
    await page.locator('[data-action=back]').click();await page.locator('#type-filter').selectOption('new');assert.equal(await page.locator('.admin-stone-card').count(),1);
-   assert.match(await page.locator('.admin-stone-card').innerText(),/Not born/);
+   assert.match(await page.locator('.admin-stone-card').innerText(),/Not born/);assert.match(await page.locator('.admin-stone-card .card-meta').first().textContent(),/S0001/);
    await page.locator('#create-stone').click();await page.locator('#draft-create-form').waitFor();
    assert.match(await page.locator('.qr-link').textContent(),/SNEXT456/);
    assert.equal(createWrites,1);assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'1594');
@@ -107,16 +110,23 @@ process.on('exit',()=>server.kill());
    // The very same printed QR opens setup until the birth is saved.
    await page.goto('http://127.0.0.1:8137/?stone=SNEW123&source=qr');
    await page.waitForURL('**/initialize/?stone=SNEW123');await page.locator('#birth-form').waitFor();
+   if(width===390){
+    for(const [locale,expected] of [['sk-SK','sk'],['hu-HU','hu'],['de-DE','de'],['fr-FR','en']]){
+     const languagePage=await context.newPage();
+     await languagePage.addInitScript(locale=>Object.defineProperty(navigator,'language',{get:()=>locale}),locale);
+     await languagePage.goto('http://127.0.0.1:8137/initialize/?stone=SNEW123');await languagePage.locator('#birth-form').waitFor();
+     assert.equal(await languagePage.locator('html').getAttribute('lang'),expected);await languagePage.close();
+    }
+   }
    await page.locator('#birth-language-switch').click();await page.locator('[data-birth-language=sk]').click();
    await page.reload();await page.locator('#birth-form').waitFor();
-   assert.equal(await page.locator('html').getAttribute('lang'),'sk');
-   assert.equal(await page.locator('#stone-name').getAttribute('placeholder'),'Ako ma pomenuješ?');
-   await page.locator('#birth-language-switch').click();await page.locator('[data-birth-language=en]').click();
-   assert.equal(await page.locator('.portrait-option').count(),10);
+   assert.equal(await page.locator('html').getAttribute('lang'),'en','browser language takes precedence on a new page');
+   assert.equal(await page.locator('.portrait-option').count(),12);
    assert.match(await page.locator('#pool-status').textContent(),/40/);
    assert.equal(await page.evaluate(()=>window.__gpsRequests),0);
    assert.equal(await page.locator('#give-birth').isDisabled(),true);
    await page.locator('#stone-name').fill('Pebble <hello>');await page.locator('#stone-creator').fill('Painter <friend>');
+   await page.locator('#birth-wish').fill('May you bring joy <wish>!');
    await page.locator('#find-code').fill('WRONG');await page.locator('#use-birth-gps').click();
    await page.waitForFunction(()=>document.querySelector('#location-status').textContent.includes('does not match'));
    assert.equal(await page.evaluate(()=>window.__gpsRequests),0);
@@ -149,12 +159,12 @@ process.on('exit',()=>server.kill());
     await page.locator('#manual-city').fill('Bansk');assert.equal(await page.locator('#give-birth').isDisabled(),true);
     await page.locator('.city-result').waitFor();await page.locator('.city-result').click();
    }
-   const preserved=await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,image:document.querySelector('#portrait-options input:checked').value,theme:document.querySelector('#stone-theme').value}));
+   const preserved=await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,wish:document.querySelector('#birth-wish').value,image:document.querySelector('#portrait-options input:checked').value,theme:document.querySelector('#stone-theme').value}));
    for(const language of ['sk','hu','de','en']){
     await page.locator('#birth-language-switch').click();await page.locator(`[data-birth-language=${language}]`).click();
     assert.equal(await page.locator('html').getAttribute('lang'),language);
     assert.equal(await page.locator('#birth-language-label').textContent(),language.toUpperCase());
-    assert.deepEqual(await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,image:document.querySelector('#portrait-options input:checked').value,theme:document.querySelector('#stone-theme').value})),preserved);
+    assert.deepEqual(await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,wish:document.querySelector('#birth-wish').value,image:document.querySelector('#portrait-options input:checked').value,theme:document.querySelector('#stone-theme').value})),preserved);
     assert.equal(await page.locator('#give-birth').isEnabled(),true);
     assert.match(await page.locator('#location-status').textContent(),width===390?/Banská/:/Bratislava/);
     assert.ok(!/themeCopy|palette|themeOption/.test(await page.locator('#birth-form').innerText()));
@@ -162,6 +172,7 @@ process.on('exit',()=>server.kill());
    assert.equal(await page.locator('#give-birth').isEnabled(),true);
    await page.waitForFunction(()=>[...document.querySelectorAll('.portrait-option img')].every(img=>img.complete&&img.naturalWidth>0));
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   assert.equal(await page.locator('#portrait-options').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),4);
    await page.screenshot({path:`/tmp/livingstones-birth-${width}.png`,fullPage:true});
    await page.locator('#give-birth').click();
    await page.waitForFunction(()=>document.querySelector('#form-status').textContent.includes('Someone just chose'));
@@ -179,12 +190,12 @@ process.on('exit',()=>server.kill());
    if(width===390)assert.equal(await page.locator('.manual-badge').count(),1);
    assert.equal(await page.locator('#detail-title hello').count(),0);
    assert.match(await page.locator('.detail-story').innerText(),/Painter <friend>/);
-   assert.equal(await page.locator('.story-entry').count(),1);
+   assert.equal(await page.locator('.story-entry').count(),1);assert.match(await page.locator('.story-entry').innerText(),/May you bring joy <wish>!/);assert.equal(await page.locator('.story-entry wish').count(),0);
    await page.goto('http://127.0.0.1:8137/?stone=SNEW123&source=qr');await page.locator('#stone-dialog[open]').waitFor();
    assert.ok(!page.url().includes('/initialize/'));
    await page.goto('http://127.0.0.1:8137/initialize/?stone=SNEW123');await page.waitForURL('**/?stone=SNEW123&source=qr');await page.locator('#stone-dialog[open]').waitFor();
    assert.deepEqual(errors,[]);await context.close();
   }
-  console.log('Passed: unsaved/cancelled drafts, atomic notes, create-label retries, new draft keys, EN/SK/HU/DE with preserved form and remembered language, pending QR routing, 10 portraits, mobile/desktop layouts, GPS denial, portrait conflict, lost birth response, escaped names and repeat QR story routing.');
+  console.log('Passed: unsaved/cancelled drafts, atomic notes, create-label retries, new draft keys, EN/SK/HU/DE with preserved form and browser language fallback, pending QR routing, 12 portraits in four columns, mobile/desktop layouts, GPS denial, portrait conflict, lost birth response, escaped names and repeat QR story routing.');
  }finally{await browser.close();server.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

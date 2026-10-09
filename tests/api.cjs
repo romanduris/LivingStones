@@ -337,6 +337,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const newborn=creations[0].body;
     assert.equal(newborn.stone.id,preview.body.stone.id);assert.equal(newborn.code,preview.body.code);
     assert.equal(newborn.stone.adminNote,'Saved with creation');
+    assert.equal(newborn.stone.shortId,'S0001');
     assert.equal(newborn.stone.privateCode,newborn.code);
     assert.equal((await admin('stones/'+newborn.stone.id)).body.stone.privateCode,newborn.code);
     assert.equal((await admin('stones')).body.stones.find(s=>s.id===newborn.stone.id).privateCode,newborn.code);
@@ -359,18 +360,20 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.ok(!('adminNote' in (await call('/stones/'+newborn.stone.id)).body.stone));
     assert.ok(!JSON.stringify((await call('/stones')).body).includes('Secret owner note'));
     const candidates=await call('/stones/'+newborn.stone.id+'/images');
-    assert.equal(candidates.body.available,40);assert.equal(candidates.body.images.length,10);
-    assert.equal(new Set(candidates.body.images.map(i=>i.id)).size,10);
+    assert.equal(candidates.body.available,40);assert.equal(candidates.body.images.length,12);
+    assert.equal(new Set(candidates.body.images.map(i=>i.id)).size,12);
     assert.equal((await call('/stones/A1/images')).status,409);
-    const birthBody={code:newborn.code,name:'First new stone',creator:'Its painter',theme:'heart',imageId:candidates.body.images[0].id,place:{lat:48.148,lon:17.107,accuracy:8,source:'gps',city:'Bratislava',country:'Slovakia',address:'Birth street'}};
+    const birthBody={code:newborn.code,name:'First new stone',message:'May you bring joy <hello>!',creator:'Its painter',theme:'heart',imageId:candidates.body.images[0].id,place:{lat:48.148,lon:17.107,accuracy:8,source:'gps',city:'Bratislava',country:'Slovakia',address:'Birth street'}};
     const freshHeaders={'CF-Connecting-IP':'192.0.2.70'};
     const bornPath='/stones/'+newborn.stone.id;
     assert.equal((await call(bornPath+'/initialize',{...birthBody,code:'WRONG'},randomUUID(),freshHeaders)).status,403);
     assert.equal((await call(bornPath+'/initialize',{...birthBody,place:{...birthBody.place,source:'unknown'}},randomUUID(),freshHeaders)).status,400);
     assert.equal((await call(bornPath+'/initialize',{...birthBody,place:{...birthBody.place,lat:91}},randomUUID(),freshHeaders)).status,400);
+    assert.equal((await call(bornPath+'/initialize',{...birthBody,message:'x'.repeat(401)},randomUUID(),freshHeaders)).status,400);
     assert.equal((await call(bornPath+'/initialize',{...birthBody,theme:'invalid'},randomUUID(),freshHeaders)).status,400);
     for(const kind of ['finds','comments','views','watchdog']) assert.equal((await call(bornPath+'/'+kind,{code:newborn.code,viewId:randomUUID(),email:'test@example.invalid'})).status,409);
     const other=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
+    assert.equal(other.stone.shortId,'S0002');
     const birthKey=randomUUID(),otherKey=randomUUID(),beforeBirth=Date.now();
     const races=await Promise.all([
       call(bornPath+'/initialize',birthBody,birthKey,freshHeaders),
@@ -384,12 +387,14 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.ok(!('privateCode' in born));
     assert.equal((await admin('stones/'+winner.stone.id)).body.stone.privateCode,winner.code);
     assert.equal(born.initialized,true);assert.equal(born.finds.length,1);assert.equal(born.theme,'heart');
+    assert.equal(born.finds[0].message,birthBody.message);assert.equal(born.comments.length,1);assert.equal(born.comments[0].findId,born.finds[0].id);
     assert.equal(born.finds[0].source,'gps');assert.equal(born.finds[0].accuracy,8);
     assert.ok(Date.parse(born.finds[0].date)>=beforeBirth && Date.parse(born.finds[0].date)<=Date.now());
     assert.equal(born.started,born.finds[0].date.slice(0,10));
     assert.ok((await call('/stones')).body.stones.some(s=>s.id===winner.stone.id));
     const retryBirth=await call('/stones/'+winner.stone.id+'/initialize',winningBody,winningKey,freshHeaders);
-    assert.equal(retryBirth.status,200);assert.equal(retryBirth.body.replayed,true);assert.equal(retryBirth.body.stone.finds.length,1);
+    assert.equal(retryBirth.status,200);assert.equal(retryBirth.body.replayed,true);assert.equal(retryBirth.body.stone.comments.length,1);assert.equal(retryBirth.body.stone.finds.length,1);
+    assert.equal((await call('/stones/'+winner.stone.id+'/initialize',{...winningBody,message:'Changed wish'},winningKey,freshHeaders)).status,409);
     assert.equal((await call('/stones/'+winner.stone.id+'/initialize',{...winningBody,name:'Overwrite'},winningKey,freshHeaders)).status,409);
     assert.equal((await call('/stones/'+winner.stone.id+'/initialize',winningBody,randomUUID(),freshHeaders)).status,409);
     const remaining=await call('/stones/'+loser.stone.id+'/images');assert.equal(remaining.body.available,39);

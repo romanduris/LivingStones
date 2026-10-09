@@ -19,7 +19,7 @@ export async function availableImages(env, id) {
   if (!stone) fail(404, 'This stone could not be found.');
   if (stone.initialized) fail(409, 'This stone has already been born. Open its story.');
   const [images, count] = await env.DB.batch([
-    env.DB.prepare('SELECT id,image,label,theme,color FROM stone_image_pool WHERE '+available+' ORDER BY random() LIMIT 10'),
+    env.DB.prepare('SELECT id,image,label,theme,color FROM stone_image_pool WHERE '+available+' ORDER BY random() LIMIT 12'),
     env.DB.prepare('SELECT COUNT(*) AS available FROM stone_image_pool WHERE '+available),
   ]);
   return { images: images.results, available: count.results[0].available };
@@ -33,13 +33,13 @@ export async function initializeStone(request, env, id, body, listStones) {
     fail(403, 'That Find Code does not match. Check the code on the stone.');
   const key=request.headers.get('Idempotency-Key');
   if (!key || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) fail(400, 'Please retry from the birth form.');
-  const name=text(body.name,80,true),creator=text(body.creator,80,true),imageId=text(body.imageId,32,true),theme=text(body.theme,20,true);
+  const name=text(body.name,80,true),creator=text(body.creator,80,true),imageId=text(body.imageId,32,true),theme=text(body.theme,20,true),message=text(body.message,400);
   if (!['sun','moon','leaf','heart','wave'].includes(theme)) fail(400,'Choose a theme.');
   const p=body.place;
   if (!p || !Number.isFinite(p.lat)||!Number.isFinite(p.lon)||Math.abs(p.lat)>90||Math.abs(p.lon)>180||!['gps','manual'].includes(p.source)||(p.source==='gps'&&(!Number.isFinite(p.accuracy)||p.accuracy<0)))
     fail(400,'Use your phone’s GPS or choose a city for this stone’s birthplace.');
   const place={lat:p.lat,lon:p.lon,accuracy:p.source==='gps'?p.accuracy:null,source:p.source,city:text(p.city,120,true),country:text(p.country,80,true),address:text(p.address,300)};
-  const fingerprint=await sha256(JSON.stringify({id,name,creator,imageId,theme,place}));
+  const fingerprint=await sha256(JSON.stringify({id,name,creator,imageId,theme,place,...(message?{message}:{})}));
   const replay=async()=>{
     const saved=await env.DB.prepare('SELECT stone_id,fingerprint FROM stone_initializations WHERE id=?').bind(key).first();
     if (!saved) return null;
@@ -59,6 +59,7 @@ export async function initializeStone(request, env, id, body, listStones) {
     env.DB.prepare('UPDATE stones SET initialized=1,name=?,creator=?,born=?,image=?,theme=?,color=? WHERE id=? AND initialized=0 AND EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?)').bind(name,creator,date.slice(0,10),image.image,theme,image.color,id,key,id),
     env.DB.prepare("INSERT INTO finds(id,stone_id,occurred_at,lat,lon,accuracy,city,country,address,nickname,source) SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?) AND NOT EXISTS(SELECT 1 FROM finds WHERE id=?)").bind('birth-'+id,id,date,place.lat,place.lon,place.accuracy,place.city,place.country,place.address,creator.slice(0,40),place.source,key,id,'birth-'+id),
   ];
+  if(message)statements.push(env.DB.prepare("INSERT INTO comments(id,stone_id,find_id,created_at,nickname,message) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?) AND NOT EXISTS(SELECT 1 FROM comments WHERE id=?)").bind('birth-wish-'+id,id,'birth-'+id,date,creator.slice(0,40),message,key,id,'birth-wish-'+id));
   let results;
   try {results=await env.DB.batch(statements);} catch(error) {
     const saved=await replay();if(saved)return saved;

@@ -7,7 +7,7 @@ let cityTimer,cityController,birthMap=null;
 const themes={sun:1,moon:2,leaf:3,heart:4,wave:5};
 const locales={en:'en-GB',sk:'sk-SK',hu:'hu-HU',de:'de-DE'};
 let language='en';
-try { language=localStorage.getItem('livingstones-birth-language')||navigator.language.slice(0,2); } catch {}
+language=(navigator.language||'en').toLowerCase().split(/[-_]/)[0];
 if(!locales[language])language='en';
 const messages=new Map();
 function t(key,params={}){return (BIRTH_TRANSLATIONS[language][key]||BIRTH_TRANSLATIONS.en[key]||key).replace(/\{(\w+)\}/g,(_,name)=>params[name]??'');}
@@ -25,7 +25,6 @@ function portraitLabel(image){
 }
 function setLanguage(value){
   language=locales[value]?value:'en';
-  try{localStorage.setItem('livingstones-birth-language',language);}catch{}
   document.documentElement.lang=language;document.title=t('pageTitle');
   for(const node of document.querySelectorAll('[data-i18n]'))if(node.id!=='give-birth')node.textContent=t(node.dataset.i18n);
   for(const [attribute,target] of [['i18nPlaceholder','placeholder'],['i18nAlt','alt'],['i18nAria','aria-label']]){
