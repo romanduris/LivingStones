@@ -14,6 +14,14 @@ try{
  const reclaimed=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT id,claimed_at FROM stone_image_pool WHERE id IN ('birth-01','birth-02') ORDER BY id; SELECT admin_note FROM stones;"]));
  assert.deepEqual(reclaimed[0].results,[{id:'birth-01',claimed_at:null},{id:'birth-02',claimed_at:'2026-10-09T00:00:00Z'}]);
  assert.equal(reclaimed[1].results[0].admin_note,'');
+ const labels=JSON.parse(cli(['execute','migration-db','--json','--command','SELECT label_code,code_hash,demo_code FROM stones;']))[0].results;
+ assert.equal(labels[0].label_code,'8451');assert.equal(labels[0].demo_code,'8451');assert.equal(labels[0].code_hash,'dummy');
+ const hash=value=>require('node:crypto').createHash('sha256').update(value).digest('hex');
+ const legacy=[{id:'leading-zero',code_hash:hash('0000')},{id:'last',code_hash:hash('9999')},{id:'unknown',code_hash:hash('OLDLONGCODE')}];
+ const recovered=require('../scripts/recover-label-codes.cjs').recoverLabelCodes(legacy);
+ assert.deepEqual(recovered.map(row=>[row.id,row.code]),[['leading-zero','0000'],['last','9999']]);
+ assert.ok(legacy.every(row=>!('code' in row)));
+
  const result=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT views,creator FROM stones; SELECT baseline_views FROM traffic_targets WHERE target='stone:A1'; SELECT day,views FROM traffic_daily ORDER BY day; SELECT message FROM comments; PRAGMA table_info(stones); SELECT COUNT(*) AS finds FROM finds;"]));
  assert.equal(result[0].results[0].views,9);assert.equal(result[0].results[0].creator,'Nina');assert.equal(result[1].results[0].baseline_views,6);assert.deepEqual(result[2].results,[{day:'2026-10-04',views:2},{day:'2026-10-05',views:1}]);assert.equal(result[3].results[0].message,'Keep this note');assert.ok(!result[4].results.some(c=>c.name==='story'));assert.equal(result[5].results[0].finds,1);
  console.log('Passed: traffic migration backfills dated events, retains undated totals and removes Story, adds private notes and reclaims only unused orphan portraits without losing finds or comments.');

@@ -7,7 +7,7 @@ async function listStones(db, id, admin = false) {
   const statements = [
     db.prepare(
       "SELECT id,name,born,image,theme,color,is_demo,demo_code,creator,views,initialized" +
-        (admin ? ",admin_note" : "") + " FROM stones" +
+        (admin ? ",admin_note,label_code" : "") + " FROM stones" +
         where +
         (id ? "" : " ORDER BY id"),
     ),
@@ -34,7 +34,7 @@ async function listStones(db, id, admin = false) {
     color: s.color,
     demo: Boolean(s.is_demo),
     views: s.views,
-    ...(admin ? { adminNote: s.admin_note } : {}),
+    ...(admin ? { adminNote: s.admin_note, ...(!s.is_demo && s.label_code ? { privateCode: s.label_code } : {}) } : {}),
     ...(s.is_demo ? { code: s.demo_code } : {}),
     finds: finds.results
       .filter((f) => f.stone_id === s.id)

@@ -39,10 +39,10 @@ process.on('exit',()=>server.kill());
       createAttempts++;assert.ok(req.headers()['idempotency-key']);
       if(createKey&&!created)assert.equal(req.headers()['idempotency-key'],createKey);else if(!createKey)createKey=req.headers()['idempotency-key'];
       if(createAttempts===1)return route.abort('failed');
-      result={draft:true,stone:created?{...stone,id:'SNEXT456',adminNote:''}:stone,code:created?'1594':'0372'};
+      result={draft:true,stone:created?{...stone,id:'SNEXT456',adminNote:'',privateCode:undefined}:stone,code:created?'1594':'0372'};
      }else if(req.method()==='POST'){
       assert.equal(req.headers()['idempotency-key'],createKey);
-      if(!created){created=true;createWrites++;stone.adminNote=body.note;}
+      if(!created){created=true;createWrites++;stone.adminNote=body.note;stone.privateCode='0372';}
       if(loseCreateReply){loseCreateReply=false;return route.abort('failed');}
       result={stone,code:'0372'};
      }else result={stones:[...stones,...(created?[stone]:[])],imagesAvailable:available.length};
@@ -94,6 +94,7 @@ process.on('exit',()=>server.kill());
    assert.equal(await page.locator('.qr-link').getAttribute('href'),'https://livingstones.rodulab.com/?stone=SNEW123&source=qr');
    assert.equal(await page.locator('a[href="../initialize/?stone=SNEW123"]').count(),1);
    await page.reload();await page.locator('#private-note-form').waitFor();
+   assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');assert.equal(await page.locator('#qr-code-form').count(),0);
    assert.equal(await page.locator('#admin-note').inputValue(),note);assert.equal(await page.locator('.private-note-panel script').count(),0);
    await page.locator('[data-action=back]').click();await page.locator('#type-filter').selectOption('new');assert.equal(await page.locator('.admin-stone-card').count(),1);
    assert.match(await page.locator('.admin-stone-card').innerText(),/Not born/);

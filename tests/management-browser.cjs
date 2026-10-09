@@ -84,7 +84,14 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.reload();await page.locator('#qr-code-form').waitFor();
    await page.locator('#qr-code-form input').fill('WRONG');await page.locator('#qr-code-form button').click();await page.waitForFunction(()=>document.querySelector('#notice').textContent==='That Find Code does not match this stone.');assert.equal(await page.locator('.qr-code-value').count(),0);
    await page.locator('#qr-code-form input').fill('PRIVATE9876');await page.locator('#qr-code-form button').click();await page.locator('.stone-qr .qr-code-value').waitFor();assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'PRIVATE9876');assert.equal(await page.evaluate(()=>Object.values(sessionStorage).join(' ').includes('PRIVATE9876')),false);
-   realLabel.demo=true;realLabel.code='8451';await page.reload();await page.locator('#stone-form').waitFor();
+   realLabel.privateCode='0372';await page.reload();await page.locator('#stone-form').waitFor();
+   assert.equal(await page.locator('#qr-code-form').count(),0);assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');
+   await page.reload();await page.locator('#stone-form').waitFor();assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');
+   assert.equal(await page.evaluate(()=>Object.values(sessionStorage).join(' ').includes('0372')),false);
+   const privateDownload=page.waitForEvent('download');await page.locator('[data-download-qr="svg"]').click();
+   const privateSVG=fs.readFileSync(await (await privateDownload).path(),'utf8');assert.match(privateSVG,/>0372<\/text>/);
+
+   delete realLabel.privateCode;realLabel.demo=true;realLabel.code='8451';await page.reload();await page.locator('#stone-form').waitFor();
    await page.locator('[data-section=stats]').click();await page.locator('#traffic-summary strong').first().waitFor();
    assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'157');
    await page.locator('#stats-target').selectOption('home');assert.equal(await page.locator('#traffic-summary strong').first().innerText(),'10');

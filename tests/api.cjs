@@ -337,6 +337,10 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const newborn=creations[0].body;
     assert.equal(newborn.stone.id,preview.body.stone.id);assert.equal(newborn.code,preview.body.code);
     assert.equal(newborn.stone.adminNote,'Saved with creation');
+    assert.equal(newborn.stone.privateCode,newborn.code);
+    assert.equal((await admin('stones/'+newborn.stone.id)).body.stone.privateCode,newborn.code);
+    assert.equal((await admin('stones')).body.stones.find(s=>s.id===newborn.stone.id).privateCode,newborn.code);
+    assert.ok(!('privateCode' in (await call('/stones/'+newborn.stone.id)).body.stone));
     assert.equal(newborn.stone.initialized,false);assert.match(newborn.code,/^[0-9]{4}$/);
     assert.equal(newborn.stone.finds.length,0);assert.equal(newborn.stone.started,'');
     assert.ok(!(await call('/stones')).body.stones.some(s=>s.id===newborn.stone.id));
@@ -377,6 +381,8 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const winningBody=winnerIndex===0?birthBody:{...birthBody,code:other.code,name:'Other stone'};
     const winningKey=winnerIndex===0?birthKey:otherKey;
     const born=races[winnerIndex].body.stone;
+    assert.ok(!('privateCode' in born));
+    assert.equal((await admin('stones/'+winner.stone.id)).body.stone.privateCode,winner.code);
     assert.equal(born.initialized,true);assert.equal(born.finds.length,1);assert.equal(born.theme,'heart');
     assert.equal(born.finds[0].source,'gps');assert.equal(born.finds[0].accuracy,8);
     assert.ok(Date.parse(born.finds[0].date)>=beforeBirth && Date.parse(born.finds[0].date)<=Date.now());
@@ -451,7 +457,14 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal((await admin('stones/A1/label-code','POST',{code:'WRONG'})).status,403);
     const label=await admin('stones/A1/label-code','POST',{code:'9734'});assert.equal(label.status,200);assert.equal(label.body.code,'9734');
     assert.equal((await call('/admin/stones/A1/label-code',{code:'9734'})).status,401);
-    const realAdmin=(await call("/stones/A1")).body.stone;assert.equal(realAdmin.demo,false);assert.ok(!('code' in realAdmin));
+    assert.equal((await admin('stones/A1')).body.stone.privateCode,'9734');
+    assert.equal((await admin('stones/A1','PATCH',{...managed,demo:false,code:''})).body.stone.privateCode,'9734');
+    const changed=await admin('stones/A1','PATCH',{...managed,demo:false,code:'0000'});
+    assert.equal(changed.body.stone.privateCode,'0000');
+    assert.equal((await call('/stones/A1/verify',{code:'9734'})).status,403);
+    assert.equal((await call('/stones/A1/verify',{code:'0000'})).status,200);
+    assert.equal((await admin('stones/A1','PATCH',{...managed,demo:false,code:'9734'})).status,200);
+    const realAdmin=(await call("/stones/A1")).body.stone;assert.equal(realAdmin.demo,false);assert.ok(!('code' in realAdmin));assert.ok(!('privateCode' in realAdmin));
     assert.equal((await call("/stones/A1/verify",{code:"9734"})).status,200);
     assert.equal((await admin("stones/A1","PATCH",{...managed,name:originalName,demo:true,code:"8451"})).status,200);
     managed=(await admin("stones/A1")).body.stone;

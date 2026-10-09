@@ -53,14 +53,14 @@ export async function handleManagement(request, env, listStones) {
     await limit(request, env, 'admin-create-stone', 40);
     const key = request.headers.get('Idempotency-Key');
     if (!key || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) fail(400, 'Please retry from the create button.');
-    // Stable retries recover the label without storing a plaintext private code.
+    // Stable retries keep the same stone, verification code and printable label.
     const id = 'S' + (await sha256('stone-id:' + key)).slice(0,16).toUpperCase();
     const digest = await sha256('stone-code:' + env.ADMIN_PASSWORD_HASH + ':' + key);
     const code = String(parseInt(digest.slice(0,8),16) % 10000).padStart(4,'0');
     if(path==='stone-drafts') {
       return { draft:true, code, stone:{id,name:'New stone',creator:'',started:'',image:'brand-stone.svg',theme:'sun',color:'#b49aff',demo:false,initialized:false,adminNote:note,views:0,finds:[],comments:[]} };
     }
-    await env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key,admin_note) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key, note).run();
+    await env.DB.prepare("INSERT INTO stones(id,name,creator,born,image,theme,color,is_demo,code_hash,demo_code,initialized,creation_key,admin_note,label_code) VALUES (?,'New stone','','','brand-stone.svg','sun','#b49aff',0,?,NULL,0,?,?,?) ON CONFLICT(creation_key) DO NOTHING").bind(id, await sha256(code), key, note, code).run();
     const saved = await env.DB.prepare('SELECT id,code_hash FROM stones WHERE creation_key=?').bind(key).first();
     const stone = (await listStones(env.DB,saved.id,true))[0];
     return { stone, ...(saved.code_hash === await sha256(code) ? { code } : {}) };
@@ -79,6 +79,7 @@ export async function handleManagement(request, env, listStones) {
     await limit(request,env,'admin-label-code',40);
     const body=await jsonBody(request),code=text(body.code,32,true).toUpperCase();
     if(!constantEqual(await sha256(code),stone.code_hash))fail(403,'That Find Code does not match this stone.');
+    await env.DB.prepare('UPDATE stones SET label_code=? WHERE id=? AND code_hash=?').bind(code,labelMatch[1],stone.code_hash).run();
     return {code};
   }
   const match = path.match(/^stones\/([A-Za-z0-9_-]{1,32})(?:\/(finds|comments)\/([A-Za-z0-9_-]{1,80}))?$/);
@@ -113,7 +114,7 @@ export async function handleManagement(request, env, listStones) {
       if (!first) fail(409, 'A stone must have its birth location.');
       const birthMoment = born !== stone.born ? born+'T00:00:00.000Z' : first.occurred_at;
       if (second && Date.parse(birthMoment) >= Date.parse(second.occurred_at)) fail(400, 'Birth must be before the next find.');
-      statements.push(env.DB.prepare('UPDATE stones SET name=?,creator=?,born=?,image=?,theme=?,color=?,is_demo=?,code_hash=?,demo_code=? WHERE id=?').bind(name,creator,born,image,theme,color,body.demo?1:0,code?await sha256(code):stone.code_hash,body.demo?(code||stone.demo_code):null,id));
+      statements.push(env.DB.prepare('UPDATE stones SET name=?,creator=?,born=?,image=?,theme=?,color=?,is_demo=?,code_hash=?,demo_code=?,label_code=? WHERE id=?').bind(name,creator,born,image,theme,color,body.demo?1:0,code?await sha256(code):stone.code_hash,body.demo?(code||stone.demo_code):null,code||stone.label_code,id));
       statements.push(env.DB.prepare('UPDATE traffic_targets SET name=? WHERE target=?').bind(name,'stone:'+id));
       if (born !== stone.born) {
         statements.push(env.DB.prepare('UPDATE finds SET occurred_at=? WHERE id=?').bind(birthMoment,first.id));
