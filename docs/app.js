@@ -4,11 +4,13 @@ const assetBase = new URL(
   "assets/",
   document.querySelector('script[src*="app.js"]').src,
 ).href;
-// Keep the real Kvetko portrait tied to its ID, even if its name changes.
+// Keep real portraits tied to stone IDs, even if their names change.
+const stonePhotos = {
+  SF70489F2C749F909: "stone-photos/kvetko.png",
+  S2A563A3C160F96BA: "stone-photos/obrazko.png",
+};
 const stoneImageURL = (stone) => {
-  const image = stone.id === "SF70489F2C749F909"
-    ? "stone-photos/kvetko.png"
-    : stone.image;
+  const image = stonePhotos[stone.id] || stone.image;
   const url = new URL(image, assetBase);
   if (url.origin === new URL(assetBase).origin) url.searchParams.set("v", "60");
   return url.href;
