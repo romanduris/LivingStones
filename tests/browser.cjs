@@ -25,6 +25,7 @@ process.on("exit", () => server?.kill());
   const newContext = browser.newContext.bind(browser);
   browser.newContext = async (options) => {
     const context = await newContext(options);
+    await context.addInitScript(() => localStorage.setItem('livingstones.collection.v1', JSON.stringify({statuses:['demo','alive','journey','quiet','lost']})));
     const stones = JSON.parse(JSON.stringify(fixture.stones));
     for (const stone of stones) stone.creator = stone.finds[0].nickname;
     for (const stone of stones)

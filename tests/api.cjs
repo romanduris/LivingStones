@@ -259,10 +259,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     current = (await call("/stones/A1")).body.stone;
     assert.equal(current.finds.length, 6);
     assert.equal(current.comments.length, 7);
-    // Rebuilding the source constraint preserves existing finds, attached notes and replay IDs.
-    const beforeMigration = structuredClone(current);
-    cli(["d1", "execute", "livingstones-local-db", "--local", "--persist-to", state, "--file", "backend/migrations/0003_manual_locations.sql"]);
-    assert.deepEqual((await call("/stones/A1")).body.stone, beforeMigration);
+    // Applied migrations preserve replay IDs (upgrade preservation is tested separately).
     assert.equal((await call("/stones/A1/finds", find, key)).body.replayed, true);
     // A real stone's code is not public and fictional locations are refused.
     cli([
@@ -437,7 +434,11 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const counted=await Promise.all(Array.from({length:4},()=>call("/stones/A1/views",{viewId:event})));
     assert.ok(counted.every(r=>r.status===200));
     const afterViews=(await call("/stones/A1")).body.stone;
-    assert.equal(afterViews.views,1);assert.deepEqual(afterViews.finds,beforeViews.finds);assert.deepEqual(afterViews.comments,beforeViews.comments);
+    assert.equal(afterViews.views,1);
+    for (const kind of ['finds','comments']) {
+      assert.deepEqual(afterViews[kind],beforeViews[kind].map(entry=>({...entry,views:entry.views+1})),'Every existing activity increments exactly once');
+    }
+    assert.ok(counted.every(r=>r.body.activityViews.every(entry=>entry.views===1&&entry.qrViews===0)));
     assert.equal((await call("/stones/A1/views",{viewId:"bad"})).status,400);
     assert.equal((await call("/stones/unknown/views",{viewId:randomUUID()})).status,404);
     assert.equal((await admin("stones/A1")).body.stone.views,1);
@@ -445,10 +446,20 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const qrCounted=await Promise.all(Array.from({length:4},()=>call('/stones/A1/views',{viewId:qrEvent,source:'qr'})));
     assert.ok(qrCounted.every(r=>r.status===200));
     assert.equal((await admin('stones/A1')).body.stone.qrViews,1);
-    assert.equal((await call('/stones/A1')).body.stone.views,2);
+    const qrStone=(await call('/stones/A1')).body.stone;
+    assert.equal(qrStone.views,2);
+    assert.ok([...qrStone.finds,...qrStone.comments].every(entry=>entry.views===2&&entry.qrViews===1));
     assert.equal((await call('/stones/A1/views',{viewId:qrEvent,source:'web'})).status,200);
     assert.equal((await call('/stones/A1/views',{viewId:event,source:'qr'})).status,200);
     assert.equal((await admin('stones/A1')).body.stone.qrViews,1,'Changing the source on retries cannot change counts');
+    assert.deepEqual((await call('/stones/A1')).body.stone,qrStone,'Retries cannot change activity counters');
+    const activityNote=await call('/stones/A1/comments',{code:'8451',nickname:'Counter test',message:'New activity'});
+    assert.equal(activityNote.status,200);
+    const newNote=activityNote.body.stone.comments.find(entry=>entry.id===activityNote.body.recordId);
+    assert.equal(newNote.views,0);assert.equal(newNote.qrViews,0);
+    const nextView=await call('/stones/A1/views',{viewId:randomUUID(),source:'qr'});
+    assert.deepEqual(nextView.body.activityViews.find(entry=>entry.id===newNote.id),{id:newNote.id,views:1,qrViews:1});
+    assert.ok(nextView.body.activityViews.filter(entry=>entry.id!==newNote.id).every(entry=>entry.views===3&&entry.qrViews===2));
     assert.equal((await call('/stones/A1/views',{viewId:randomUUID(),source:'bad'})).status,400);
     const homeEvent=randomUUID();
     const homeCounts=await Promise.all(Array.from({length:4},()=>call('/page-views',{viewId:homeEvent})));
@@ -458,11 +469,11 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal((await admin('stats?period=invalid')).status,400);
     const traffic=(await admin('stats?period=7')).body;
     assert.equal(traffic.targets.find(t=>t.key==='home').totalViews,1);
-    assert.equal(traffic.targets.find(t=>t.key==='stone:A1').totalViews,2);
-    assert.equal(traffic.days.reduce((n,d)=>n+d.views,0),3);
-    assert.equal(traffic.targets.find(t=>t.key==='stone:A1').totalQrViews,1);
+    assert.equal(traffic.targets.find(t=>t.key==='stone:A1').totalViews,3);
+    assert.equal(traffic.days.reduce((n,d)=>n+d.views,0),4);
+    assert.equal(traffic.targets.find(t=>t.key==='stone:A1').totalQrViews,2);
     assert.equal(traffic.targets.find(t=>t.key==='home').totalQrViews,0);
-    assert.equal(traffic.days.reduce((n,d)=>n+d.qrViews,0),1);
+    assert.equal(traffic.days.reduce((n,d)=>n+d.qrViews,0),2);
     assert.ok(traffic.qrSince);
     assert.equal((Date.parse(traffic.range.to)-Date.parse(traffic.range.from))/86400000,6);
     let managed=(await admin("stones/A1")).body.stone;
@@ -526,7 +537,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const removedWatchers = JSON.parse(cli(["d1", "execute", "livingstones-local-db", "--local", "--persist-to", state, "--json", "--command", "SELECT COUNT(*) AS total FROM stone_watchers WHERE stone_id='A1'"]));
     assert.equal(removedWatchers[0].results[0].total, 0);
     const retained=(await admin('stats?period=all')).body.targets.find(t=>t.key==='stone:A1');
-    assert.equal(retained.deleted,true);assert.equal(retained.totalViews,2);assert.equal(retained.totalQrViews,1);
+    assert.equal(retained.deleted,true);assert.equal(retained.totalViews,3);assert.equal(retained.totalQrViews,2);
     const tables=JSON.parse(cli(["d1","execute","livingstones-local-db","--local","--persist-to",state,"--json","--command","SELECT (SELECT COUNT(*) FROM finds WHERE stone_id='A1') AS finds,(SELECT COUNT(*) FROM comments WHERE stone_id='A1') AS comments,(SELECT COUNT(*) FROM submissions WHERE stone_id='A1') AS submissions,(SELECT COUNT(*) FROM stone_views WHERE stone_id='A1') AS views"]));
     assert.deepEqual(tables[0].results[0],{finds:0,comments:0,submissions:0,views:0});
     assert.equal((await admin("logout","POST",{})).status,200);

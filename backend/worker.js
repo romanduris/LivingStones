@@ -41,6 +41,8 @@ async function listStones(db, id, admin = false) {
       .filter((f) => f.stone_id === s.id)
       .map((f) => ({
         id: f.id,
+        views: f.views,
+        qrViews: f.qr_views,
         date: !admin && f.source === "seed" ? f.occurred_at.slice(0, 10) : f.occurred_at,
         lat: f.lat,
         lon: f.lon,
@@ -57,6 +59,8 @@ async function listStones(db, id, admin = false) {
       .filter((c) => c.stone_id === s.id)
       .map((c) => ({
         id: c.id,
+        views: c.views,
+        qrViews: c.qr_views,
         findId: c.find_id,
         date: c.created_at,
         nickname: c.nickname,

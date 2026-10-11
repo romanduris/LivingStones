@@ -242,8 +242,14 @@ const stoneRepository = (() => {
     async recordView(id) {
       const result = await request(`/api/stones/${encodeURIComponent(id)}/views`, {viewId: crypto.randomUUID(), source: openedFromQR() ? "qr" : "web"});
       const stone = stones.find(s => s.id === id);
-      if (stone) stone.views = result.views;
-      return result.views;
+      if (stone) {
+        stone.views = result.views;
+        for (const entry of [...stone.finds, ...(stone.comments || [])]) {
+          const counts = result.activityViews?.find(count => count.id === entry.id);
+          if (counts) Object.assign(entry, {views: counts.views, qrViews: counts.qrViews});
+        }
+      }
+      return result;
     },
     watch: (id, email) => request(`/api/stones/${encodeURIComponent(id)}/watchdog`, { email }),
     verify: (id, code) =>
@@ -276,7 +282,7 @@ function disposeMap(id) {
 }
 const collectionStatuses = ["demo", "alive", "journey", "quiet", "lost"];
 const collectionPreferencesKey = "livingstones.collection.v1";
-const collectionState = { view: "cards", sort: "recent", direction: "desc", statuses: [...collectionStatuses], search: "", visibleRows: 3 };
+const collectionState = { view: "cards", sort: "recent", direction: "desc", statuses: collectionStatuses.filter(status => status !== "demo"), search: "", visibleRows: 3 };
 try {
   const saved = JSON.parse(localStorage.getItem(collectionPreferencesKey));
   if (saved && typeof saved === "object") {
@@ -570,7 +576,7 @@ function historyHTML(stone) {
           <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? ui`<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : ui`<span class="entry-kind">A little note</span>`}</div>
           <p class="entry-address">${isFind && entry.source === "gps" ? ui`<span class="location-badge gps-badge">GPS</span>` : isFind && entry.source === "manual" ? ui`<span class="location-badge manual-badge">Manual</span>` : isFind && entry.source === "demo" ? ui`<span class="location-badge demo-location-badge">Demo</span>` : ""} ${uiText("{0}",[address])}</p>
         </div>
-        <div class="entry-author"><strong class="entry-finder">${entry.nickname?escapeHTML(entry.nickname):uiText("A kind stranger")}</strong></div>
+        <div class="entry-author"><strong class="entry-finder">${entry.nickname?escapeHTML(entry.nickname):uiText("A kind stranger")}</strong><span class="entry-views" title="Story openings / QR openings since this entry">View (${Number(entry.views) || 0}/${Number(entry.qrViews) || 0})</span></div>
       </header>
       ${entry.message ? ui`<p class="entry-message">“${escapeHTML(entry.message)}”</p>` : ui`<p class="entry-message no-message">A little hello, without a note this time.</p>`}
     </article>`;
@@ -738,10 +744,15 @@ function openStone(id, updateURL = true) {
   flow = null;
   if (!dialog.open) dialog.showModal();
   renderDetail();
-  stoneRepository.recordView(id).then(views => {
+  stoneRepository.recordView(id).then(result => {
     if (selectedId === id && dialog.open) {
       const counter = $(".stone-views strong");
-      if (counter) counter.textContent = views;
+      if (counter) counter.textContent = result.views;
+      for (const entry of document.querySelectorAll('#stone-notes [data-entry]')) {
+        const counts = result.activityViews?.find(count => count.id === entry.dataset.entry);
+        const counter = entry.querySelector('.entry-views');
+        if (counts && counter) say(counter, "View ({0}/{1})", [counts.views, counts.qrViews]);
+      }
     }
   }).catch(() => {});
   dialog.scrollTop = 0;

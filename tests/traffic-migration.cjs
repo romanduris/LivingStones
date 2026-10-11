@@ -31,5 +31,8 @@ try{
  fs.copyFileSync('backend/migrations/0014_qr_traffic.sql',path.join(migrations,'0014_qr_traffic.sql'));cli(['migrations','apply','migration-db']);
  const qr=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT SUM(views) AS views,SUM(qr_views) AS qr FROM traffic_daily; SELECT value FROM traffic_meta WHERE key='qr_started_at';"]));
  assert.deepEqual(qr[0].results,[{views:3,qr:0}]);assert.ok(qr[1].results[0].value);
+ fs.copyFileSync('backend/migrations/0015_activity_views.sql',path.join(migrations,'0015_activity_views.sql'));cli(['migrations','apply','migration-db']);
+ const activity=JSON.parse(cli(['execute','migration-db','--json','--command',"SELECT views,qr_views FROM finds WHERE id='f1'; SELECT message,views,qr_views FROM comments WHERE id='c1';"]));
+ assert.deepEqual(activity[0].results,[{views:0,qr_views:0}]);assert.deepEqual(activity[1].results,[{message:'Keep this note',views:0,qr_views:0}]);
  console.log('Passed: traffic migration backfills dated events, retains undated totals and removes Story, adds private notes and reclaims only unused orphan portraits without losing finds or comments.');
 }finally{fs.rmSync(dir,{recursive:true,force:true});}

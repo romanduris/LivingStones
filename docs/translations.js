@@ -2,6 +2,8 @@
 // Only trusted UI copy. English source keys stay stable across language changes.
 const SITE_TRANSLATIONS = {
   "en": {
+    "View ({0}/{1})": "View ({0}/{1})",
+    "Story openings / QR openings since this entry": "Story openings / QR openings since this entry",
     "Living Stones — Small stones. Big stories.": "Living Stones — Small stones. Big stories.",
     "Skip to the map": "Skip to the map",
     "Living Stones home": "Living Stones home",
@@ -269,6 +271,8 @@ const SITE_TRANSLATIONS = {
     "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue."
   },
   "sk": {
+    "View ({0}/{1})": "View ({0}/{1})",
+    "Story openings / QR openings since this entry": "Otvorenia príbehu / otvorenia cez QR od tohto príspevku",
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
     "Skip to the map": "Preskočiť na mapu",
     "Living Stones home": "Domov Living Stones",
@@ -536,6 +540,8 @@ const SITE_TRANSLATIONS = {
     "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Stačí zaznamenať nález a prípadne pridať správu. Potom vezmi kamienok na ďalšie pekné miesto — tak pomôžeš jeho príbehu pokračovať."
   },
   "hu": {
+    "View ({0}/{1})": "View ({0}/{1})",
+    "Story openings / QR openings since this entry": "A történet megnyitásai / QR-megnyitások e bejegyzés óta",
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
     "Skip to the map": "Ugrás a térképre",
     "Living Stones home": "Living Stones kezdőlap",
@@ -803,6 +809,8 @@ const SITE_TRANSLATIONS = {
     "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Csak rögzítsd a megtalálást, és ha szeretnél, írj üzenetet. Aztán vidd a kavicsot egy másik szép helyre — így segítesz folytatni a történetét."
   },
   "de": {
+    "View ({0}/{1})": "View ({0}/{1})",
+    "Story openings / QR openings since this entry": "Geschichtenaufrufe / QR-Aufrufe seit diesem Beitrag",
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
     "Skip to the map": "Zur Karte springen",
     "Living Stones home": "Living Stones Startseite",

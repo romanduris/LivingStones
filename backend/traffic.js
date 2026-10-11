@@ -1,4 +1,8 @@
 import { fail, text, limit } from './common.js';
+export async function activityViews(db, stoneId) {
+  const {results} = await db.prepare('SELECT id,views,qr_views AS qrViews FROM finds WHERE stone_id=? UNION ALL SELECT id,views,qr_views AS qrViews FROM comments WHERE stone_id=? AND find_id IS NULL').bind(stoneId,stoneId).all();
+  return results;
+}
 export async function recordTraffic(request, env, body, stoneId = null) {
   const viewId = text(body.viewId,80,true);
   if(!/^[a-zA-Z0-9-]{16,80}$/.test(viewId)) fail(400,'Invalid view event.');
@@ -12,10 +16,16 @@ export async function recordTraffic(request, env, body, stoneId = null) {
   const statements=[env.DB.prepare("INSERT INTO traffic_targets(target,name,kind) VALUES (?,?,?) ON CONFLICT(target) DO UPDATE SET name=excluded.name,deleted=0").bind(target,stone?stone.name:'Homepage',stone?'stone':'home')];
   if(stone) statements.push(env.DB.prepare('UPDATE stones SET views=views+1 WHERE id=? AND NOT EXISTS(SELECT 1 FROM stone_views WHERE id=?)').bind(stoneId,viewId));
   statements.push(env.DB.prepare(`INSERT INTO traffic_daily(day,target,views,qr_views) SELECT ?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM ${events} WHERE id=?) ON CONFLICT(day,target) DO UPDATE SET views=views+1,qr_views=qr_views+excluded.qr_views`).bind(day,target,qr,viewId));
+  // Update durable activity totals before inserting the deduplication event.
+  if(stone) {
+    for (const [table,dateColumn] of [['finds','occurred_at'],['comments','created_at']]) {
+      statements.push(env.DB.prepare(`UPDATE ${table} SET views=views+1,qr_views=qr_views+? WHERE stone_id=? AND ${dateColumn}<=? AND NOT EXISTS(SELECT 1 FROM stone_views WHERE id=?)`).bind(qr,stoneId,now,viewId));
+    }
+  }
   statements.push(stone ? env.DB.prepare('INSERT INTO stone_views(id,stone_id,created_at) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING').bind(viewId,stoneId,now) : env.DB.prepare('INSERT INTO homepage_views(id,created_at) VALUES (?,?) ON CONFLICT(id) DO NOTHING').bind(viewId,now));
   statements.push(env.DB.prepare(`DELETE FROM ${events} WHERE created_at < ?`).bind(new Date(Date.now()-30*86400000).toISOString()));
   await env.DB.batch(statements);
-  return stone ? {views:(await env.DB.prepare('SELECT views FROM stones WHERE id=?').bind(stoneId).first()).views} : {ok:true};
+  return stone ? {activityViews:await activityViews(env.DB,stoneId),views:(await env.DB.prepare('SELECT views FROM stones WHERE id=?').bind(stoneId).first()).views} : {ok:true};
 }
 export async function trafficStatistics(request, env) {
   const period=new URL(request.url).searchParams.get('period') || '30';
