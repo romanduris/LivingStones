@@ -4,9 +4,12 @@ const assetBase = new URL(
   "assets/",
   document.querySelector('script[src*="app.js"]').src,
 ).href;
-// Image paths can later be replaced by local JPGs or full photo URLs.
+// Keep the real Kvetko portrait tied to its ID, even if its name changes.
 const stoneImageURL = (stone) => {
-  const url = new URL(stone.image, assetBase);
+  const image = stone.id === "SF70489F2C749F909"
+    ? "stone-photos/kvetko.png"
+    : stone.image;
+  const url = new URL(image, assetBase);
   if (url.origin === new URL(assetBase).origin) url.searchParams.set("v", "60");
   return url.href;
 };
