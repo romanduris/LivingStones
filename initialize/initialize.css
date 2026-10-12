@@ -81,3 +81,8 @@ body[data-photo-editing="true"] .birth-footnote { display:none; }
 .birth-panel .field input,.birth-panel .field textarea { margin-top:0; }
 .birth-panel .field textarea { min-height:64px; }
 .birth-footnote { display:block; border:0; padding:0; line-height:16px; }
+
+.photo-links { display:grid; justify-content:start; gap:8px; text-align:left; }
+.photo-links > div { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
+.photo-links .birth-help { margin:0; }
+.birth-wish { margin-top:8px; }

@@ -243,6 +243,7 @@ const stoneRepository = (() => {
       if (stone.initialized !== false && !stones.some(s => s.id === id)) stones.push(stone);
       return stone;
     },
+    contactHomepage: (body,key) => request("/api/contact",body,key),
     recordHomepage: () => request("/api/page-views", {viewId: crypto.randomUUID()}),
     async recordView(id) {
       const result = await request(`/api/stones/${encodeURIComponent(id)}/views`, {viewId: crypto.randomUUID(), source: openedFromQR() ? "qr" : "web"});
@@ -581,7 +582,7 @@ function historyHTML(stone) {
           <div class="entry-meta"><time datetime="${escapeHTML(entry.date)}">${formatMoment(entry.date)}</time>${isFind ? ui`<span class="entry-location"><strong>${escapeHTML(entry.city)}</strong>${countryFlagHTML(entry.country)}</span>` : ui`<span class="entry-kind">A little note</span>`}</div>
           <p class="entry-address">${isFind && entry.source === "gps" ? ui`<span class="location-badge gps-badge">GPS</span>` : isFind && entry.source === "manual" ? ui`<span class="location-badge manual-badge">Manual</span>` : isFind && entry.source === "demo" ? ui`<span class="location-badge demo-location-badge">Demo</span>` : ""} ${uiText("{0}",[address])}</p>
         </div>
-        <div class="entry-author"><strong class="entry-finder">${entry.nickname?escapeHTML(entry.nickname):uiText("A kind stranger")}</strong><span class="entry-views" title="Story openings / QR openings since this entry">View (${Number(entry.views) || 0}/${Number(entry.qrViews) || 0})</span></div>
+        <div class="entry-author"><strong class="entry-finder">${entry.nickname?escapeHTML(entry.nickname):uiText("A kind stranger")}</strong><span class="entry-views" title="Story openings / QR openings until the next entry">Views (${Number(entry.views) || 0}/${Number(entry.qrViews) || 0})</span></div>
       </header>
       ${entry.message ? ui`<p class="entry-message">“${escapeHTML(entry.message)}”</p>` : ui`<p class="entry-message no-message">A little hello, without a note this time.</p>`}
     </article>`;
@@ -637,10 +638,9 @@ function renderDetail() {
       <div id="find-container"></div>
       <section id="contact-panel" class="find-panel" aria-labelledby="contact-title" hidden>
         <h3 id="contact-title" tabindex="-1">A question or suggestion about ${escapeHTML(stone.name)}?</h3>
-        <p id="contact-help">Send a message to the Living Stones creator. Include your email so they can reply. Your message stays private.</p>
+        <p id="contact-help">Include your email if you’d like a reply. Your message stays private.</p>
         <form id="contact-form"><fieldset id="contact-fields">
-          <label class="field" for="contact-name">Your name (optional)<input id="contact-name" name="nickname" maxlength="80" autocomplete="name"></label>
-          <label class="field" for="contact-email">Your email<input id="contact-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-help"></label>
+          <label class="field" for="contact-email">Your email (optional)<input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-help"></label>
           <label class="field" for="contact-message">Your message<textarea id="contact-message" name="message" required maxlength="2000" rows="5"></textarea></label>
           <div class="form-actions"><button class="button primary" id="send-contact" type="submit">Send message</button><button class="button secondary" id="close-contact" type="button">Close</button></div>
         </fieldset></form><p id="contact-status" role="status" aria-live="polite"></p>
@@ -654,7 +654,7 @@ function renderDetail() {
         <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${encounters}</strong> ${uiText(encounters===1?"Find":"Finds")}</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
       </section>
       <section class="detail-section" aria-labelledby="history-title"><div class="detail-history-heading"><h3 id="history-title">My activity <span class="activity-description">(Every find and message is part of my story.)</span></h3></div><div id="stone-notes" class="story-feed">${historyHTML(stone)}</div></section>
-      <p class="detail-footnote">View (2/0) below the finder’s name means: 2 story openings since that entry, including 0 via QR code.</p>
+      <p class="detail-footnote">Views (20/2): 20 openings, 2 via QR. Counted until the next entry.</p>
     </div>`;
   siteI18n.apply($("#stone-detail"));
   renderMap($("#journey-map"), [stone], true);
@@ -674,7 +674,7 @@ function renderDetail() {
   contactForm.addEventListener('input',()=>{contactDraft=null;});
   contactForm.addEventListener('submit',async event=>{
     event.preventDefault();if(contactFields.disabled||!contactForm.reportValidity())return;
-    contactDraft||={key:crypto.randomUUID(),body:{nickname:$("#contact-name").value.trim(),email:$("#contact-email").value.trim(),message:$("#contact-message").value.trim(),language:siteI18n.language}};
+    contactDraft||={key:crypto.randomUUID(),body:{email:$("#contact-email").value.trim(),message:$("#contact-message").value.trim(),language:siteI18n.language}};
     contactFields.disabled=true;say(contactSubmit,'Sending…');say(contactStatus,'');
     try{
       await stoneRepository.contact(stone.id,contactDraft.body,contactDraft.key);
@@ -740,7 +740,7 @@ function openStone(id, updateURL = true) {
       for (const entry of document.querySelectorAll('#stone-notes [data-entry]')) {
         const counts = result.activityViews?.find(count => count.id === entry.dataset.entry);
         const counter = entry.querySelector('.entry-views');
-        if (counts && counter) say(counter, "View ({0}/{1})", [counts.views, counts.qrViews]);
+        if (counts && counter) say(counter, "Views ({0}/{1})", [counts.views, counts.qrViews]);
       }
     }
   }).catch(() => {});
@@ -1331,3 +1331,20 @@ setInterval(() => {
   renderCollection();
   say($("#total-active"), journeyStatistics(stoneRepository.list()).alive);
 }, 60000);
+
+const homepageContactForm=$("#homepage-contact-form");
+let homepageContactDraft=null;
+homepageContactForm.addEventListener('input',()=>{homepageContactDraft=null;});
+homepageContactForm.addEventListener('submit',async event=>{
+  event.preventDefault();
+  if(!homepageContactForm.reportValidity())return;
+  homepageContactDraft||={key:crypto.randomUUID(),body:{email:$("#homepage-contact-email").value.trim(),message:$("#homepage-contact-message").value.trim(),language:siteI18n.language}};
+  const fields=$("#homepage-contact-fields"),status=$("#homepage-contact-status"),button=$("#homepage-send-contact");
+  if(fields.disabled)return;
+  fields.disabled=true;say(button,"Sending…");say(status,"Sending…");
+  try{
+    await stoneRepository.contactHomepage(homepageContactDraft.body,homepageContactDraft.key);
+    homepageContactForm.reset();homepageContactDraft=null;say(status,"Your message has been sent. Thank you!");
+  }catch(error){say(status,error.message);}
+  finally{fields.disabled=false;say(button,"Send message");}
+});

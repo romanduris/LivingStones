@@ -129,7 +129,7 @@ process.on('exit', () => server.kill());
     await page.locator('dialog[open]').waitFor();
     assert.match(await page.locator('#detail-title').textContent(), /Mountain Whisper/);
     assert.equal(await page.locator('#journey-map .leaflet-marker-icon').count(), 5);
-    await page.waitForFunction(() => [...document.querySelectorAll('.entry-views')].every(el => el.textContent === 'View (10/1)'));
+    await page.waitForFunction(() => [...document.querySelectorAll('.entry-views')].every(el => el.textContent === 'Views (10/1)'));
     assert.ok(await page.locator('.story-entry').evaluateAll(entries => entries.every(entry => {
       const counter=entry.querySelector('.entry-views'),address=entry.querySelector('.entry-address'),author=entry.querySelector('.entry-finder');
       const cs=getComputedStyle(counter),as=getComputedStyle(address);

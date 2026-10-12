@@ -23,11 +23,11 @@ const labels={
 };
 export function contactMessage(stone,body,env,key) {
   const c=labels[body.language]||labels.en,from=contactEmail(env.CONTACT_FROM),to=contactEmail(env.CONTACT_TO);
-  const story=new URL('/?'+new URLSearchParams({stone:stone.id}),env.CONTACT_SITE_URL).href;
-  const content=[c.stone+': '+stone.name+' ('+stone.id+')',c.story+': '+story,c.sender+': '+(body.nickname||body.email),c.email+': '+body.email,'',c.message+':',body.message].join('\n');
+  const story=stone ? new URL('/?'+new URLSearchParams({stone:stone.id}),env.CONTACT_SITE_URL).href : null;
+  const content=[...(stone?[c.stone+': '+stone.name+' ('+stone.id+')',c.story+': '+story]:['Living Stones']),...(body.email?[c.email+': '+body.email]:[]),'',c.message+':',body.message].join('\n');
   const raw=[
-    'From: Living Stones <'+from+'>','To: <'+to+'>','Reply-To: <'+body.email+'>',
-    'Subject: '+encodedHeader('[Living Stones] '+c.subject+' · '+stone.name),
+    'From: Living Stones <'+from+'>','To: <'+to+'>',...(body.email?['Reply-To: <'+body.email+'>']:[]),
+    'Subject: '+encodedHeader('[Living Stones] '+c.subject+(stone?' · '+stone.name:'')),
     'Date: '+new Date().toUTCString(),'Message-ID: <'+key+'@'+from.split('@')[1]+'>',
     'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',
     base64(content).match(/.{1,76}/g).join('\r\n'),'',''
@@ -36,12 +36,12 @@ export function contactMessage(stone,body,env,key) {
 }
 export async function sendContact(request,env,id,body,createMessage) {
   await limit(request,env,'stone-contact',5);
-  const stone=await env.DB.prepare('SELECT id,name,initialized FROM stones WHERE id=?').bind(id).first();
-  if(!stone)fail(404,'This stone could not be found.');
-  if(!stone.initialized)fail(409,'This stone is waiting to be born. Finish its setup first.');
+  const stone=id ? await env.DB.prepare('SELECT id,name,initialized FROM stones WHERE id=?').bind(id).first() : null;
+  if(id&&!stone)fail(404,'This stone could not be found.');
+  if(stone&&!stone.initialized)fail(409,'This stone is waiting to be born. Finish its setup first.');
   const key=request.headers.get('Idempotency-Key');
   if(!key||!/^[a-zA-Z0-9-]{16,80}$/.test(key))fail(400,'Please retry from the form.');
-  const data={nickname:text(body.nickname,80),email:contactEmail(body.email),message:text(body.message,2000,true),language:['en','sk','hu','de'].includes(body.language)?body.language:'en'};
+  const data={email:text(body.email,254)?contactEmail(body.email):'',message:text(body.message,2000,true),language:['en','sk','hu','de'].includes(body.language)?body.language:'en'};
   const fingerprint=await sha256(JSON.stringify({id,...data})),date=new Date().toISOString(),now=Math.floor(Date.now()/1000);
   if(!env.EMAIL||!env.CONTACT_FROM||!env.CONTACT_TO)fail(503,'We couldn’t send your message. Please try again — your message is still here.');
   await env.DB.prepare('INSERT INTO stone_contact_submissions(id,stone_id,fingerprint,created_at) VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING').bind(key,id,fingerprint,date).run();

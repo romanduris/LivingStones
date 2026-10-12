@@ -84,6 +84,11 @@ async function handle(request, env) {
     requireOrigin(request, env);
     return recordTraffic(request, env, await jsonBody(request));
   }
+  if (path === "/api/contact") {
+    if (request.method !== "POST") fail(405, "Method not allowed.");
+    requireOrigin(request, env);
+    return sendContact(request, env, null, await jsonBody(request), message => new EmailMessage(message.from, message.to, message.raw));
+  }
   const match = path.match(
     /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|contact|initialize|images|photo))?$/,
   );

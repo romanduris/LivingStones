@@ -20,7 +20,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8137/?stone='+stones[0].id+'&source=qr');await page.locator('#stone-dialog[open]').waitFor();
   const expected=locale==='fr-FR'?'en':locale.startsWith('cs')?'sk':locale.slice(0,2);assert.equal(await page.locator('html').getAttribute('lang'),expected);
-  assert.equal(await page.locator('.detail-footnote').innerText(),await page.evaluate(()=>t('View (2/0) below the finder’s name means: 2 story openings since that entry, including 0 via QR code.')));
+  assert.equal(await page.locator('.detail-footnote').innerText(),await page.evaluate(()=>t('Views (20/2): 20 openings, 2 via QR. Counted until the next entry.')));
   assert.equal(await page.locator('.find-action-invitation').innerText(),await page.evaluate(()=>t('Click here to keep its story going →')));
   await page.setViewportSize({width:320,height:844});
   assert.ok(await page.locator('#start-find').evaluate(button=>{

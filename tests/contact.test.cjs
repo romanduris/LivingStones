@@ -33,10 +33,27 @@ test('Contact sends only to the owner, preserves reply address and UTF-8, and re
 test('Contact validates inputs, enforces rate limits and refuses success without an email transport',async()=>{
  const {sendContact,contactMessage}=await import('../backend/contact.js'),env=await environment();
  try{
-  for(const changes of [{email:'bad\r\nCc:other@example.invalid'},{email:'a@b'},{message:''},{message:'x'.repeat(2001)},{nickname:'x'.repeat(81)}])await assert.rejects(sendContact(request(randomUUID()),env,'C3',{...body,...changes},create),e=>e.status===400);
+  for(const changes of [{email:'bad\r\nCc:other@example.invalid'},{email:'a@b'},{message:''},{message:'x'.repeat(2001)}])await assert.rejects(sendContact(request(randomUUID()),env,'C3',{...body,...changes},create),e=>e.status===400);
   for(let n=0;n<5;n++)await assert.rejects(sendContact(request(randomUUID(),'198.51.100.1'),env,'C3',{...body,email:'invalid'},create),e=>e.status===400);
   await assert.rejects(sendContact(request(randomUUID(),'198.51.100.1'),env,'C3',body,create),e=>e.status===429);
   env.EMAIL=null;await assert.rejects(sendContact(request(randomUUID()),env,'C3',body,create),e=>e.status===503);assert.equal(env.sent.length,0);
   const mail=contactMessage({id:'C3',name:'A stone\r\nBcc: attacker@example.invalid'},body,env,randomUUID());assert.ok(!mail.raw.split('\r\n\r\n')[0].includes('\r\nBcc:'));
+ }finally{env.sqlite.close();}
+});
+
+test('Homepage and stone contacts accept no email, omit Reply-To and retain private idempotent metadata',async()=>{
+ const {sendContact}=await import('../backend/contact.js'),env=await environment();
+ try{
+  for(const id of [null,'C3']){
+   const key=randomUUID();const data={message:'Anonymous suggestion',language:'de'};
+   await sendContact(request(key),env,id,data,create);
+   const mail=env.sent.at(-1);assert.doesNotMatch(mail.raw,/Reply-To:/);
+   const content=Buffer.from(mail.raw.split('\r\n\r\n')[1].replace(/\s/g,''),'base64').toString('utf8');
+   assert.match(content,/Nachricht:/);assert.match(content,/Anonymous suggestion/);
+   assert.equal(content.includes('stone=C3'),id==='C3');
+   assert.deepEqual(await sendContact(request(key),env,id,data,create),{ok:true,replayed:true});
+   assert.equal(env.sqlite.prepare('SELECT stone_id FROM stone_contact_submissions WHERE id=?').get(key).stone_id,id);
+  }
+  assert.equal(env.sent.length,2);
  }finally{env.sqlite.close();}
 });

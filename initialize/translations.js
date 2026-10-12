@@ -91,7 +91,7 @@ const BIRTH_TRANSLATIONS = {
     "palettePeach": "Peach",
     "paletteSilver": "Silver",
     "paletteLilac": "Lilac",
-    "wish": "Add a wish (optional)",
+    "wish": "Wish (optional)",
     "wishPlaceholder": "A short wish for its journey",
     "takePhoto": "Photograph the stone",
     "uploadPhoto": "Upload photo",
@@ -113,7 +113,9 @@ const BIRTH_TRANSLATIONS = {
     "next": "Continue",
     "back": "Back",
     "choosePhoto": "Add a photo or choose a design first.",
-    "capturingPhoto": "Taking photo…"
+    "capturingPhoto": "Taking photo…",
+    "uploadHelp": "Use a photo from your phone.",
+    "designHelp": "Choose a ready-made image."
   },
   "sk": {
     "pageTitle": "Oživenie kamienka · Living Stones",
@@ -205,7 +207,7 @@ const BIRTH_TRANSLATIONS = {
     "palettePeach": "Broskyňová",
     "paletteSilver": "Strieborná",
     "paletteLilac": "Orgovánová",
-    "wish": "Pridať prianie (voliteľné)",
+    "wish": "Prianie (voliteľné)",
     "wishPlaceholder": "Krátke prianie na cestu",
     "takePhoto": "Odfotiť kamienok",
     "uploadPhoto": "Nahrať fotku",
@@ -227,7 +229,9 @@ const BIRTH_TRANSLATIONS = {
     "next": "Pokračovať",
     "back": "Späť",
     "choosePhoto": "Najprv pridaj fotku alebo vyber grafiku.",
-    "capturingPhoto": "Fotím…"
+    "capturingPhoto": "Fotím…",
+    "uploadHelp": "Použi fotku z telefónu.",
+    "designHelp": "Vyber hotový obrázok."
   },
   "hu": {
     "pageTitle": "Kavics aktiválása · Living Stones",
@@ -319,7 +323,7 @@ const BIRTH_TRANSLATIONS = {
     "palettePeach": "Barack",
     "paletteSilver": "Ezüst",
     "paletteLilac": "Orgona",
-    "wish": "Kívánság hozzáadása (nem kötelező)",
+    "wish": "Kívánság (nem kötelező)",
     "wishPlaceholder": "Rövid kívánság az útra",
     "takePhoto": "Kavics lefényképezése",
     "uploadPhoto": "Fotó feltöltése",
@@ -341,7 +345,9 @@ const BIRTH_TRANSLATIONS = {
     "next": "Tovább",
     "back": "Vissza",
     "choosePhoto": "Először adj hozzá fotót vagy válassz mintát.",
-    "capturingPhoto": "Fényképezés…"
+    "capturingPhoto": "Fényképezés…",
+    "uploadHelp": "Használj fotót a telefonodról.",
+    "designHelp": "Válassz kész képet."
   },
   "de": {
     "pageTitle": "Stein aktivieren · Living Stones",
@@ -433,7 +439,7 @@ const BIRTH_TRANSLATIONS = {
     "palettePeach": "Pfirsich",
     "paletteSilver": "Silber",
     "paletteLilac": "Flieder",
-    "wish": "Wunsch hinzufügen (optional)",
+    "wish": "Wunsch (optional)",
     "wishPlaceholder": "Ein kurzer Wunsch für die Reise",
     "takePhoto": "Stein fotografieren",
     "uploadPhoto": "Foto hochladen",
@@ -455,6 +461,8 @@ const BIRTH_TRANSLATIONS = {
     "next": "Weiter",
     "back": "Zurück",
     "choosePhoto": "Füge zuerst ein Foto hinzu oder wähle ein Design.",
-    "capturingPhoto": "Fotoaufnahme…"
+    "capturingPhoto": "Fotoaufnahme…",
+    "uploadHelp": "Verwende ein Foto vom Handy.",
+    "designHelp": "Wähle ein fertiges Bild."
   }
 };

@@ -10,10 +10,10 @@
   <link rel="icon" href="../docs/assets/brand-stone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../docs/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="../docs/style.css?v=73">
-  <link rel="stylesheet" href="initialize.css?v=8">
+  <link rel="stylesheet" href="initialize.css?v=9">
   <script src="../docs/vendor/leaflet/leaflet.js" defer></script>
   <script src="../docs/config.js?v=1" defer></script>
-  <script src="translations.js?v=6" defer></script>
+  <script src="translations.js?v=7" defer></script>
   <script src="initialize.js?v=8" defer></script>
 </head>
 <body>
@@ -31,14 +31,16 @@
           <label class="field"><span data-i18n="creator">Painted by</span><input name="creator" id="stone-creator" required maxlength="80" data-i18n-placeholder="creatorPlaceholder" placeholder="Your name or nickname" autocomplete="nickname"></label>
           <label class="field"><span data-i18n="code">Stone code</span><input name="code" id="find-code" inputmode="numeric" required minlength="4" maxlength="32" pattern="[A-Za-z0-9]{4,32}" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-describedby="code-help" data-i18n-placeholder="codePlaceholder" placeholder="Code beside the QR"></label>
         </div><p id="code-help" class="birth-help" data-i18n="codeHelp">Find this code beside the QR code on your stone.</p>
-        <details id="birth-wish-details" class="birth-wish"><summary data-i18n="wish">Add a wish (optional)</summary><label class="field"><span class="sr-only" data-i18n="wish">Add a wish (optional)</span><textarea id="birth-wish" name="message" maxlength="400" rows="2" data-i18n-placeholder="wishPlaceholder" placeholder="A short wish for its journey"></textarea></label></details>
+        <div class="birth-wish"><label class="field"><span data-i18n="wish">Wish (optional)</span><textarea id="birth-wish" name="message" maxlength="400" rows="2" data-i18n-placeholder="wishPlaceholder" placeholder="A short wish for its journey"></textarea></label></div>
       </section>
       <section id="birth-step-2" class="birth-panel" data-step="2" aria-labelledby="look-heading" hidden>
         <div class="birth-section-heading"><h2 id="look-heading" tabindex="-1" data-i18n="lookHeading">Add a photo</h2></div>
         <div id="stone-photo-actions" class="stone-photo-actions">
           <button id="take-stone-photo" class="button primary" type="button" data-i18n="takePhoto">Photograph the stone</button>
-          <div class="photo-links"><button class="photo-link" type="button" data-native-camera data-i18n="nativeCamera">Phone camera</button><button id="upload-stone-photo" class="photo-link" type="button" data-i18n="uploadPhoto">Upload photo</button></div>
-          <button id="choose-stone-design" class="photo-link" type="button" aria-expanded="false" aria-controls="design-picker" data-i18n="chooseDesign">Choose a design</button>
+          <div class="photo-links">
+            <div><button id="upload-stone-photo" class="photo-link" type="button" data-i18n="uploadPhoto">Upload photo</button><span class="birth-help" data-i18n="uploadHelp">Use a photo from your phone.</span></div>
+            <div><button id="choose-stone-design" class="photo-link" type="button" aria-expanded="false" aria-controls="design-picker" data-i18n="chooseDesign">Choose a design</button><span class="birth-help" data-i18n="designHelp">Choose a ready-made image.</span></div>
+          </div>
         </div>
         <input id="stone-photo-file" type="file" accept="image/*" hidden><input id="stone-native-file" type="file" accept="image/*" capture="environment" hidden>
         <p id="photo-status" class="birth-help" role="status" aria-live="polite"></p>

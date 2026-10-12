@@ -101,6 +101,10 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     );
     assert.ok(!JSON.stringify(result.body).includes("code_hash"));
     assert.ok(result.body.stones.every(stone => !("tagline" in stone) && !("story" in stone)));
+    assert.equal((await call('/contact')).status,405);
+    assert.equal((await call('/contact',{message:'Hello'},randomUUID())).status,503);
+    assert.equal((await call('/contact',{message:'Hello'},randomUUID(),{Origin:'https://bad.invalid'})).status,403);
+    assert.equal((await call('/contact',{message:''},randomUUID())).status,400);
     const contactBody={nickname:'Visitor',email:'visitor@example.invalid',message:'A question about this stone',language:'sk'};
     assert.equal((await call('/stones/A1/watchdog',{email:contactBody.email})).status,404,'removed subscription endpoint');
     assert.equal((await call('/stones/A1/contact')).status,405);
@@ -438,10 +442,9 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.ok(counted.every(r=>r.status===200));
     const afterViews=(await call("/stones/A1")).body.stone;
     assert.equal(afterViews.views,1);
-    for (const kind of ['finds','comments']) {
-      assert.deepEqual(afterViews[kind],beforeViews[kind].map(entry=>({...entry,views:entry.views+1})),'Every existing activity increments exactly once');
-    }
-    assert.ok(counted.every(r=>r.body.activityViews.every(entry=>entry.views===1&&entry.qrViews===0)));
+    const active=[...beforeViews.finds.map(e=>({...e,kind:'finds'})),...beforeViews.comments.filter(e=>!e.findId).map(e=>({...e,kind:'comments'}))].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)||b.kind.localeCompare(a.kind))[0];
+    for(const kind of ['finds','comments'])assert.deepEqual(afterViews[kind],beforeViews[kind].map(e=>({...e,views:e.views+(kind===active.kind&&e.id===active.id?1:0)})));
+    assert.ok(counted.every(r=>r.body.activityViews.filter(e=>e.id!==active.id).every(e=>e.views===0)));
     assert.equal((await call("/stones/A1/views",{viewId:"bad"})).status,400);
     assert.equal((await call("/stones/unknown/views",{viewId:randomUUID()})).status,404);
     assert.equal((await admin("stones/A1")).body.stone.views,1);
@@ -451,7 +454,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal((await admin('stones/A1')).body.stone.qrViews,1);
     const qrStone=(await call('/stones/A1')).body.stone;
     assert.equal(qrStone.views,2);
-    assert.ok([...qrStone.finds,...qrStone.comments].every(entry=>entry.views===2&&entry.qrViews===1));
+    assert.ok([...qrStone.finds,...qrStone.comments].every(entry=>entry.views===(entry.id===active.id?2:0)&&entry.qrViews===(entry.id===active.id?1:0)));
     assert.equal((await call('/stones/A1/views',{viewId:qrEvent,source:'web'})).status,200);
     assert.equal((await call('/stones/A1/views',{viewId:event,source:'qr'})).status,200);
     assert.equal((await admin('stones/A1')).body.stone.qrViews,1,'Changing the source on retries cannot change counts');
@@ -462,7 +465,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal(newNote.views,0);assert.equal(newNote.qrViews,0);
     const nextView=await call('/stones/A1/views',{viewId:randomUUID(),source:'qr'});
     assert.deepEqual(nextView.body.activityViews.find(entry=>entry.id===newNote.id),{id:newNote.id,views:1,qrViews:1});
-    assert.ok(nextView.body.activityViews.filter(entry=>entry.id!==newNote.id).every(entry=>entry.views===3&&entry.qrViews===2));
+    assert.deepEqual(nextView.body.activityViews.filter(entry=>entry.id!==newNote.id),qrCounted[0].body.activityViews,'Earlier activity counters are frozen');
     assert.equal((await call('/stones/A1/views',{viewId:randomUUID(),source:'bad'})).status,400);
     const homeEvent=randomUUID();
     const homeCounts=await Promise.all(Array.from({length:4},()=>call('/page-views',{viewId:homeEvent})));

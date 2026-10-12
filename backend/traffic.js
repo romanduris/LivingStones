@@ -18,8 +18,15 @@ export async function recordTraffic(request, env, body, stoneId = null) {
   statements.push(env.DB.prepare(`INSERT INTO traffic_daily(day,target,views,qr_views) SELECT ?,?,1,? WHERE NOT EXISTS(SELECT 1 FROM ${events} WHERE id=?) ON CONFLICT(day,target) DO UPDATE SET views=views+1,qr_views=qr_views+excluded.qr_views`).bind(day,target,qr,viewId));
   // Update durable activity totals before inserting the deduplication event.
   if(stone) {
-    for (const [table,dateColumn] of [['finds','occurred_at'],['comments','created_at']]) {
-      statements.push(env.DB.prepare(`UPDATE ${table} SET views=views+1,qr_views=qr_views+? WHERE stone_id=? AND ${dateColumn}<=? AND NOT EXISTS(SELECT 1 FROM stone_views WHERE id=?)`).bind(qr,stoneId,now,viewId));
+    for (const table of ['finds','comments']) {
+      statements.push(env.DB.prepare(`WITH latest AS (
+          SELECT kind,id FROM (
+            SELECT 'finds' AS kind,id,occurred_at AS date FROM finds WHERE stone_id=?
+            UNION ALL SELECT 'comments',id,created_at FROM comments WHERE stone_id=? AND find_id IS NULL
+          ) WHERE date<=? ORDER BY date DESC,id DESC,kind DESC LIMIT 1
+        ) UPDATE ${table} SET views=views+1,qr_views=qr_views+?
+        WHERE stone_id=? AND id=(SELECT id FROM latest WHERE kind='${table}')
+        AND NOT EXISTS(SELECT 1 FROM stone_views WHERE id=?)`).bind(stoneId,stoneId,now,qr,stoneId,viewId));
     }
   }
   statements.push(stone ? env.DB.prepare('INSERT INTO stone_views(id,stone_id,created_at) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING').bind(viewId,stoneId,now) : env.DB.prepare('INSERT INTO homepage_views(id,created_at) VALUES (?,?) ON CONFLICT(id) DO NOTHING').bind(viewId,now));
