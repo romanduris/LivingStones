@@ -101,37 +101,16 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     );
     assert.ok(!JSON.stringify(result.body).includes("code_hash"));
     assert.ok(result.body.stones.every(stone => !("tagline" in stone) && !("story" in stone)));
-    const watched = await call("/stones/A1/watchdog", { email: "  Watcher+one@example.invalid  " });
-    assert.equal(watched.status, 200);
-    assert.deepEqual(watched.body, { ok: true, confirmationRequired:true, notificationsEnabled: false });
-    assert.deepEqual((await call("/stones/A1/watchdog", { email: "WATCHER+ONE@EXAMPLE.INVALID" })).body, watched.body);
-    assert.equal((await call("/stones/A1/watchdog", { email: "second@example.invalid" })).status, 200);
-    assert.equal((await call("/stones/B2/watchdog", { email: "watcher+one@example.invalid" })).status, 200);
-    const concurrentWatchers = await Promise.all([1, 2].map(() => call("/stones/A1/watchdog", { email: "parallel@example.invalid" }, undefined, { "CF-Connecting-IP": "192.0.2.10" })));
-    assert.ok(concurrentWatchers.every(r => r.status === 200));
-    const watchers = JSON.parse(cli(["d1", "execute", "livingstones-local-db", "--local", "--persist-to", state, "--json", "--command", "SELECT stone_id,email FROM stone_watchers ORDER BY stone_id,email"]));
-    assert.deepEqual(watchers[0].results, [
-      { stone_id: "A1", email: "parallel@example.invalid" },
-      { stone_id: "A1", email: "second@example.invalid" },
-      { stone_id: "A1", email: "watcher+one@example.invalid" },
-      { stone_id: "B2", email: "watcher+one@example.invalid" },
-    ]);
-    for (const email of ["invalid", "a@b", "bad\naddress@example.invalid", 42])
-      assert.equal((await call("/stones/A1/watchdog", { email })).status, 400);
-    assert.equal((await call("/stones/unknown/watchdog", { email: "test@example.invalid" })).status, 404);
-    assert.equal((await call("/stones/A1/watchdog", { email: "test@example.invalid" }, undefined, { Origin: "https://evil.invalid" })).status, 403);
-    assert.equal((await call("/stones/A1/watchdog")).status, 405);
-    assert.doesNotMatch(JSON.stringify((await call("/stones")).body), /example\.invalid|stone_watchers|watchdog|email/i);
-    assert.doesNotMatch(JSON.stringify((await call("/stones/A1")).body), /example\.invalid|stone_watchers|watchdog|email/i);
-    const watcherToken=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT token FROM stone_watchers WHERE stone_id='A1' AND email='watcher+one@example.invalid'"]))[0].results[0].token;
-    const manageURL='http://127.0.0.1:'+port+'/api/watchdog/'+watcherToken;
-    const watchPage=await fetch(manageURL);assert.equal(watchPage.status,200);assert.match(await watchPage.text(),/Enable notifications/);
-    assert.equal((await fetch(manageURL+'/confirm',{method:'POST'})).status,200);
-    assert.equal((await fetch(manageURL+'/unsubscribe',{method:'POST'})).status,200);
-    assert.equal((await fetch(manageURL)).status,404);
-    let watchLimited;
-    for (let i = 0; i < 11; i++) watchLimited = await call("/stones/B2/watchdog", { email: "watcher+one@example.invalid" }, undefined, { "CF-Connecting-IP": "192.0.2.11" });
-    assert.equal(watchLimited.status, 429);
+    const contactBody={nickname:'Visitor',email:'visitor@example.invalid',message:'A question about this stone',language:'sk'};
+    assert.equal((await call('/stones/A1/watchdog',{email:contactBody.email})).status,404,'removed subscription endpoint');
+    assert.equal((await call('/stones/A1/contact')).status,405);
+    assert.equal((await call('/stones/unknown/contact',contactBody)).status,404);
+    for(const [index,email] of ['invalid','a@b','bad\naddress@example.invalid',42].entries())assert.equal((await call('/stones/A1/contact',{...contactBody,email},undefined,{'CF-Connecting-IP':'192.0.2.'+(30+index)})).status,400);
+    assert.equal((await call('/stones/A1/contact',{...contactBody,message:'x'.repeat(2001)},undefined,{'CF-Connecting-IP':'192.0.2.35'})).status,400);
+    assert.equal((await call('/stones/A1/contact',{...contactBody,message:''},undefined,{'CF-Connecting-IP':'192.0.2.36'})).status,400);
+    assert.equal((await call('/stones/A1/contact',contactBody,undefined,{Origin:'https://evil.invalid'})).status,403);
+    assert.equal((await call('/stones/A1/contact',contactBody,undefined,{'CF-Connecting-IP':'192.0.2.37'})).status,503,'unconfigured local transport never reports a sent message');
+    const retiredTables=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT name FROM sqlite_master WHERE type='table' AND name IN ('stone_watchers','watchdog_outbox')"]));assert.deepEqual(retiredTables[0].results,[]);
     assert.equal((await call("/stones/unknown")).status, 404);
     assert.equal(
       (await call("/stones/A1/verify", { code: "WRONG" })).status,
@@ -366,17 +345,15 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.equal(candidates.body.available,40);assert.equal(candidates.body.images.length,12);
     assert.equal(new Set(candidates.body.images.map(i=>i.id)).size,12);
     assert.equal((await call('/stones/A1/images')).status,409);
-    const birthBody={code:newborn.code,name:'First new stone',message:'May you bring joy <hello>!',creator:'Its painter',watchEmails:['painter@example.invalid','friend@example.invalid'],watchLanguage:'sk',theme:'heart',imageId:candidates.body.images[0].id,place:{lat:48.148,lon:17.107,accuracy:8,source:'gps',city:'Bratislava',country:'Slovakia',address:'Birth street'}};
+    const birthBody={code:newborn.code,name:'First new stone',message:'May you bring joy <hello>!',creator:'Its painter',theme:'heart',imageId:candidates.body.images[0].id,place:{lat:48.148,lon:17.107,accuracy:8,source:'gps',city:'Bratislava',country:'Slovakia',address:'Birth street'}};
     const freshHeaders={'CF-Connecting-IP':'192.0.2.70'};
     const bornPath='/stones/'+newborn.stone.id;
     assert.equal((await call(bornPath+'/initialize',{...birthBody,code:'WRONG'},randomUUID(),freshHeaders)).status,403);
     assert.equal((await call(bornPath+'/initialize',{...birthBody,place:{...birthBody.place,source:'unknown'}},randomUUID(),freshHeaders)).status,400);
     assert.equal((await call(bornPath+'/initialize',{...birthBody,place:{...birthBody.place,lat:91}},randomUUID(),freshHeaders)).status,400);
     assert.equal((await call(bornPath+'/initialize',{...birthBody,message:'x'.repeat(401)},randomUUID(),freshHeaders)).status,400);
-    assert.equal((await call(bornPath+'/initialize',{...birthBody,watchEmails:['invalid']},randomUUID(),freshHeaders)).status,400);
-    assert.equal((await call(bornPath+'/initialize',{...birthBody,watchEmails:Array(6).fill('too-many@example.invalid')},randomUUID(),freshHeaders)).status,400);
     assert.equal((await call(bornPath+'/initialize',{...birthBody,theme:'invalid'},randomUUID(),freshHeaders)).status,400);
-    for(const kind of ['finds','comments','views','watchdog']) assert.equal((await call(bornPath+'/'+kind,{code:newborn.code,viewId:randomUUID(),email:'test@example.invalid'})).status,409);
+    for(const kind of ['finds','comments','views','contact']) assert.equal((await call(bornPath+'/'+kind,{code:newborn.code,viewId:randomUUID(),email:'test@example.invalid'})).status,409);
     const other=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
     assert.equal(other.stone.shortId,'S0002');
     const birthKey=randomUUID(),otherKey=randomUUID(),beforeBirth=Date.now();
@@ -397,8 +374,6 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.ok(Date.parse(born.finds[0].date)>=beforeBirth && Date.parse(born.finds[0].date)<=Date.now());
     assert.equal(born.started,born.finds[0].date.slice(0,10));
     assert.ok((await call('/stones')).body.stones.some(s=>s.id===winner.stone.id));
-    const birthWatchers=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT email,confirmed_at,language FROM stone_watchers WHERE stone_id='"+winner.stone.id+"' ORDER BY email"]));
-    assert.deepEqual(birthWatchers[0].results,[{email:'friend@example.invalid',confirmed_at:null,language:'sk'},{email:'painter@example.invalid',confirmed_at:null,language:'sk'}]);
     const retryBirth=await call('/stones/'+winner.stone.id+'/initialize',winningBody,winningKey,freshHeaders);
     assert.equal(retryBirth.status,200);assert.equal(retryBirth.body.replayed,true);assert.equal(retryBirth.body.stone.comments.length,1);assert.equal(retryBirth.body.stone.finds.length,1);
     assert.equal((await call('/stones/'+winner.stone.id+'/initialize',{...winningBody,message:'Changed wish'},winningKey,freshHeaders)).status,409);
@@ -562,8 +537,7 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const duplicateAssets=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT COUNT(*) AS count FROM stone_image_pool WHERE image='stone-1.svg'"]));
     assert.equal(duplicateAssets[0].results[0].count,1,'returning a portrait twice never duplicates it');
 
-    const removedWatchers = JSON.parse(cli(["d1", "execute", "livingstones-local-db", "--local", "--persist-to", state, "--json", "--command", "SELECT COUNT(*) AS total FROM stone_watchers WHERE stone_id='A1'"]));
-    assert.equal(removedWatchers[0].results[0].total, 0);
+    const removedContacts = JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT COUNT(*) AS total FROM stone_contact_submissions WHERE stone_id='A1'"]));assert.equal(removedContacts[0].results[0].total,0);
     const retained=(await admin('stats?period=all')).body.targets.find(t=>t.key==='stone:A1');
     assert.equal(retained.deleted,true);assert.equal(retained.totalViews,3);assert.equal(retained.totalQrViews,2);
     const tables=JSON.parse(cli(["d1","execute","livingstones-local-db","--local","--persist-to",state,"--json","--command","SELECT (SELECT COUNT(*) FROM finds WHERE stone_id='A1') AS finds,(SELECT COUNT(*) FROM comments WHERE stone_id='A1') AS comments,(SELECT COUNT(*) FROM submissions WHERE stone_id='A1') AS submissions,(SELECT COUNT(*) FROM stone_views WHERE stone_id='A1') AS views"]));

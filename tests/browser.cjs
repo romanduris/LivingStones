@@ -404,13 +404,13 @@ process.on("exit", () => server?.kill());
       assert.equal(actions.length, 3);
       assert.ok(
         Math.max(...actions) - Math.min(...actions) <= 1,
-        "Explore, watchdog and share fill one mobile row below the map",
+        "Explore, contact and share fill one mobile row below the map",
       );
       assert.ok(await phone.evaluate(() => {
         const bounds = selector => document.querySelector(selector).getBoundingClientRect();
         const find = bounds('#start-find'), intro = bounds('.detail-intro');
         const row = bounds('.detail-actions'), map = bounds('.detail-journey .map-frame');
-        const explore = bounds('#other-stones'), watch = bounds('#watch-stone'), share = bounds('#share-stone');
+        const explore = bounds('#other-stones'), watch = bounds('#contact-stone'), share = bounds('#share-stone');
         return Math.abs(find.width - intro.width) < 1 && find.bottom <= map.top &&
           row.top >= map.bottom && Math.abs(row.width - map.width) < 1 &&
           Math.abs(explore.left - row.left) < 1 && Math.abs(share.right - row.right) < 1 &&

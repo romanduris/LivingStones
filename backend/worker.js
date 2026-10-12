@@ -1,5 +1,6 @@
 import { fail, sha256, text, requireOrigin, jsonBody, limit } from "./common.js";
-import { subscribeWatchdog, foundWatchdogStatements, deliverWatchdog, checkWatchdogStatuses, watchdogLink } from './watchdog.js';
+import { EmailMessage } from 'cloudflare:email';
+import { sendContact } from './contact.js';
 import { recordTraffic } from "./traffic.js";
 import { handleManagement } from "./management.js";
 import { initializeStone, availableImages } from "./initialization.js";
@@ -69,11 +70,9 @@ async function listStones(db, id, admin = false) {
       })),
   }));
 }
-async function handle(request, env, ctx) {
+async function handle(request, env) {
   const url = new URL(request.url),
     path = url.pathname;
-  const watchLink=path.match(/^\/api\/watchdog\/([a-f0-9]{64})(?:\/(confirm|unsubscribe))?$/);
-  if(watchLink)return watchdogLink(request,env,watchLink[1],watchLink[2]);
   if (path.startsWith("/api/admin/")) return handleManagement(request, env, listStones);
   if (request.method === "GET" && path === "/api/health") {
     await env.DB.prepare("SELECT id FROM stones LIMIT 1").first();
@@ -86,7 +85,7 @@ async function handle(request, env, ctx) {
     return recordTraffic(request, env, await jsonBody(request));
   }
   const match = path.match(
-    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|watchdog|initialize|images|photo))?$/,
+    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|contact|initialize|images|photo))?$/,
   );
   if (!match) fail(404, "That page could not be found.");
   const [, id, kind] = match;
@@ -104,19 +103,13 @@ async function handle(request, env, ctx) {
   if (request.method !== "POST" || !kind) fail(405, "Method not allowed.");
   requireOrigin(request, env);
   const body = await jsonBody(request, kind === "initialize" ? 620000 : 8192);
-  if (kind === "initialize") {
-    const result=await initializeStone(request, env, id, body, listStones);
-    ctx?.waitUntil(deliverWatchdog(env));return result;
-  }
+  if (kind === "initialize") return initializeStone(request, env, id, body, listStones);
   if (kind !== "verify") {
     const state = await env.DB.prepare("SELECT initialized FROM stones WHERE id=?").bind(id).first();
     if (state && !state.initialized) fail(409, "This stone is waiting to be born. Finish its setup first.");
   }
   if (kind === "views") return recordTraffic(request, env, body, id);
-  if (kind === "watchdog") {
-    const result=await subscribeWatchdog(request,env,id,body);
-    ctx?.waitUntil(deliverWatchdog(env));return result;
-  }
+  if(kind==='contact')return sendContact(request,env,id,body,message=>new EmailMessage(message.from,message.to,message.raw));
   await limit(request, env, "public", 40);
   const stone = await env.DB.prepare(
     "SELECT code_hash,is_demo FROM stones WHERE id = ?",
@@ -225,7 +218,6 @@ async function handle(request, env, ctx) {
         message,
       ),
     );
-  if(kind==='finds')statements.push(...foundWatchdogStatements(env.DB,id,recordId,date,place));
   // D1 batch is transactional: a find and its message are committed together.
   try {
     await env.DB.batch(statements);
@@ -243,14 +235,10 @@ async function handle(request, env, ctx) {
       replayed: true,
     };
   }
-  if(kind==='finds')ctx?.waitUntil(deliverWatchdog(env));
   return { stone: (await listStones(env.DB, id))[0], recordId };
 }
 export default {
-  async scheduled(event,env,ctx) {
-    ctx.waitUntil((async()=>{await checkWatchdogStatuses(env,event.scheduledTime);await deliverWatchdog(env);})());
-  },
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const origin = request.headers.get("Origin");
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").includes(origin);
     const headers = {
@@ -271,7 +259,7 @@ export default {
         },
       });
     try {
-      const result=await handle(request, env, ctx);
+      const result=await handle(request, env);
       if(result instanceof Response)return result;
       return new Response(JSON.stringify(result), {
         headers,

@@ -6,13 +6,13 @@
   "workers_dev": true,
   "preview_urls": false,
   "vars": {
-    "WATCHDOG_FROM": "watchdog@rodulab.com",
-    "WATCHDOG_SITE_URL": "https://livingstones.rodulab.com",
-    "WATCHDOG_API_URL": "https://livingstones-api.livingstones-romanduris.workers.dev",
+    "CONTACT_TO": "roman.duris@gmail.com",
+    "CONTACT_FROM": "livingstones@notify.rodulab.com",
+    "CONTACT_SITE_URL": "https://livingstones.rodulab.com",
     "ALLOWED_ORIGINS": "https://romanduris.github.io,https://livingstones.rodulab.com",
   },
-  "triggers": { "crons": ["*/10 * * * *"] },
-  "send_email": [{ "name": "EMAIL" }],
+  "triggers": { "crons": [] },
+  "send_email": [{ "name": "EMAIL", "destination_address": "roman.duris@gmail.com" }],
   "d1_databases": [
     {
       "binding": "DB",

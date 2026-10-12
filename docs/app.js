@@ -256,7 +256,7 @@ const stoneRepository = (() => {
       }
       return result;
     },
-    watch: (id, email) => request(`/api/stones/${encodeURIComponent(id)}/watchdog`, { email, language:siteI18n.language }),
+    contact: (id, body, key) => request(`/api/stones/${encodeURIComponent(id)}/contact`, body, key),
     verify: (id, code) =>
       request(`/api/stones/${encodeURIComponent(id)}/verify`, { code }),
     addFind: (id, body, key) => save(id, "finds", body, key),
@@ -635,19 +635,20 @@ function renderDetail() {
         ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find"><span class="find-action-title">I found this stone</span><span class="find-action-invitation">Click here to keep its story going →</span></button><p class="find-reassurance">Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.</p>` : ""}
       </section>
       <div id="find-container"></div>
-      <section id="watchdog-panel" class="find-panel" aria-labelledby="watchdog-title" hidden>
-        <h3 id="watchdog-title" tabindex="-1">Watchdog · Follow ${escapeHTML(stone.name)}’s next adventure</h3>
-        <p id="watchdog-help">Leave your email to follow <strong>${escapeHTML(stone.name)}</strong>. Watchdog emails you whenever this stone is found or its status changes. You can enable it later and turn it off at any time using a link in an email. Several people can follow the same stone; everyone’s email stays private.</p>
-        <form id="watchdog-form">
-          <label class="field" for="watchdog-email">Your email<input id="watchdog-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="watchdog-help watchdog-status"></label>
-          <div class="form-actions"><button class="button primary" id="save-watchdog" type="submit">Enable notifications</button><button class="button secondary" id="close-watchdog" type="button">Close</button></div><button class="manual-location-toggle" id="stop-watchdog" type="button">Send me a link to turn notifications off</button>
-        </form>
-        <p id="watchdog-status" role="status" aria-live="polite"></p>
+      <section id="contact-panel" class="find-panel" aria-labelledby="contact-title" hidden>
+        <h3 id="contact-title" tabindex="-1">A question or suggestion about ${escapeHTML(stone.name)}?</h3>
+        <p id="contact-help">Send a message to the Living Stones creator. Include your email so they can reply. Your message stays private.</p>
+        <form id="contact-form"><fieldset id="contact-fields">
+          <label class="field" for="contact-name">Your name (optional)<input id="contact-name" name="nickname" maxlength="80" autocomplete="name"></label>
+          <label class="field" for="contact-email">Your email<input id="contact-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-help"></label>
+          <label class="field" for="contact-message">Your message<textarea id="contact-message" name="message" required maxlength="2000" rows="5"></textarea></label>
+          <div class="form-actions"><button class="button primary" id="send-contact" type="submit">Send message</button><button class="button secondary" id="close-contact" type="button">Close</button></div>
+        </fieldset></form><p id="contact-status" role="status" aria-live="polite"></p>
       </section>
       <section class="detail-journey" aria-labelledby="journey-title">
         <h3 id="journey-title" class="sr-only">${escapeHTML(stone.name)} journey map</h3>
         <div class="map-frame"><div id="journey-map" class="map-panel journey-map" role="region" aria-label="Interactive map of ${escapeHTML(stone.name)}’s finds"></div><button class="map-reset" data-reset-map="journey-map">Show whole journey ⤢</button></div>
-        <div class="detail-actions"><button class="button secondary" id="other-stones">Explore more stones ↗</button><button class="icon-button" id="watch-stone" type="button" aria-label="Watchdog: watch this stone" title="Watchdog: watch this stone" aria-expanded="false" aria-controls="watchdog-panel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/><path d="M12 2V1"/></svg></button><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
+        <div class="detail-actions"><button class="button secondary" id="other-stones">Explore more stones ↗</button><button class="icon-button" id="contact-stone" type="button" aria-label="Send a question or suggestion" title="Send a question or suggestion" aria-expanded="false" aria-controls="contact-panel"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></svg></button><button class="icon-button share-button" id="share-stone" aria-label="Share my story" title="Share my story">${shareIcon}</button></div>
         <div id="share-fallback" class="share-fallback" hidden></div>
         <div class="journey-caption"><span>Last seen: ${escapeHTML(last.city)} · ${formatDate(last.date)}</span><span class="journey-caption-end">${last.local ? ui`<span class="new-find-key">✦ Your new find · saved</span>` : ""}<span class="stone-views" title="Story openings since view tracking began">Views: <strong>${stone.views || 0}</strong></span></span></div>
         <div class="detail-stats" aria-label="My journey statistics"><span class="stat-alive"><strong>${days}</strong> Days alive</span><span class="stat-finds"><strong>${encounters}</strong> ${uiText(encounters===1?"Find":"Finds")}</span><span class="stat-countries"><strong>${new Set(stone.finds.map((find) => find.country)).size}</strong> Countries</span></div>
@@ -660,51 +661,31 @@ function renderDetail() {
   $("#close-detail").addEventListener("click", closeDetail);
   $("#share-stone").addEventListener("click", shareStone);
   $("#other-stones").addEventListener("click", showOtherStones);
-  const watchButton = $("#watch-stone"), watchPanel = $("#watchdog-panel");
-  const closeWatchdog = () => {
-    watchPanel.hidden = true;
-    watchButton.setAttribute("aria-expanded", "false");
-    $("#find-container").hidden = false;
-    watchButton.focus({ preventScroll: true });
-  };
-  watchButton.addEventListener("click", () => {
-    if (!watchPanel.hidden) return closeWatchdog();
-    watchPanel.hidden = false;
-    watchButton.setAttribute("aria-expanded", "true");
-    $("#find-container").hidden = true;
-    watchPanel.style.scrollMarginTop = `${$(".detail-topbar").getBoundingClientRect().height + 12}px`;
-    watchPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-    $("#watchdog-title").focus({ preventScroll: true });
+  const contactButton=$("#contact-stone"),contactPanel=$("#contact-panel"),contactForm=$("#contact-form"),contactFields=$("#contact-fields"),contactSubmit=$("#send-contact"),contactStatus=$("#contact-status");
+  let contactDraft=null;
+  const closeContact=()=>{contactPanel.hidden=true;contactButton.setAttribute('aria-expanded','false');$("#find-container").hidden=false;contactButton.focus({preventScroll:true});};
+  contactButton.addEventListener('click',()=>{
+    if(!contactPanel.hidden)return closeContact();
+    contactPanel.hidden=false;contactButton.setAttribute('aria-expanded','true');$("#find-container").hidden=true;
+    contactPanel.style.scrollMarginTop=`${$(".detail-topbar").getBoundingClientRect().height+12}px`;
+    contactPanel.scrollIntoView({behavior:'smooth',block:'start'});$("#contact-title").focus({preventScroll:true});
   });
-  $("#close-watchdog").addEventListener("click", closeWatchdog);
-  const watchForm = $("#watchdog-form"), watchEmail = $("#watchdog-email"), watchSubmit = $("#save-watchdog"), watchStatus = $("#watchdog-status"), watchStop=$("#stop-watchdog");
-  const submitWatchdog=async event=>{
-    event.preventDefault();
-    if(!watchForm.reportValidity())return;
-    if (watchSubmit.disabled) return;
-    const email = watchEmail.value.trim();
-    watchSubmit.disabled = true;
-    watchEmail.disabled = true;watchStop.disabled=true;
-    say(watchSubmit,"Saving…");
-    say(watchStatus,"");
-    try {
-      const result=await stoneRepository.watch(stone.id, email);
-      watchForm.reset();
-      say(watchStatus,result.notificationsEnabled?"Check your email to confirm Watchdog or turn notifications off. Each subscriber manages their own notifications.":"Your email is saved. Email delivery is being configured; your confirmation email will follow once it is ready.");
-    } catch (error) {
-      say(watchStatus,error.message);
-    } finally {
-      watchSubmit.disabled = false;
-      watchEmail.disabled = false;watchStop.disabled=false;
-      say(watchSubmit,"Enable notifications");
-    }
-  };
-  watchForm.addEventListener("submit",submitWatchdog);
-  watchStop.addEventListener("click",submitWatchdog);
+  $("#close-contact").addEventListener('click',closeContact);
+  contactForm.addEventListener('input',()=>{contactDraft=null;});
+  contactForm.addEventListener('submit',async event=>{
+    event.preventDefault();if(contactFields.disabled||!contactForm.reportValidity())return;
+    contactDraft||={key:crypto.randomUUID(),body:{nickname:$("#contact-name").value.trim(),email:$("#contact-email").value.trim(),message:$("#contact-message").value.trim(),language:siteI18n.language}};
+    contactFields.disabled=true;say(contactSubmit,'Sending…');say(contactStatus,'');
+    try{
+      await stoneRepository.contact(stone.id,contactDraft.body,contactDraft.key);
+      contactForm.reset();contactDraft=null;say(contactStatus,'Your message has been sent. Thank you!');
+    }catch(error){say(contactStatus,error.message);}
+    finally{contactFields.disabled=false;say(contactSubmit,'Send message');}
+  });
   $("#start-find")?.addEventListener("click", () => {
     if (!openedFromQR() || !supportsPreciseLocation()) return;
-    watchPanel.hidden = true;
-    watchButton.setAttribute("aria-expanded", "false");
+    contactPanel.hidden = true;
+    contactButton.setAttribute('aria-expanded','false');
     $("#find-container").hidden = false;
     flow = {
       id: stone.id,

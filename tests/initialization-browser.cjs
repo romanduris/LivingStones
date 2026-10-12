@@ -111,7 +111,7 @@ process.on('exit',()=>server.kill());
    await page.goto('http://127.0.0.1:8137/?stone=SNEW123&source=qr');
    await page.waitForURL('**/initialize/?stone=SNEW123');await page.locator('#birth-form').waitFor();
    if(width===390){
-    for(const [locale,expected] of [['sk-SK','sk'],['hu-HU','hu'],['de-DE','de'],['fr-FR','en']]){
+    for(const [locale,expected] of [['cs-CZ','sk'],['sk-SK','sk'],['hu-HU','hu'],['de-DE','de'],['fr-FR','en']]){
      const languagePage=await context.newPage();
      await languagePage.addInitScript(locale=>Object.defineProperty(navigator,'language',{get:()=>locale}),locale);
      await languagePage.goto('http://127.0.0.1:8137/initialize/?stone=SNEW123');await languagePage.locator('#birth-form').waitFor();
@@ -121,6 +121,7 @@ process.on('exit',()=>server.kill());
    await page.locator('#birth-language-switch').click();await page.locator('[data-birth-language=sk]').click();
    await page.reload();await page.locator('#birth-form').waitFor();
    assert.equal(await page.locator('html').getAttribute('lang'),'en','browser language takes precedence on a new page');
+   assert.deepEqual(await page.locator('.birth-section-heading h2').allTextContents(),['Give me a name','Choose my look','Let me be born']);
    assert.equal(await page.locator('#design-picker').isVisible(),false);
    assert.equal(await page.locator('#stone-theme').count(),0);
    await page.locator('#choose-stone-design').click();

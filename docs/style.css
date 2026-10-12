@@ -1576,11 +1576,11 @@ body:has(dialog[open]) {
   white-space: nowrap;
 }
 @media (max-width: 700px) {
-  #watchdog-form .form-actions {
+  #contact-form .form-actions {
     flex-wrap: nowrap;
     align-items: stretch;
   }
-  #watchdog-form .form-actions .button {
+  #contact-form .form-actions .button {
     min-width: 0;
     padding-inline: 10px;
     font-size: 12px;
@@ -1700,7 +1700,7 @@ body:has(dialog[open]) {
   gap: 8px;
   flex-shrink: 0;
 }
-#watchdog-panel { margin-bottom: 24px; }
+#contact-panel { margin-bottom: 24px; }
 .language-switch {
   display: inline-flex;
   align-items: center;
@@ -2104,3 +2104,7 @@ body:has(dialog[open]) {
   font-size: 8px;
   padding: 0 5px;
 }
+
+#contact-fields { border:0; margin:0; padding:0; min-width:0; }
+#contact-form .field { margin-bottom:14px; }
+#contact-message { resize:vertical; }

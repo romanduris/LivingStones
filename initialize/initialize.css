@@ -42,7 +42,7 @@
 button:disabled { opacity:.5; cursor:not-allowed; }
 .birth-footnote { padding-top:10px; text-align:center; color:var(--muted); font-size:12px; }
 .birth-footnote a { margin-left:10px; }
-@media(max-width:650px) { .birth-header { padding:16px; gap:10px; } .birth-header .wordmark { font-size:20px; } .birth-header > a:last-child { max-width:110px; text-align:right; font-size:11px; } .birth-wrap { padding:28px 16px; } .birth-intro { grid-template-columns:1fr; gap:10px; } .birth-hero-stone img { width:180px; height:160px; } .birth-hero-stone { margin:10px 0; } .birth-steps { gap:10px; justify-content:space-between; margin:26px 0; } .birth-steps li { font-size:11px; gap:6px; } .birth-steps span { width:23px; height:23px; } .birth-panel { padding:20px 16px; } .birth-section-heading h2 { font-size:21px; } .birth-input-grid,.birth-location { grid-template-columns:1fr; gap:16px; } .portrait-options { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; } .birth-submit { flex-direction:column; align-items:stretch; } .birth-submit span { text-align:center; } }
+@media(max-width:650px) { .birth-header { padding:16px; gap:10px; } .birth-header .wordmark { font-size:20px; } .birth-header > a:last-child { max-width:110px; text-align:right; font-size:11px; } .birth-wrap { padding:28px 16px; } .birth-intro { grid-template-columns:1fr; gap:10px; } .birth-steps { gap:10px; justify-content:space-between; margin:26px 0; } .birth-steps li { font-size:11px; gap:6px; } .birth-steps span { width:23px; height:23px; } .birth-panel { padding:20px 16px; } .birth-section-heading h2 { font-size:21px; } .birth-input-grid,.birth-location { grid-template-columns:1fr; gap:16px; } .portrait-options { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; } .birth-submit { flex-direction:column; align-items:stretch; } .birth-submit span { text-align:center; } }
 @media(prefers-reduced-motion:reduce) { .portrait-option { transition:none; } }
 #birth-location-preview-frame { margin:18px 0; }
 .birth-header-actions { display:flex; align-items:center; gap:18px; }
@@ -66,6 +66,7 @@ button:disabled { opacity:.5; cursor:not-allowed; }
 .stone-photo-preview img { width:220px; height:220px; max-width:100%; object-fit:contain; filter:drop-shadow(0 8px 12px #0003); }
 .birth-steps { flex-wrap:wrap; justify-content:space-between; }
 .photo-stage[data-zoom="2"] video,.photo-stage[data-zoom="2"] img { transform:scale(2); }
+.photo-stage[data-zoom="3"] video,.photo-stage[data-zoom="3"] img { transform:scale(3); }
 .photo-zoom { display:flex; justify-content:center; gap:8px; margin:12px 0; }
 .photo-zoom button { border:1px solid var(--line); border-radius:20px; background:var(--bg); color:var(--ink); padding:8px 14px; cursor:pointer; }
 .photo-zoom button[aria-pressed="true"] { border-color:var(--teal); color:var(--teal); }

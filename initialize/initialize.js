@@ -4,11 +4,12 @@ const id=new URL(location.href).searchParams.get('stone');
 const assetBase=new URL('../docs/assets/',location.href);
 let images=[],place=null,requestKey=null,gpsRun=0,portraitRun=0;
 let cityTimer,cityController,birthMap=null;
-let photo=null,cameraStream=null,photoRun=0,uploadURL=null,photoZoom=2;
+let photo=null,cameraStream=null,photoRun=0,uploadURL=null,photoZoom=3;
 const stoneOutline=new Path2D('M 51 9 C 73 7 87 24 90 43 C 96 64 81 85 62 90 C 41 97 18 85 11 66 C 5 47 12 25 28 15 C 35 10 43 11 51 9 Z');
 const locales={en:'en-GB',sk:'sk-SK',hu:'hu-HU',de:'de-DE'};
 let language='en';
 language=(navigator.language||'en').toLowerCase().split(/[-_]/)[0];
+if(language==='cs')language='sk';
 if(!locales[language])language='en';
 const messages=new Map();
 function t(key,params={}){return (BIRTH_TRANSLATIONS[language][key]||BIRTH_TRANSLATIONS.en[key]||key).replace(/\{(\w+)\}/g,(_,name)=>params[name]??'');}
@@ -256,9 +257,7 @@ $('#use-birth-gps').addEventListener('click',async()=>{
 $('#birth-form').addEventListener('submit',async event=>{
   event.preventDefault();if($('#birth-fields').disabled)return;
   if(!place||!(photo||selectedPortrait())){status('needPlace',true);return;}
-  const watchEmails=$('#birth-watch-emails').value.split(',').map(email=>email.trim()).filter(Boolean);
-  if(watchEmails.length>5){status('watchTooMany',true);$('#birth-watch-emails').focus();return;}
-  const body=Object.fromEntries(new FormData(event.currentTarget));body.place=place;body.watchEmails=watchEmails;body.watchLanguage=language;body.theme=selectedPortrait()?.theme||'sun';if(photo){delete body.imageId;body.photo=photo;}
+  const body=Object.fromEntries(new FormData(event.currentTarget));body.place=place;body.theme=selectedPortrait()?.theme||'sun';if(photo){delete body.imageId;body.photo=photo;}
   stopPhotoEditor();cancelCitySearch();
   requestKey ||= crypto.randomUUID();
   $('#birth-fields').disabled=true;$('#give-birth').textContent=t('savingButton');status('saving');

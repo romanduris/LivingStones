@@ -1,4 +1,3 @@
-import { watchdogEmail, birthWatchdogStatements } from './watchdog.js';
 import { fail, sha256, text, limit } from './common.js';
 
 // Used by both the picker and management; never offer an image still in use.
@@ -53,9 +52,6 @@ export async function initializeStone(request, env, id, body, listStones) {
   const key=request.headers.get('Idempotency-Key');
   if (!key || !/^[a-zA-Z0-9-]{16,80}$/.test(key)) fail(400, 'Please retry from the birth form.');
   const name=text(body.name,80,true),creator=text(body.creator,80,true),imageId=text(body.imageId,32,!body.photo),theme=text(body.theme,20,true),message=text(body.message,400);
-  if(body.watchEmails!=null&&(!Array.isArray(body.watchEmails)||body.watchEmails.length>5))fail(400,'Enter up to five email addresses.');
-  const watchEmails=[...new Set((body.watchEmails||[]).map(watchdogEmail))];
-  const watchLanguage=['en','sk','hu','de'].includes(body.watchLanguage)?body.watchLanguage:'en';
   const photo=body.photo?decodePhoto(body.photo):null;
   if(photo&&imageId)fail(400,'Choose either a photo or a portrait.');
   if (!['sun','moon','leaf','heart','wave'].includes(theme)) fail(400,'Choose a theme.');
@@ -63,7 +59,7 @@ export async function initializeStone(request, env, id, body, listStones) {
   if (!p || !Number.isFinite(p.lat)||!Number.isFinite(p.lon)||Math.abs(p.lat)>90||Math.abs(p.lon)>180||!['gps','manual'].includes(p.source)||(p.source==='gps'&&(!Number.isFinite(p.accuracy)||p.accuracy<0)))
     fail(400,'Use your phone’s GPS or choose a city for this stone’s birthplace.');
   const place={lat:p.lat,lon:p.lon,accuracy:p.source==='gps'?p.accuracy:null,source:p.source,city:text(p.city,120,true),country:text(p.country,80,true),address:text(p.address,300)};
-  const fingerprint=await sha256(JSON.stringify({id,name,creator,imageId,theme,place,...(watchEmails.length?{watchEmails,watchLanguage}:{}),...(photo?{photo:body.photo}:{}),...(message?{message}:{})}));
+  const fingerprint=await sha256(JSON.stringify({id,name,creator,imageId,theme,place,...(photo?{photo:body.photo}:{}),...(message?{message}:{})}));
   const replay=async()=>{
     const saved=await env.DB.prepare('SELECT stone_id,fingerprint FROM stone_initializations WHERE id=?').bind(key).first();
     if (!saved) return null;
@@ -86,7 +82,6 @@ export async function initializeStone(request, env, id, body, listStones) {
   if(photo)statements.push(env.DB.prepare('INSERT INTO stone_photos(stone_id,png) SELECT ?,? WHERE EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?) ON CONFLICT(stone_id) DO NOTHING').bind(id,photo,key,id));
   else statements.push(env.DB.prepare('UPDATE stone_image_pool SET stone_id=?,claimed_at=? WHERE id=? AND claimed_at IS NULL AND EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?)').bind(id,date,imageId,key,id));
   if(message)statements.push(env.DB.prepare("INSERT INTO comments(id,stone_id,find_id,created_at,nickname,message) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?) AND NOT EXISTS(SELECT 1 FROM comments WHERE id=?)").bind('birth-wish-'+id,id,'birth-'+id,date,creator.slice(0,40),message,key,id,'birth-wish-'+id));
-  if(watchEmails.length)statements.push(...birthWatchdogStatements(env.DB,id,watchEmails,watchLanguage,date,key));
   let results;
   try {results=await env.DB.batch(statements);} catch(error) {
     const saved=await replay();if(saved)return saved;

@@ -41,8 +41,8 @@ process.on('exit',()=>server.kill());
    const pixels=await page.evaluate(async()=>{const img=document.querySelector('#photo-portrait');await img.decode();const canvas=document.createElement('canvas');canvas.width=canvas.height=320;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);return {corner:[...ctx.getImageData(0,0,1,1).data],center:[...ctx.getImageData(160,160,1,1).data],width:img.naturalWidth};});
    assert.equal(pixels.width,320);assert.equal(pixels.corner[3],0);assert.deepEqual(pixels.center,[200,70,40,255]);
    assert.equal(await page.locator('#hero-portrait').count(),0);
-   assert.equal(await page.locator('.birth-steps li').count(),4);
-   assert.equal(await page.locator('[data-photo-zoom="2"]').getAttribute('aria-pressed'),'true');
+   assert.equal(await page.locator('.birth-steps li').count(),3);
+   assert.equal(await page.locator('[data-photo-zoom="3"]').getAttribute('aria-pressed'),'true');
    assert.equal(await page.evaluate(()=>window.photoScrolls.includes('photo-editor')&&window.photoScrolls.includes('stone-photo-preview')),true);
    // Cancelling another photo keeps the selected portrait.
    let photo=await page.locator('#photo-portrait').getAttribute('src');
@@ -54,21 +54,20 @@ process.on('exit',()=>server.kill());
    await page.locator('#stone-photo-file').setInputFiles('fixtures/stone-photo.png');await page.waitForFunction(()=>!document.querySelector('#capture-stone-photo').disabled);await page.locator('#capture-stone-photo').click();
    assert.equal(await page.locator('#portrait-options input:checked').count(),0);assert.equal(await page.locator('#design-picker').isVisible(),false);
    const zoomImage=Buffer.from(await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=canvas.height=320;const ctx=canvas.getContext('2d');ctx.fillStyle='#0000ff';ctx.fillRect(0,0,320,320);ctx.fillStyle='#ff0000';ctx.fillRect(80,80,160,160);return canvas.toDataURL().split(',')[1];}),'base64');
-   for(const [zoom,expected] of [[2,[255,0,0,255]],[1,[0,0,255,255]],[2,[255,0,0,255]]]){
+   for(const [zoom,expected] of [[3,[255,0,0,255]],[1,[0,0,255,255]],[2,[255,0,0,255]],[3,[255,0,0,255]]]){
     await page.locator('#stone-photo-file').setInputFiles({name:'zoom.png',mimeType:'image/png',buffer:zoomImage});await page.waitForFunction(()=>!document.querySelector('#capture-stone-photo').disabled);
     await page.locator(`[data-photo-zoom="${zoom}"]`).click();await page.locator('#capture-stone-photo').click();
     const pixel=await page.evaluate(async()=>{const img=document.querySelector('#photo-portrait');await img.decode();const canvas=document.createElement('canvas');canvas.width=canvas.height=320;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);return [...ctx.getImageData(60,160,1,1).data];});assert.deepEqual(pixel,expected,'saved crop matches '+zoom+'× preview');
    }
    photo=await page.locator('#photo-portrait').getAttribute('src');
-   await page.locator('#birth-watch-emails').fill('creator@example.invalid, friend@example.invalid');
    await page.locator('#stone-name').fill('Photo friend');await page.locator('#stone-creator').fill('Painter');await page.locator('#find-code').fill('0372');await page.locator('#use-birth-gps').click();
    await page.waitForFunction(()=>!document.querySelector('#give-birth').disabled);
    await page.locator('#give-birth').click();await page.waitForFunction(()=>document.querySelector('#form-status').textContent.includes('couldn’t confirm'));
-   await page.locator('#give-birth').click();await page.waitForFunction(()=>!document.querySelector('#birth-fields').disabled);assert.equal(attempts,2);assert.equal(saved.photo,photo);assert.deepEqual(saved.watchEmails,['creator@example.invalid','friend@example.invalid']);assert.equal(saved.watchLanguage,'en');
+   await page.locator('#give-birth').click();await page.waitForFunction(()=>!document.querySelector('#birth-fields').disabled);assert.equal(attempts,2);assert.equal(saved.photo,photo);assert.equal(saved.watchEmails,undefined);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    await page.screenshot({path:`/tmp/livingstones-photo-${width}.png`,fullPage:true});assert.deepEqual(errors,[]);
    await context.close();
   }
-  console.log('Passed: camera denial, live camera outline, capture, matching 1×/2× crops and transparency, automatic scrolling, four setup steps, multiple birth watcher emails, stopped camera tracks, cancelled retake, translated preview, photo submission retries and 320/390/1280 layouts.');
+  console.log('Passed: camera denial, live camera outline, capture, matching 1×/2×/3× crops and transparency, automatic scrolling, three setup steps, stopped camera tracks, cancelled retake, translated preview, photo submission retries and 320/390/1280 layouts.');
  }finally{await browser.close();server.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

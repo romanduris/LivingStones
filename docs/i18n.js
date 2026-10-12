@@ -4,6 +4,7 @@
 const siteI18n=(()=>{
  const supported={en:'en-GB',sk:'sk-SK',hu:'hu-HU',de:'de-DE'};
  let language=(navigator.language||'en').toLowerCase().split(/[-_]/)[0];
+ if(language==='cs')language='sk';
  if(!supported[language])language='en';
  const generated=new Map();
  const attributes=['aria-label','title','placeholder','data-label'];

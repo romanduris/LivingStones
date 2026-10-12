@@ -2,7 +2,7 @@ const {chromium,devices}=require('playwright'),assert=require('node:assert/stric
 const fixture=vm.createContext({});vm.runInContext(fs.readFileSync('fixtures/demo-data.js','utf8')+';globalThis.stones=DEMO_STONES',fixture);
 const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit',()=>server.kill());
 (async()=>{await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject);});const browser=await chromium.launch();try{
- for(const locale of ['sk-SK','hu-HU','de-DE','fr-FR']){
+ for(const locale of ['cs-CZ','sk-SK','hu-HU','de-DE','fr-FR']){
   const context=await browser.newContext({...devices['iPhone 13'],locale});const stones=JSON.parse(JSON.stringify(fixture.stones));
   stones.forEach(stone=>stone.finds.forEach((find,i)=>find.id=stone.id+'-find-'+i));
   stones[0].name='Map';stones[0].creator='Finds';stones[0].finds[0].message='Close';stones[0].finds[0].nickname='Countries';
@@ -19,7 +19,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   await context.route('https://photon.komoot.io/api/**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({features:[{geometry:{type:'Point',coordinates:[19,48]},properties:{name:'Map',country:'Slovakia'}}]})}));
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:8137/?stone='+stones[0].id+'&source=qr');await page.locator('#stone-dialog[open]').waitFor();
-  const expected=locale==='fr-FR'?'en':locale.slice(0,2);assert.equal(await page.locator('html').getAttribute('lang'),expected);
+  const expected=locale==='fr-FR'?'en':locale.startsWith('cs')?'sk':locale.slice(0,2);assert.equal(await page.locator('html').getAttribute('lang'),expected);
   assert.equal(await page.locator('.detail-footnote').innerText(),await page.evaluate(()=>t('View (2/0) below the finder’s name means: 2 story openings since that entry, including 0 via QR code.')));
   assert.equal(await page.locator('.find-action-invitation').innerText(),await page.evaluate(()=>t('Click here to keep its story going →')));
   await page.setViewportSize({width:320,height:844});
@@ -34,14 +34,14 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.locator('#detail-title .detail-title-copy').innerText(),'Map');assert.match(await page.locator('.detail-story').innerText(),/Finds/);
   assert.equal(await page.locator('[data-entry="'+stones[0].finds[0].id+'"] .entry-message').innerText(),'“Close”');
-  await page.locator('#watch-stone').click();await page.locator('#watchdog-email').fill('draft@example.invalid');
+  await page.locator('#contact-stone').click();await page.locator('#contact-email').fill('draft@example.invalid');
   await page.setViewportSize({width:320,height:844});
-  assert.ok(await page.evaluate(()=>{const save=document.querySelector('#save-watchdog').getBoundingClientRect(),close=document.querySelector('#close-watchdog').getBoundingClientRect();return Math.abs(save.top-close.top)<1&&close.left>save.right;}),'Watchdog buttons share a row at 320px in '+expected);
+  assert.ok(await page.evaluate(()=>{const save=document.querySelector('#send-contact').getBoundingClientRect(),close=document.querySelector('#close-contact').getBoundingClientRect();return Math.abs(save.top-close.top)<1&&close.left>save.right;}),'Contact buttons share a row at 320px in '+expected);
   await page.setViewportSize({width:390,height:844});
   await page.locator('[popovertarget=detail-language-menu]').click();await page.locator('#detail-language-menu [data-language=de]').click();
-  assert.equal(await page.locator('#watchdog-email').inputValue(),'draft@example.invalid');assert.equal(await page.locator('#watchdog-panel').isVisible(),true);
-  assert.equal(await page.locator('#save-watchdog').innerText(),'Benachrichtigungen aktivieren');assert.equal(await page.locator('.site-header .language-label').textContent(),'DE');
-  await page.locator('#close-watchdog').click();await page.locator('#start-find').click();await page.locator('#find-code').fill('8451');
+  assert.equal(await page.locator('#contact-email').inputValue(),'draft@example.invalid');assert.equal(await page.locator('#contact-panel').isVisible(),true);
+  assert.equal(await page.locator('#send-contact').innerText(),'Nachricht senden');assert.equal(await page.locator('.site-header .language-label').textContent(),'DE');
+  await page.locator('#close-contact').click();await page.locator('#start-find').click();await page.locator('#find-code').fill('8451');
   await page.locator('[popovertarget=detail-language-menu]').click();await page.locator('#detail-language-menu [data-language=sk]').click();
   assert.equal(await page.locator('#find-code').inputValue(),'8451');assert.match(await page.locator('#find-title').innerText(),/Teším sa/);
   await page.locator('#find-form button[type=submit]').click();await page.locator('#choose-city').waitFor();await page.locator('#choose-city').click();await page.locator('#manual-city').fill('Map');await page.locator('.city-result').click();
@@ -62,5 +62,5 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);
   await context.close();
  }
- console.log('Passed: browser locale/fallback, main/story/find/watchdog translations, visitor copy untouched, switching preserves drafts and location.');
+ console.log('Passed: browser locale/fallback, main/story/find/contact translations, visitor copy untouched, switching preserves drafts and location.');
 }finally{await browser.close();server.kill();}})().catch(e=>{console.error(e);process.exitCode=1;});
