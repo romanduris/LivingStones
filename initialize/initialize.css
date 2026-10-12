@@ -86,3 +86,6 @@ body[data-photo-editing="true"] .birth-footnote { display:none; }
 .photo-links > div { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
 .photo-links .birth-help { margin:0; }
 .birth-wish { margin-top:8px; }
+
+#use-birth-gps.primary { font-weight:700; }
+#give-birth:disabled { background:var(--surface); color:var(--muted); border:1px solid var(--line); opacity:1; }

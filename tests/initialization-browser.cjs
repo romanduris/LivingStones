@@ -143,6 +143,10 @@ process.on('exit',()=>server.kill());
    await page.locator('#birth-back').click();await page.locator('#birth-step-1').waitFor();assert.equal(await page.locator('#stone-name').inputValue(),'Pebble <hello>');
    await page.locator('#birth-next').click();await page.locator('#birth-step-2').waitFor();assert.equal(await page.locator('#stone-photo-preview').isVisible(),true);
    await page.locator('#birth-next').click();await page.locator('#birth-step-3').waitFor();
+   assert.equal(await page.locator('#give-birth').isDisabled(),true);
+   assert.equal(await page.locator('#use-birth-gps').evaluate(el=>el.classList.contains('primary')),true);
+   const inactiveBirthColor=await page.locator('#give-birth').evaluate(el=>getComputedStyle(el).backgroundColor);
+   assert.notEqual(inactiveBirthColor,await page.locator('#use-birth-gps').evaluate(el=>getComputedStyle(el).backgroundColor));
    // A declined GPS request preserves the form and can be retried.
    await page.evaluate(()=>{const original=navigator.geolocation.getCurrentPosition;navigator.geolocation.getCurrentPosition=(ok,bad)=>{navigator.geolocation.getCurrentPosition=original;bad({code:1});};});
    await page.locator('#use-birth-gps').click();
@@ -150,9 +154,13 @@ process.on('exit',()=>server.kill());
    assert.equal(await page.locator('#give-birth').isDisabled(),true);
    await page.locator('#use-birth-gps').click();
    await page.waitForFunction(()=>document.querySelector('#location-status').textContent.includes('Bratislava'));
+   assert.equal(await page.locator('#give-birth').isEnabled(),true);
+   assert.equal(await page.locator('#use-birth-gps').evaluate(el=>el.classList.contains('secondary')),true);
+   assert.notEqual(await page.locator('#give-birth').evaluate(el=>getComputedStyle(el).backgroundColor),inactiveBirthColor);
    assert.equal(await page.locator('#manual-location').isVisible(),false);
    if(width===390){
     await page.locator('#choose-city').click();assert.equal(await page.locator('#give-birth').isDisabled(),true);
+    assert.equal(await page.locator('#give-birth').evaluate(el=>getComputedStyle(el).backgroundColor),inactiveBirthColor);
     await page.locator('#manual-city').fill('nowhere');await page.waitForFunction(()=>document.querySelector('#city-search-status').textContent.includes('No matching'));
     await page.locator('#manual-city').fill('failure');await page.waitForFunction(()=>document.querySelector('#city-search-status').textContent.includes('unavailable'));
     await page.locator('#manual-city').fill('Banská');await page.locator('.city-result').waitFor();

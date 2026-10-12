@@ -60,6 +60,8 @@ async function api(suffix='',body,key){
 }
 function updateBirthButton(){
   const disabled=$('#birth-fields').disabled;
+  $('#use-birth-gps').classList.toggle('primary',!place);
+  $('#use-birth-gps').classList.toggle('secondary',Boolean(place));
   $('#give-birth').disabled=!place||!(photo||selectedPortrait())||disabled;
   $('#birth-next').disabled=disabled||wizardBusy||(currentStep===2&&(!(photo||selectedPortrait())||!$('#photo-editor').hidden));
   $('#birth-next').textContent=t(wizardBusy?'checkingCode':'next');

@@ -10,11 +10,11 @@
   <link rel="icon" href="../docs/assets/brand-stone.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../docs/vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="../docs/style.css?v=73">
-  <link rel="stylesheet" href="initialize.css?v=9">
+  <link rel="stylesheet" href="initialize.css?v=10">
   <script src="../docs/vendor/leaflet/leaflet.js" defer></script>
   <script src="../docs/config.js?v=1" defer></script>
   <script src="translations.js?v=7" defer></script>
-  <script src="initialize.js?v=8" defer></script>
+  <script src="initialize.js?v=9" defer></script>
 </head>
 <body>
   <svg class="map-tone-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="map-petrol-tone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 0 0 0 1 0" result="inverted"/><feComponentTransfer in="inverted" result="petrol"><feFuncR type="table" tableValues=".075 .18 .5 .76 .94"/><feFuncG type="table" tableValues=".155 .28 .56 .76 .90"/><feFuncB type="table" tableValues=".17 .29 .46 .60 .72"/></feComponentTransfer><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 .82 0 0 0 0 .70 0 0 0 0 .43 0 -6 6 0 -.25" result="border-colors"/><feComponentTransfer in="border-colors" result="borders"><feFuncA type="discrete" tableValues="0 0 0 0 .75"/></feComponentTransfer><feMerge><feMergeNode in="petrol"/><feMergeNode in="borders"/></feMerge></filter></defs></svg>
@@ -58,7 +58,7 @@
       <section id="birth-step-3" class="birth-panel birth-final" data-step="3" aria-labelledby="activate-heading" hidden>
         <div class="birth-section-heading"><h2 id="activate-heading" tabindex="-1" data-i18n="birthHeading">Activate your stone</h2><p data-i18n="birthHelp">Choose the stone’s current location, then activate it.</p></div>
         <div class="birth-summary"><img id="summary-portrait" src="../docs/assets/brand-stone.svg" alt="" width="48" height="48"><div><strong id="summary-name"></strong><small id="birth-date"></small></div></div>
-        <button class="button secondary" type="button" id="use-birth-gps" data-i18n="gps">Use current location</button><p id="location-status" role="status" aria-live="polite"></p>
+        <button class="button primary" type="button" id="use-birth-gps" data-i18n="gps">Use current location</button><p id="location-status" role="status" aria-live="polite"></p>
         <button class="manual-location-toggle" id="choose-city" type="button" aria-expanded="false" aria-controls="manual-location" data-i18n="manualToggle">Choose a city instead</button>
         <div id="manual-location" hidden><label class="field" for="manual-city"><span data-i18n="city">City</span><input id="manual-city" maxlength="120" autocomplete="off" data-i18n-placeholder="cityPlaceholder" placeholder="Type a city…" aria-describedby="city-search-status"></label><p id="city-search-status" class="birth-help" role="status"></p><div id="city-results" class="city-results" data-i18n-aria="citiesLabel" aria-label="Matching cities"></div></div>
         <div id="birth-location-preview-frame" class="map-frame location-preview-frame" hidden><div id="birth-location-preview" class="map-panel location-preview-map" role="region" data-i18n-aria="mapLabel" aria-label="Stone location"></div></div>
