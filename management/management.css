@@ -98,3 +98,8 @@ button:hover { border-color:var(--purple); } button:disabled { opacity:.55; curs
 .private-note-panel textarea { min-height:130px; }
 
 #traffic-ranking { overflow-x: auto; }
+
+.email-setting { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; margin:12px 0 20px; }
+.email-setting label { display:flex; flex-direction:row; align-items:center; gap:10px; min-height:44px; font-size:13px; color:var(--ink); cursor:pointer; }
+.email-setting input { width:18px; height:18px; flex:none; padding:0; accent-color:var(--purple); }
+#owner-email-status { font-size:12px; color:var(--muted); }

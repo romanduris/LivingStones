@@ -2137,3 +2137,6 @@ body:has(dialog[open]) {
 #find-container .form-actions .button { padding-inline:10px; font-size:12px; min-height:42px; }
 #find-container .city-results { max-height:140px; overflow-y:auto; }
 #find-error:empty { display:none; }
+
+.find-reassurance > span { display:block; }
+.find-reassurance { line-height:1.5; margin-top:10px; }

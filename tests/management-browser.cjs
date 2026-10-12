@@ -11,13 +11,17 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    const context=await browser.newContext({viewport:{width,height:900}});
    const stones=JSON.parse(JSON.stringify(fixture.stones));
    stones.forEach((s,index)=>{s.views=index+4;s.qrViews=1;s.creator=s.finds[0].nickname;s.finds.forEach((f,i)=>f.id='find-'+s.id+'-'+i);s.comments=s.finds.map((f,i)=>({id:'comment-'+s.id+'-'+i,findId:f.id,date:f.date,nickname:f.nickname,message:f.message}));});
-   const token='a'.repeat(64);let valid=true;
+   const token='a'.repeat(64);let valid=true,ownerEmailsEnabled=true,failEmailSave=false;
    await context.route('http://127.0.0.1:8787/api/admin/**',async route=>{
-    const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones,imagesAvailable:40},status=200;
+    const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones,imagesAvailable:40,ownerEmailsEnabled},status=200;
     if(parts[3]==='login'){
      if(req.postDataJSON().password==='test-only-password'){valid=true;result={token,expiresAt:Math.floor(Date.now()/1000)+14400};}else{status=401;result={error:'That password is not correct.'};}
     }else if(!valid||req.headers().authorization!=='Bearer '+token){status=401;result={error:'Please sign in to management.'};}
     else if(parts[3]==='logout'){valid=false;result={ok:true};}
+    else if(parts[3]==='email-settings'){
+     if(failEmailSave){failEmailSave=false;status=503;result={error:'Could not save setting.'};}
+     else {if(method==='PATCH')ownerEmailsEnabled=req.postDataJSON().enabled;result={enabled:ownerEmailsEnabled};}
+    }
     else if(parts[3]==='stats'){
      const period=new URL(req.url()).searchParams.get('period')||'30',today=new Date().toISOString().slice(0,10);
      result={period,since:today,timezone:'UTC',range:{from:period==='all'?today:new Date(Date.parse(today)-(Number(period)-1)*86400000).toISOString().slice(0,10),to:today},targets:[{key:'home',name:'Homepage',kind:'home',totalViews:10,beforeRange:0},...stones.map(s=>({key:'stone:'+s.id,name:s.name,kind:'stone',totalViews:s.views,totalQrViews:s.qrViews,beforeRange:0}))],days:[{day:today,target:'home',views:10},...stones.map(s=>({day:today,target:'stone:'+s.id,views:s.views,qrViews:s.qrViews}))]};
@@ -48,6 +52,11 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#password').fill('wrong');await page.locator('#login-form button').click();await page.locator('#notice.error').waitFor();assert.equal(await page.locator('#login').isVisible(),true);
    await page.locator('#password').fill('test-only-password');await page.locator('#login-form button').click();await page.locator('.admin-stone-card').first().waitFor();assert.equal(await page.locator('.admin-stone-card').count(),14);
    assert.match(await page.locator('#summary').innerText(),/147\s+Story views/);
+   await page.locator('#owner-email-enabled:not(:disabled)').waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),true);
+   await page.locator('#owner-email-enabled').uncheck();await page.locator('#owner-email-status').filter({hasText:'Email alerts off.'}).waitFor();
+   await page.reload();await page.locator('.admin-stone-card').first().waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
+   failEmailSave=true;await page.locator('#owner-email-enabled').check();await page.locator('#owner-email-status').filter({hasText:'Could not save setting.'}).waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
+   await page.locator('#owner-email-enabled').check();await page.locator('#owner-email-status').filter({hasText:'Email alerts on.'}).waitFor();
    await page.locator('#search').fill('Sunny');assert.equal(await page.locator('.admin-stone-card').count(),1);await page.locator('#search').fill('');
    await page.locator('#type-filter').selectOption('real');assert.equal(await page.locator('.admin-stone-card').count(),0);await page.locator('#type-filter').selectOption('all');
    await page.locator('#sort').selectOption('views');assert.match(await page.locator('.admin-stone-card').first().innerText(),/Forest Friend/);

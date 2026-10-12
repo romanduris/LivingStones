@@ -308,6 +308,14 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       return {status:response.status,body:await response.json()};
     }
     assert.equal((await admin("stones")).body.stones.length,14);
+    assert.equal((await admin('stones')).body.ownerEmailsEnabled,true);
+    assert.equal((await call('/admin/email-settings')).status,401);
+    assert.equal((await admin('email-settings','PATCH',{enabled:false},{Origin:'https://bad.invalid'})).status,403);
+    assert.equal((await admin('email-settings','PATCH',{enabled:'false'})).status,400);
+    assert.deepEqual((await admin('email-settings','PATCH',{enabled:false})).body,{enabled:false});
+    assert.equal((await admin('stones')).body.ownerEmailsEnabled,false);
+    assert.deepEqual((await admin('email-settings')).body,{enabled:false});
+    assert.deepEqual((await admin('email-settings','PATCH',{enabled:true})).body,{enabled:true});
     // New labels are private; uninitialized stones stay off the public collection.
     assert.equal((await call('/admin/stones',{})).status,401);
     assert.equal((await admin('stones','POST',{}, {Origin:'https://bad.invalid','Idempotency-Key':randomUUID()})).status,403);

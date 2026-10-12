@@ -280,7 +280,9 @@ const SITE_TRANSLATIONS = {
     "Allow GPS to locate your find. Addresses and city searches use Photon.": "Allow GPS to locate your find. Addresses and city searches use Photon.",
     "Choose a city from the results.": "Choose a city from the results.",
     "Your location, nickname and message will be public.": "Your location, nickname and message will be public.",
-    "Demo code: {0}": "Demo code: {0}"
+    "Demo code: {0}": "Demo code: {0}",
+    "Record your find. A message is optional.": "Record your find. A message is optional.",
+    "Then leave the stone somewhere safe.": "Then leave the stone somewhere safe."
   },
   "sk": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
@@ -561,7 +563,9 @@ const SITE_TRANSLATIONS = {
     "Allow GPS to locate your find. Addresses and city searches use Photon.": "Povoľ GPS pre miesto nájdenia. Adresy a mestá vyhľadávame cez Photon.",
     "Choose a city from the results.": "Vyber mesto z výsledkov.",
     "Your location, nickname and message will be public.": "Poloha, prezývka a správa budú verejné.",
-    "Demo code: {0}": "Demo kód: {0}"
+    "Demo code: {0}": "Demo kód: {0}",
+    "Record your find. A message is optional.": "Zapíš nájdenie. Správa je voliteľná.",
+    "Then leave the stone somewhere safe.": "Potom ho nechaj na bezpečnom mieste."
   },
   "hu": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
@@ -842,7 +846,9 @@ const SITE_TRANSLATIONS = {
     "Allow GPS to locate your find. Addresses and city searches use Photon.": "Engedélyezd a GPS-t a találat helyéhez. A címeket és városokat a Photon keresi.",
     "Choose a city from the results.": "Válassz várost a találatokból.",
     "Your location, nickname and message will be public.": "A hely, becenév és üzenet nyilvános lesz.",
-    "Demo code: {0}": "Demo kód: {0}"
+    "Demo code: {0}": "Demo kód: {0}",
+    "Record your find. A message is optional.": "Rögzítsd a találatot, üzenet nélkül is.",
+    "Then leave the stone somewhere safe.": "Utána hagyd a kavicsot biztonságos helyen."
   },
   "de": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
@@ -1123,6 +1129,8 @@ const SITE_TRANSLATIONS = {
     "Allow GPS to locate your find. Addresses and city searches use Photon.": "Erlaube GPS für den Fundort. Adressen und Städte suchen wir mit Photon.",
     "Choose a city from the results.": "Wähle eine Stadt aus den Ergebnissen.",
     "Your location, nickname and message will be public.": "Standort, Spitzname und Nachricht werden öffentlich.",
-    "Demo code: {0}": "Demo-Code: {0}"
+    "Demo code: {0}": "Demo-Code: {0}",
+    "Record your find. A message is optional.": "Trage deinen Fund ein. Nachricht optional.",
+    "Then leave the stone somewhere safe.": "Lege den Stein dann an einen sicheren Ort."
   }
 };

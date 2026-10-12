@@ -31,6 +31,8 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
       parseInt(getComputedStyle(title).fontWeight)>parseInt(getComputedStyle(invitation).fontWeight)&&
       button.scrollWidth<=button.clientWidth;
   }),'Two clear action lines fit at 320px in '+expected);
+  await page.evaluate(()=>document.fonts.ready);
+  assert.ok(await page.locator('.find-reassurance').evaluate(el=>el.getBoundingClientRect().height<=2*parseFloat(getComputedStyle(el).lineHeight)+1),'Reassurance fits two lines at 320px in '+expected);
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.locator('#detail-title .detail-title-copy').innerText(),'Map');assert.match(await page.locator('.detail-story').innerText(),/Finds/);
   assert.equal(await page.locator('[data-entry="'+stones[0].finds[0].id+'"] .entry-message').innerText(),'“Close”');

@@ -3,7 +3,8 @@ import { mailMessage } from './contact.js';
 // Queue alongside the event in the same D1 transaction. One row per birth/find.
 export function eventEmailStatement(db,id,stoneId,kind,payload,initializationKey=null) {
   return db.prepare(`INSERT INTO owner_event_emails(id,stone_id,kind,payload,created_at)
-    SELECT ?,?,?,?,? WHERE ? IS NULL OR EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?)
+    SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM owner_email_settings WHERE id=1 AND enabled=1)
+    AND (? IS NULL OR EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?))
     ON CONFLICT(id) DO NOTHING`).bind(id,stoneId,kind,JSON.stringify(payload),payload.date,initializationKey,initializationKey,stoneId);
 }
 export function eventEmailMessage(row,env) {
@@ -19,15 +20,19 @@ export function eventEmailMessage(row,env) {
 }
 export async function deliverEventEmails(env,createMessage) {
   if(!env.EMAIL||!env.CONTACT_FROM||!env.CONTACT_TO)return;
+  if(!(await env.DB.prepare('SELECT enabled FROM owner_email_settings WHERE id=1').first())?.enabled)return;
   const now=Math.floor(Date.now()/1000);
   const {results}=await env.DB.prepare(`SELECT * FROM owner_event_emails WHERE sent_at IS NULL
     AND next_attempt_at<=? AND lease_until<=? ORDER BY created_at,id LIMIT 5`).bind(now,now).all();
   for(const row of results){
     const claim=await env.DB.prepare(`UPDATE owner_event_emails SET lease_until=?,attempts=attempts+1
-      WHERE id=? AND sent_at IS NULL AND next_attempt_at<=? AND lease_until<=? RETURNING id`)
+      WHERE id=? AND sent_at IS NULL AND next_attempt_at<=? AND lease_until<=?
+      AND EXISTS(SELECT 1 FROM owner_email_settings WHERE id=1 AND enabled=1) RETURNING id`)
       .bind(now+600,row.id,now,now).first();
     if(!claim)continue;
     try{
+      const active=await env.DB.prepare('SELECT id FROM owner_event_emails WHERE id=? AND EXISTS(SELECT 1 FROM owner_email_settings WHERE id=1 AND enabled=1)').bind(row.id).first();
+      if(!active)continue;
       await env.EMAIL.send(createMessage(eventEmailMessage(row,env)));
       await env.DB.prepare('UPDATE owner_event_emails SET sent_at=?,lease_until=0 WHERE id=?').bind(new Date().toISOString(),row.id).run();
     }catch(error){

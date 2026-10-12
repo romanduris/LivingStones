@@ -8,11 +8,11 @@
   <link rel="icon" href="logo.svg" type="image/svg+xml">
   <title>Management · Living Stones</title>
   <link rel="stylesheet" href="../docs/style.css?v=50">
-  <link rel="stylesheet" href="management.css?v=9">
+  <link rel="stylesheet" href="management.css?v=10">
   <script src="../docs/config.js?v=1" defer></script>
   <script src="vendor/qrcode.js?v=2.0.4" defer></script>
   <script src="statistics.js?v=2" defer></script>
-  <script src="management.js?v=16" defer></script>
+  <script src="management.js?v=17" defer></script>
 </head>
 <body>
   <header class="admin-header"><a class="admin-brand" href="../"><img class="admin-logo" src="logo.svg" alt=""><span class="admin-brand-name">Living Stones <span>Management</span></span></a><div><a href="../">Visit website ↗</a><button id="logout" hidden>Sign out</button></div></header>
@@ -26,6 +26,7 @@
     <nav id="admin-tabs" class="admin-tabs" role="tablist" aria-label="Administration sections" hidden><button id="management-tab" role="tab" aria-selected="true" aria-controls="management-panel" data-section="management">Management</button><button id="stats-tab" role="tab" aria-selected="false" aria-controls="statistics" tabindex="-1" data-section="stats">Stats</button></nav>
     <div id="management-panel" role="tabpanel" aria-labelledby="management-tab" hidden>
     <p class="inventory-summary" role="status">Stone portraits in stock: <strong id="available-images">—</strong> available</p>
+    <div class="email-setting"><label for="owner-email-enabled"><input id="owner-email-enabled" type="checkbox" disabled aria-describedby="owner-email-status">Email me when a stone is found or activated</label><span id="owner-email-status" role="status" aria-live="polite"></span></div>
     <section id="dashboard" hidden>
       <div class="page-heading"><div><p class="eyebrow">LIVING STONES MANAGEMENT</p><h1>Every stone. Every little hello.</h1></div><div class="heading-actions"><button id="create-stone" class="primary">＋ Create new stone</button><button id="refresh">Refresh</button></div></div>
       <div id="summary" class="admin-stats"></div>

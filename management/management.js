@@ -3,7 +3,7 @@ const $ = s => document.querySelector(s);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sessionKey = 'livingstones-management-session';
 let auth = null, stones = [], selected = null, record = null, tab = 'finds', noticeTimer;
-let creationKey=null,draft=null;
+let creationKey=null,draft=null,ownerEmailsEnabled=true;
 let section='management',statsPeriod='30',statsTarget='all',statsData=null,statsRun=0;
 const qrCache=new Map(),qrLabelCodes=new Map();
 if (location.protocol === 'http:' && !['localhost','127.0.0.1'].includes(location.hostname)) location.replace('https:'+location.href.slice(5));
@@ -13,6 +13,7 @@ function notice(message, error=false) {
   clearTimeout(noticeTimer); noticeTimer=setTimeout(()=>el.hidden=true,7000);
 }
 function signedOut() {
+  $('#owner-email-enabled').disabled=true;$('#owner-email-status').textContent='';
   creationKey=null;draft=null;qrLabelCodes.clear();auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
   statsRun++;statsData=null;$('#admin-tabs').hidden=true;$('#management-panel').hidden=true;$('#statistics').hidden=true;
   $('#login').hidden=false;$('#dashboard').hidden=true;$('#editor').hidden=true;$('#editor').replaceChildren();$('#logout').hidden=true;
@@ -94,6 +95,7 @@ function updateSection() {
 }
 async function load() {
   const data=await api('stones');stones=data.stones;$('#available-images').textContent=data.imagesAvailable??'—';
+  ownerEmailsEnabled=data.ownerEmailsEnabled!==false;$('#owner-email-enabled').checked=ownerEmailsEnabled;$('#owner-email-enabled').disabled=typeof data.ownerEmailsEnabled!=='boolean';
   $('#login').hidden=true;$('#logout').hidden=false;$('#admin-tabs').hidden=false;
   const params=new URLSearchParams(location.hash.slice(1));
   section=params.get('tab')==='stats'?'stats':'management';
@@ -299,3 +301,13 @@ document.addEventListener('click',event=>{
   if(kind&&confirm(kind==='finds'?'Delete this find and its attached comment? This cannot be undone.':'Delete this comment? The find will remain.'))withButton(button,async()=>{const data=await api(`stones/${selected}/${kind}/${id}`,'DELETE');updateStone(data);notice('Record deleted.');});
 });
 (async()=>{if(!auth||auth.expiresAt<=Math.floor(Date.now()/1000)){signedOut();return;}try{await load();}catch(e){notice(e.message,true);if(auth)signedOut();}})();
+
+$('#owner-email-enabled').addEventListener('change',async event=>{
+  const checkbox=event.currentTarget,previous=ownerEmailsEnabled,status=$('#owner-email-status');
+  checkbox.disabled=true;status.textContent='Saving…';
+  try{
+    const result=await api('email-settings','PATCH',{enabled:checkbox.checked});
+    ownerEmailsEnabled=result.enabled;checkbox.checked=result.enabled;status.textContent=result.enabled?'Email alerts on.':'Email alerts off.';
+  }catch(error){checkbox.checked=previous;status.textContent=error.message;}
+  finally{checkbox.disabled=!auth;}
+});

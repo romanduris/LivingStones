@@ -45,9 +45,20 @@ export async function handleManagement(request, env, listStones) {
     await env.DB.prepare('DELETE FROM admin_sessions WHERE token_hash=?').bind(tokenHash).run();
     return { ok: true };
   }
+  if (path === 'email-settings') {
+    if(request.method==='GET')return {enabled:Boolean((await env.DB.prepare('SELECT enabled FROM owner_email_settings WHERE id=1').first()).enabled)};
+    if(request.method!=='PATCH')fail(405,'Method not allowed.');
+    const body=await jsonBody(request);
+    if(typeof body.enabled!=='boolean')fail(400,'Choose whether to send email alerts.');
+    await env.DB.batch([
+      env.DB.prepare('UPDATE owner_email_settings SET enabled=? WHERE id=1').bind(Number(body.enabled)),
+      env.DB.prepare('DELETE FROM owner_event_emails WHERE sent_at IS NULL AND ?=0').bind(Number(body.enabled)),
+    ]);
+    return {enabled:body.enabled};
+  }
   if (path === 'stats' && request.method === 'GET') return trafficStatistics(request, env);
   if (path === 'session' && request.method === 'GET') return { ok: true };
-  if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true), imagesAvailable: await availableImageCount(env.DB) };
+  if (path === 'stones' && request.method === 'GET') return { stones: await listStones(env.DB, null, true), imagesAvailable: await availableImageCount(env.DB), ownerEmailsEnabled:Boolean((await env.DB.prepare('SELECT enabled FROM owner_email_settings WHERE id=1').first()).enabled) };
   if (['stones','stone-drafts'].includes(path) && request.method === 'POST') {
     const body=await jsonBody(request),note=text(body.note,2000);
     await limit(request, env, 'admin-create-stone', 40);

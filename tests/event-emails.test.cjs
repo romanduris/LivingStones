@@ -38,3 +38,24 @@ test('Queue is atomic with events and retries temporary failures without changin
   env.EMAIL=null;await eventEmailStatement(env.DB,'no-transport','A1','find',payload).run();await deliverEventEmails(env,create);assert.equal(env.sqlite.prepare("SELECT attempts FROM owner_event_emails WHERE id='no-transport'").get().attempts,0);
  }finally{env.sqlite.close();}
 });
+test('Authenticated persistent switch drops pending alerts and skips events while disabled',async()=>{
+ const {eventEmailStatement,deliverEventEmails}=await import('../backend/event-emails.js'),{handleManagement}=await import('../backend/management.js'),{sha256}=await import('../backend/common.js'),env=environment();
+ try{
+  const token='a'.repeat(64);env.ALLOWED_ORIGINS='https://livingstones.rodulab.com';
+  env.sqlite.prepare('INSERT INTO admin_sessions(token_hash,expires_at) VALUES (?,?)').run(await sha256(token),Math.floor(Date.now()/1000)+3600);
+  const request=(method,body,origin=env.ALLOWED_ORIGINS,authenticated=true)=>new Request('https://api.invalid/api/admin/email-settings',{method,headers:{Origin:origin,...(authenticated?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  const handle=req=>handleManagement(req,env,async()=>[]);
+  assert.deepEqual(await handle(request('GET')),{enabled:true});
+  await assert.rejects(handle(request('PATCH',{enabled:false},env.ALLOWED_ORIGINS,false)),e=>e.status===401);
+  await assert.rejects(handle(request('PATCH',{enabled:false},'https://bad.invalid')),e=>e.status===403);
+  await assert.rejects(handle(request('PATCH',{enabled:'false'})),e=>e.status===400);
+  await eventEmailStatement(env.DB,'before-off','A1','find',payload).run();
+  assert.deepEqual(await handle(request('PATCH',{enabled:false})),{enabled:false});
+  assert.deepEqual(await handle(request('GET')),{enabled:false});
+  assert.equal(env.sqlite.prepare('SELECT COUNT(*) AS n FROM owner_event_emails').get().n,0);
+  await eventEmailStatement(env.DB,'while-off','A1','find',payload).run();await deliverEventEmails(env,create);assert.equal(env.sent.length,0);
+  assert.deepEqual(await handle(request('PATCH',{enabled:true})),{enabled:true});
+  await deliverEventEmails(env,create);assert.equal(env.sent.length,0,'No old alerts are sent after re-enabling');
+  await eventEmailStatement(env.DB,'after-on','A1','find',payload).run();await deliverEventEmails(env,create);assert.equal(env.sent.length,1);
+ }finally{env.sqlite.close();}
+});

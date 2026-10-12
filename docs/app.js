@@ -633,7 +633,7 @@ function renderDetail() {
       <section class="detail-intro" aria-labelledby="intro-title">
         <h3 id="intro-title" class="sr-only">Meet ${escapeHTML(stone.name)}</h3>
         <p class="detail-story">${stoneStoryHTML(stone)}</p>
-        ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find"><span class="find-action-title">I found this stone</span><span class="find-action-invitation">Click here to keep its story going →</span></button><p class="find-reassurance">Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.</p>` : ""}
+        ${openedFromQR() && supportsPreciseLocation() ? ui`<button class="button primary" id="start-find"><span class="find-action-title">I found this stone</span><span class="find-action-invitation">Click here to keep its story going →</span></button><p class="find-reassurance"><span>Record your find. A message is optional.</span><span>Then leave the stone somewhere safe.</span></p>` : ""}
       </section>
       <div id="find-container"></div>
       <section id="contact-panel" class="find-panel" aria-labelledby="contact-title" hidden>
