@@ -83,10 +83,15 @@ async function handle(request, env) {
     return recordTraffic(request, env, await jsonBody(request));
   }
   const match = path.match(
-    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|watchdog|initialize|images))?$/,
+    /^\/api\/stones\/([A-Za-z0-9_-]{1,32})(?:\/(verify|finds|comments|views|watchdog|initialize|images|photo))?$/,
   );
   if (!match) fail(404, "That page could not be found.");
   const [, id, kind] = match;
+  if (request.method === "GET" && kind === "photo") {
+    const photo=await env.DB.prepare('SELECT png FROM stone_photos JOIN stones ON stones.id=stone_photos.stone_id WHERE stone_id=? AND initialized=1').bind(id).first();
+    if(!photo)fail(404,'This stone photo could not be found.');
+    return new Response(new Uint8Array(photo.png),{headers:{'Content-Type':'image/png','Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}});
+  }
   if (request.method === "GET" && kind === "images") return availableImages(env, id);
   if (request.method === "GET" && !kind) {
     const stone = (await listStones(env.DB, id))[0];
@@ -95,7 +100,7 @@ async function handle(request, env) {
   }
   if (request.method !== "POST" || !kind) fail(405, "Method not allowed.");
   requireOrigin(request, env);
-  const body = await jsonBody(request);
+  const body = await jsonBody(request, kind === "initialize" ? 620000 : 8192);
   if (kind === "initialize") return initializeStone(request, env, id, body, listStones);
   if (kind !== "verify") {
     const state = await env.DB.prepare("SELECT initialized FROM stones WHERE id=?").bind(id).first();
@@ -265,7 +270,9 @@ export default {
         },
       });
     try {
-      return new Response(JSON.stringify(await handle(request, env)), {
+      const result=await handle(request, env);
+      if(result instanceof Response)return result;
+      return new Response(JSON.stringify(result), {
         headers,
       });
     } catch (error) {

@@ -1,0 +1,4 @@
+CREATE TABLE stone_photos (
+  stone_id TEXT PRIMARY KEY REFERENCES stones(id) ON DELETE CASCADE,
+  png BLOB NOT NULL
+);

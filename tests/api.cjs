@@ -407,6 +407,23 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     const unusedInventory=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT COUNT(*) AS count FROM stone_image_pool WHERE claimed_at IS NULL"]));
     assert.equal(unusedInventory[0].results[0].count,40);
     assert.equal((await admin('stones/'+loser.stone.id,'DELETE')).status,200);
+    // Photos persist outside the portrait stock and retries remain atomic.
+    const photoDraft=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
+    const photoBytes=fs.readFileSync('fixtures/stone-photo.png');
+    const photoBody={...birthBody,code:photoDraft.code,theme:'sun',photo:'data:image/png;base64,'+photoBytes.toString('base64')};delete photoBody.imageId;
+    assert.ok(JSON.stringify(photoBody).length>8192,'photo initialization accepts more than the ordinary JSON limit');
+    const photoPath='/stones/'+photoDraft.stone.id,photoKey=randomUUID();
+    assert.equal((await call(photoPath+'/initialize',{...photoBody,photo:'data:image/svg+xml;base64,PHN2Zz4='},randomUUID(),freshHeaders)).status,400);
+    assert.equal((await call(photoPath+'/initialize',{...photoBody,photo:'data:image/png;base64,AAAA'},randomUUID(),freshHeaders)).status,400);
+    assert.equal((await call(photoPath+'/initialize',{...photoBody,photo:photoBody.photo.slice(0,-16)},randomUUID(),freshHeaders)).status,400);
+    assert.equal((await call(photoPath+'/initialize',{...photoBody,imageId:birthBody.imageId},randomUUID(),freshHeaders)).status,400);
+    const photoBirth=await call(photoPath+'/initialize',photoBody,photoKey,freshHeaders);
+    assert.equal(photoBirth.status,200);assert.equal(photoBirth.body.stone.image,'http://127.0.0.1:'+port+'/api'+photoPath+'/photo');
+    const storedPhoto=await fetch(photoBirth.body.stone.image);assert.equal(storedPhoto.status,200);assert.equal(storedPhoto.headers.get('content-type'),'image/png');assert.deepEqual(Buffer.from(await storedPhoto.arrayBuffer()),photoBytes);
+    assert.equal((await call(photoPath+'/initialize',photoBody,photoKey,freshHeaders)).body.replayed,true);
+    assert.equal((await admin('stones')).body.imagesAvailable,40);
+    assert.equal((await admin('stones/'+photoDraft.stone.id,'DELETE')).status,200);
+    assert.equal((await fetch(photoBirth.body.stone.image)).status,404);
     const competingStone=(await admin('stones','POST',{}, {'Idempotency-Key':randomUUID()})).body;
     const competingBirths=await Promise.all([1,2].map(i=>call('/stones/'+competingStone.stone.id+'/initialize',{...birthBody,code:competingStone.code,imageId:remaining.body.images[i].id},randomUUID(),{'CF-Connecting-IP':'192.0.2.71'})));
     assert.deepEqual(competingBirths.map(r=>r.status).sort(),[200,409]);

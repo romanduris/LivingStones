@@ -4,7 +4,8 @@ const id=new URL(location.href).searchParams.get('stone');
 const assetBase=new URL('../docs/assets/',location.href);
 let images=[],place=null,requestKey=null,gpsRun=0,portraitRun=0;
 let cityTimer,cityController,birthMap=null;
-const themes={sun:1,moon:2,leaf:3,heart:4,wave:5};
+let photo=null,cameraStream=null,photoRun=0,uploadURL=null;
+const stoneOutline=new Path2D('M 51 9 C 73 7 87 24 90 43 C 96 64 81 85 62 90 C 41 97 18 85 11 66 C 5 47 12 25 28 15 C 35 10 43 11 51 9 Z');
 const locales={en:'en-GB',sk:'sk-SK',hu:'hu-HU',de:'de-DE'};
 let language='en';
 language=(navigator.language||'en').toLowerCase().split(/[-_]/)[0];
@@ -56,16 +57,12 @@ async function api(suffix='',body,key){
   }finally{clearTimeout(timer);}
 }
 function updateBirthButton(){
-  $('#give-birth').disabled=!place||!$('#portrait-options input:checked')||$('#birth-fields').disabled;
+  $('#give-birth').disabled=!place||!(photo||selectedPortrait())||$('#birth-fields').disabled;
 }
 function selectedPortrait(){return images.find(image=>image.id===$('#portrait-options input:checked')?.value);}
 function updatePreview(){
   $('#preview-name').textContent=$('#stone-name').value.trim()||t('friend');
-  const image=selectedPortrait();$('#hero-portrait').src=new URL(image?.image||'brand-stone.svg',assetBase).href;
-  const theme=$('#stone-theme').value,example=themes[theme],capital=theme[0].toUpperCase()+theme.slice(1);
-  $('#theme-swatch').className='theme-swatch theme-'+theme;
-  $('#theme-portrait').src=new URL(image?.image||`stone-${example}.svg`,assetBase).href;
-  $('#theme-preview-title').textContent=t('themeOption'+capital);$('#theme-preview-copy').textContent=t('themeCopy'+capital);
+  const image=selectedPortrait();$('#hero-portrait').src=photo||new URL(image?.image||'brand-stone.svg',assetBase).href;
   updateBirthButton();
 }
 async function loadImages(){
@@ -76,7 +73,7 @@ async function loadImages(){
     $('#portrait-options').replaceChildren();
     for(const image of images){
       const label=document.createElement('label');label.className='portrait-option';
-      const radio=document.createElement('input');radio.type='radio';radio.name='imageId';radio.value=image.id;radio.required=true;
+      const radio=document.createElement('input');radio.type='radio';radio.name='imageId';radio.value=image.id;
       const picture=document.createElement('img');picture.src=new URL(image.image,assetBase).href;picture.alt=t('portraitAlt',{label:portraitLabel(image)});picture.width=340;picture.height=280;
       const caption=document.createElement('span');caption.textContent=portraitLabel(image);
       label.append(radio,picture,caption);$('#portrait-options').append(label);
@@ -92,7 +89,6 @@ async function boot(){
     if(!id||! /^[A-Za-z0-9_-]{1,32}$/.test(id))throw localizedError('scan');
     const {stone}=await api();
     if(stone.initialized!==false){location.replace(storyURL());return;}
-    await loadImages();
     $('#birth-date').textContent=new Intl.DateTimeFormat(locales[language],{day:'numeric',month:'long',year:'numeric'}).format(new Date());
     $('#page-status').hidden=true;$('#birth-form').hidden=false;
   }catch(error){showMessage('#page-status',errorKey(error));$('#page-status').classList.add('error');$('#retry-page').hidden=false;}
@@ -169,9 +165,64 @@ $('#city-results').addEventListener('keydown',event=>{
   const buttons=[...$('#city-results').querySelectorAll('button')],index=buttons.indexOf(document.activeElement);
   buttons[(index+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();
 });
+function stopPhotoEditor(){
+  ++photoRun;
+  cameraStream?.getTracks().forEach(track=>track.stop());cameraStream=null;
+  $('#stone-camera').srcObject=null;$('#stone-camera').hidden=true;
+  $('#uploaded-photo').hidden=true;$('#uploaded-photo').removeAttribute('src');
+  if(uploadURL)URL.revokeObjectURL(uploadURL);uploadURL=null;
+  $('#photo-editor').hidden=true;$('#capture-stone-photo').disabled=true;
+}
+function openPhotoEditor(){
+  $('#design-picker').hidden=true;$('#choose-stone-design').setAttribute('aria-expanded','false');
+  $('#photo-editor').hidden=false;
+}
+$('#take-stone-photo').addEventListener('click',async()=>{
+  stopPhotoEditor();const run=photoRun;
+  showMessage('#photo-status','cameraStarting');
+  try{
+    if(!navigator.mediaDevices?.getUserMedia)throw localizedError('cameraUnavailable');
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:1280}},audio:false});
+    if(run!==photoRun){stream.getTracks().forEach(track=>track.stop());return;}
+    cameraStream=stream;openPhotoEditor();const video=$('#stone-camera');video.hidden=false;video.srcObject=stream;
+    await video.play();if(run!==photoRun)return;
+    $('#capture-stone-photo').disabled=false;showMessage('#photo-status','cameraReady');
+  }catch(error){if(run!==photoRun)return;stopPhotoEditor();showMessage('#photo-status',error.i18nKey||'cameraUnavailable');}
+});
+$('#upload-stone-photo').addEventListener('click',()=>{$('#stone-photo-file').click();});
+$('#stone-photo-file').addEventListener('change',async event=>{
+  const file=event.target.files[0];event.target.value='';if(!file)return;
+  stopPhotoEditor();const run=photoRun;
+  if(file.size>20*1024*1024){showMessage('#photo-status','photoTooLarge');return;}
+  uploadURL=URL.createObjectURL(file);const img=$('#uploaded-photo');img.src=uploadURL;
+  try{
+    await img.decode();if(run!==photoRun)return;
+    img.hidden=false;openPhotoEditor();$('#capture-stone-photo').disabled=false;showMessage('#photo-status','cameraReady');
+  }catch{if(run!==photoRun)return;stopPhotoEditor();showMessage('#photo-status','photoInvalid');}
+});
+$('#capture-stone-photo').addEventListener('click',()=>{
+  const source=cameraStream?$('#stone-camera'):$('#uploaded-photo');
+  const width=source.videoWidth||source.naturalWidth,height=source.videoHeight||source.naturalHeight;
+  if(!width||!height)return;
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=320;
+  const context=canvas.getContext('2d'),side=Math.min(width,height);
+  context.save();context.scale(3.2,3.2);context.clip(stoneOutline);context.scale(1/3.2,1/3.2);
+  context.drawImage(source,(width-side)/2,(height-side)/2,side,side,0,0,320,320);context.restore();
+  photo=canvas.toDataURL('image/png');
+  for(const input of $('#portrait-options').querySelectorAll('input'))input.checked=false;
+  $('#photo-portrait').src=photo;$('#stone-photo-preview').hidden=false;
+  requestKey=null;stopPhotoEditor();showMessage('#photo-status','photoReady');updatePreview();
+});
+$('#cancel-stone-photo').addEventListener('click',()=>{stopPhotoEditor();showMessage('#photo-status','');});
+$('#choose-stone-design').addEventListener('click',async()=>{
+  stopPhotoEditor();showMessage('#photo-status','');const panel=$('#design-picker');panel.hidden=!panel.hidden;
+  $('#choose-stone-design').setAttribute('aria-expanded',String(!panel.hidden));
+  if(!panel.hidden&&!images.length){try{await loadImages();}catch(error){showMessage('#pool-status',errorKey(error));}}
+});
+window.addEventListener('pagehide',stopPhotoEditor);
 $('#retry-page').addEventListener('click',boot);
 $('#birth-form').addEventListener('input',()=>{requestKey=null;updatePreview();});
-$('#portrait-options').addEventListener('change',()=>{const image=selectedPortrait();if(image)$('#stone-theme').value=image.theme;updatePreview();});
+$('#portrait-options').addEventListener('change',()=>{photo=null;stopPhotoEditor();showMessage('#photo-status','');$('#stone-photo-preview').hidden=true;requestKey=null;updatePreview();});
 $('#refresh-portraits').addEventListener('click',async()=>{
   try{await loadImages();status('choosePortrait');}catch(error){status(errorKey(error),true);}
 });
@@ -201,9 +252,9 @@ $('#use-birth-gps').addEventListener('click',async()=>{
 });
 $('#birth-form').addEventListener('submit',async event=>{
   event.preventDefault();if($('#birth-fields').disabled)return;
-  if(!place||!selectedPortrait()){status('needPlace',true);return;}
-  const body=Object.fromEntries(new FormData(event.currentTarget));body.place=place;
-  cancelCitySearch();
+  if(!place||!(photo||selectedPortrait())){status('needPlace',true);return;}
+  const body=Object.fromEntries(new FormData(event.currentTarget));body.place=place;body.theme=selectedPortrait()?.theme||'sun';if(photo){delete body.imageId;body.photo=photo;}
+  stopPhotoEditor();cancelCitySearch();
   requestKey ||= crypto.randomUUID();
   $('#birth-fields').disabled=true;$('#give-birth').textContent=t('savingButton');status('saving');
   try{

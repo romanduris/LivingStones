@@ -12,11 +12,11 @@ export function requireOrigin(request, env) {
   const origin = request.headers.get('Origin');
   if (!origin || !(env.ALLOWED_ORIGINS || '').split(',').includes(origin)) fail(403, 'Please open the Living Stones website to continue.');
 }
-export async function jsonBody(request) {
+export async function jsonBody(request, maximum = 8192) {
   if (!request.headers.get('Content-Type')?.startsWith('application/json')) fail(415, 'Please send JSON.');
-  if (Number(request.headers.get('Content-Length')) > 8192) fail(413, 'This message is too large.');
+  if (Number(request.headers.get('Content-Length')) > maximum) fail(413, 'This message is too large.');
   const raw = await request.text();
-  if (raw.length > 8192) fail(413, 'This message is too large.');
+  if (raw.length > maximum) fail(413, 'This message is too large.');
   let body; try { body = JSON.parse(raw); } catch { fail(400, 'Please check the form fields.'); }
   if (!body || typeof body !== 'object' || Array.isArray(body)) fail(400, 'Please check the form fields.');
   return body;

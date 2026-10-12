@@ -121,6 +121,10 @@ process.on('exit',()=>server.kill());
    await page.locator('#birth-language-switch').click();await page.locator('[data-birth-language=sk]').click();
    await page.reload();await page.locator('#birth-form').waitFor();
    assert.equal(await page.locator('html').getAttribute('lang'),'en','browser language takes precedence on a new page');
+   assert.equal(await page.locator('#design-picker').isVisible(),false);
+   assert.equal(await page.locator('#stone-theme').count(),0);
+   await page.locator('#choose-stone-design').click();
+   await page.locator('.portrait-option').first().waitFor();
    assert.equal(await page.locator('.portrait-option').count(),12);
    assert.match(await page.locator('#pool-status').textContent(),/40/);
    assert.equal(await page.evaluate(()=>window.__gpsRequests),0);
@@ -142,10 +146,6 @@ process.on('exit',()=>server.kill());
    await page.locator('#use-birth-gps').click();
    await page.waitForFunction(()=>document.querySelector('#location-status').textContent.includes('Bratislava'));
    await page.locator('.portrait-option input').first().check();
-   await page.locator('#stone-theme').selectOption('heart');
-   assert.match(await page.locator('#theme-swatch').getAttribute('class'),/theme-heart/);
-   assert.match(await page.locator('#theme-preview-copy').textContent(),/rose/);
-   assert.equal(await page.locator('#theme-portrait').getAttribute('src'),await page.locator('#hero-portrait').getAttribute('src'));
    assert.equal(await page.locator('#manual-location').isVisible(),false);
    if(width===390){
     await page.locator('#choose-city').click();assert.equal(await page.locator('#give-birth').isDisabled(),true);
@@ -159,12 +159,12 @@ process.on('exit',()=>server.kill());
     await page.locator('#manual-city').fill('Bansk');assert.equal(await page.locator('#give-birth').isDisabled(),true);
     await page.locator('.city-result').waitFor();await page.locator('.city-result').click();
    }
-   const preserved=await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,wish:document.querySelector('#birth-wish').value,image:document.querySelector('#portrait-options input:checked').value,theme:document.querySelector('#stone-theme').value}));
+   const preserved=await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,wish:document.querySelector('#birth-wish').value,image:document.querySelector('#portrait-options input:checked').value}));
    for(const language of ['sk','hu','de','en']){
     await page.locator('#birth-language-switch').click();await page.locator(`[data-birth-language=${language}]`).click();
     assert.equal(await page.locator('html').getAttribute('lang'),language);
     assert.equal(await page.locator('#birth-language-label').textContent(),language.toUpperCase());
-    assert.deepEqual(await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,wish:document.querySelector('#birth-wish').value,image:document.querySelector('#portrait-options input:checked').value,theme:document.querySelector('#stone-theme').value})),preserved);
+    assert.deepEqual(await page.evaluate(()=>({name:document.querySelector('#stone-name').value,creator:document.querySelector('#stone-creator').value,code:document.querySelector('#find-code').value,wish:document.querySelector('#birth-wish').value,image:document.querySelector('#portrait-options input:checked').value})),preserved);
     assert.equal(await page.locator('#give-birth').isEnabled(),true);
     assert.match(await page.locator('#location-status').textContent(),width===390?/Banská/:/Bratislava/);
     assert.ok(!/themeCopy|palette|themeOption/.test(await page.locator('#birth-form').innerText()));
