@@ -40,7 +40,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   await page.setViewportSize({width:390,height:844});
   await page.locator('[popovertarget=detail-language-menu]').click();await page.locator('#detail-language-menu [data-language=de]').click();
   assert.equal(await page.locator('#watchdog-email').inputValue(),'draft@example.invalid');assert.equal(await page.locator('#watchdog-panel').isVisible(),true);
-  assert.equal(await page.locator('#save-watchdog').innerText(),'E-Mail speichern');assert.equal(await page.locator('.site-header .language-label').textContent(),'DE');
+  assert.equal(await page.locator('#save-watchdog').innerText(),'Benachrichtigungen aktivieren');assert.equal(await page.locator('.site-header .language-label').textContent(),'DE');
   await page.locator('#close-watchdog').click();await page.locator('#start-find').click();await page.locator('#find-code').fill('8451');
   await page.locator('[popovertarget=detail-language-menu]').click();await page.locator('#detail-language-menu [data-language=sk]').click();
   assert.equal(await page.locator('#find-code').inputValue(),'8451');assert.match(await page.locator('#find-title').innerText(),/Teším sa/);

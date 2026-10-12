@@ -256,7 +256,7 @@ const stoneRepository = (() => {
       }
       return result;
     },
-    watch: (id, email) => request(`/api/stones/${encodeURIComponent(id)}/watchdog`, { email }),
+    watch: (id, email) => request(`/api/stones/${encodeURIComponent(id)}/watchdog`, { email, language:siteI18n.language }),
     verify: (id, code) =>
       request(`/api/stones/${encodeURIComponent(id)}/verify`, { code }),
     addFind: (id, body, key) => save(id, "finds", body, key),
@@ -637,10 +637,10 @@ function renderDetail() {
       <div id="find-container"></div>
       <section id="watchdog-panel" class="find-panel" aria-labelledby="watchdog-title" hidden>
         <h3 id="watchdog-title" tabindex="-1">Watchdog · Follow ${escapeHTML(stone.name)}’s next adventure</h3>
-        <p id="watchdog-help">Leave your email to follow <strong>${escapeHTML(stone.name)}</strong>. Watchdog will let you know when a new find is recorded or I move to a new place. Your email stays private.</p>
+        <p id="watchdog-help">Leave your email to follow <strong>${escapeHTML(stone.name)}</strong>. Watchdog emails you whenever this stone is found or its status changes. You can enable it later and turn it off at any time using a link in an email. Several people can follow the same stone; everyone’s email stays private.</p>
         <form id="watchdog-form">
           <label class="field" for="watchdog-email">Your email<input id="watchdog-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="watchdog-help watchdog-status"></label>
-          <div class="form-actions"><button class="button primary" id="save-watchdog" type="submit">Save my email</button><button class="button secondary" id="close-watchdog" type="button">Close</button></div>
+          <div class="form-actions"><button class="button primary" id="save-watchdog" type="submit">Enable notifications</button><button class="button secondary" id="close-watchdog" type="button">Close</button></div><button class="manual-location-toggle" id="stop-watchdog" type="button">Send me a link to turn notifications off</button>
         </form>
         <p id="watchdog-status" role="status" aria-live="polite"></p>
       </section>
@@ -677,27 +677,30 @@ function renderDetail() {
     $("#watchdog-title").focus({ preventScroll: true });
   });
   $("#close-watchdog").addEventListener("click", closeWatchdog);
-  const watchForm = $("#watchdog-form"), watchEmail = $("#watchdog-email"), watchSubmit = $("#save-watchdog"), watchStatus = $("#watchdog-status");
-  watchForm.addEventListener("submit", async event => {
+  const watchForm = $("#watchdog-form"), watchEmail = $("#watchdog-email"), watchSubmit = $("#save-watchdog"), watchStatus = $("#watchdog-status"), watchStop=$("#stop-watchdog");
+  const submitWatchdog=async event=>{
     event.preventDefault();
+    if(!watchForm.reportValidity())return;
     if (watchSubmit.disabled) return;
     const email = watchEmail.value.trim();
     watchSubmit.disabled = true;
-    watchEmail.disabled = true;
+    watchEmail.disabled = true;watchStop.disabled=true;
     say(watchSubmit,"Saving…");
     say(watchStatus,"");
     try {
-      await stoneRepository.watch(stone.id, email);
+      const result=await stoneRepository.watch(stone.id, email);
       watchForm.reset();
-      say(watchStatus,"Your email is saved for this stone. Notifications are not active yet; no emails will be sent.");
+      say(watchStatus,result.notificationsEnabled?"Check your email to confirm Watchdog or turn notifications off. Each subscriber manages their own notifications.":"Your email is saved. Email delivery is being configured; your confirmation email will follow once it is ready.");
     } catch (error) {
       say(watchStatus,error.message);
     } finally {
       watchSubmit.disabled = false;
-      watchEmail.disabled = false;
-      say(watchSubmit,"Save my email");
+      watchEmail.disabled = false;watchStop.disabled=false;
+      say(watchSubmit,"Enable notifications");
     }
-  });
+  };
+  watchForm.addEventListener("submit",submitWatchdog);
+  watchStop.addEventListener("click",submitWatchdog);
   $("#start-find")?.addEventListener("click", () => {
     if (!openedFromQR() || !supportsPreciseLocation()) return;
     watchPanel.hidden = true;

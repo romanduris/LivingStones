@@ -1,4 +1,5 @@
 import { fail, sha256, text, requireOrigin, jsonBody, limit } from "./common.js";
+import { subscribeWatchdog, foundWatchdogStatements, deliverWatchdog, checkWatchdogStatuses, watchdogLink } from './watchdog.js';
 import { recordTraffic } from "./traffic.js";
 import { handleManagement } from "./management.js";
 import { initializeStone, availableImages } from "./initialization.js";
@@ -68,9 +69,11 @@ async function listStones(db, id, admin = false) {
       })),
   }));
 }
-async function handle(request, env) {
+async function handle(request, env, ctx) {
   const url = new URL(request.url),
     path = url.pathname;
+  const watchLink=path.match(/^\/api\/watchdog\/([a-f0-9]{64})(?:\/(confirm|unsubscribe))?$/);
+  if(watchLink)return watchdogLink(request,env,watchLink[1],watchLink[2]);
   if (path.startsWith("/api/admin/")) return handleManagement(request, env, listStones);
   if (request.method === "GET" && path === "/api/health") {
     await env.DB.prepare("SELECT id FROM stones LIMIT 1").first();
@@ -101,25 +104,18 @@ async function handle(request, env) {
   if (request.method !== "POST" || !kind) fail(405, "Method not allowed.");
   requireOrigin(request, env);
   const body = await jsonBody(request, kind === "initialize" ? 620000 : 8192);
-  if (kind === "initialize") return initializeStone(request, env, id, body, listStones);
+  if (kind === "initialize") {
+    const result=await initializeStone(request, env, id, body, listStones);
+    ctx?.waitUntil(deliverWatchdog(env));return result;
+  }
   if (kind !== "verify") {
     const state = await env.DB.prepare("SELECT initialized FROM stones WHERE id=?").bind(id).first();
     if (state && !state.initialized) fail(409, "This stone is waiting to be born. Finish its setup first.");
   }
   if (kind === "views") return recordTraffic(request, env, body, id);
   if (kind === "watchdog") {
-    await limit(request, env, "watchdog", 10);
-    const stone = await env.DB.prepare("SELECT id FROM stones WHERE id = ?").bind(id).first();
-    if (!stone) fail(404, "This stone could not be found.");
-    const email = text(body.email, 254, true).toLowerCase();
-    const localPart = email.split("@")[0];
-    if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i.test(email) || localPart.length > 64 || localPart.startsWith(".") || localPart.endsWith(".") || localPart.includes(".."))
-      fail(400, "Enter a valid email address.");
-    // A retry or a second signup must not reveal existing subscribers.
-    await env.DB.prepare(
-      "INSERT INTO stone_watchers(stone_id,email,created_at) VALUES (?,?,?) ON CONFLICT(stone_id,email) DO NOTHING",
-    ).bind(id, email, new Date().toISOString()).run();
-    return { ok: true, notificationsEnabled: false };
+    const result=await subscribeWatchdog(request,env,id,body);
+    ctx?.waitUntil(deliverWatchdog(env));return result;
   }
   await limit(request, env, "public", 40);
   const stone = await env.DB.prepare(
@@ -229,6 +225,7 @@ async function handle(request, env) {
         message,
       ),
     );
+  if(kind==='finds')statements.push(...foundWatchdogStatements(env.DB,id,recordId,date,place));
   // D1 batch is transactional: a find and its message are committed together.
   try {
     await env.DB.batch(statements);
@@ -246,10 +243,14 @@ async function handle(request, env) {
       replayed: true,
     };
   }
+  if(kind==='finds')ctx?.waitUntil(deliverWatchdog(env));
   return { stone: (await listStones(env.DB, id))[0], recordId };
 }
 export default {
-  async fetch(request, env) {
+  async scheduled(event,env,ctx) {
+    ctx.waitUntil((async()=>{await checkWatchdogStatuses(env,event.scheduledTime);await deliverWatchdog(env);})());
+  },
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin");
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").includes(origin);
     const headers = {
@@ -270,7 +271,7 @@ export default {
         },
       });
     try {
-      const result=await handle(request, env);
+      const result=await handle(request, env, ctx);
       if(result instanceof Response)return result;
       return new Response(JSON.stringify(result), {
         headers,

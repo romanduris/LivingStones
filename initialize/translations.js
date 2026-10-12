@@ -9,9 +9,6 @@ const BIRTH_TRANSLATIONS = {
     "intro": "This little stone hasn’t been born yet. Give it a name, a face and a place in the world — then let its journey begin.",
     "explanation": "Paint it, take it on an adventure, and leave it somewhere safe for its next friend. Every QR scan opens its story; each new find adds another memory.",
     "moreInfo": "What is Living Stones? Find out more ↗",
-    "friend": "Your little travelling friend",
-    "world": "A whole world to discover.",
-    "heroAlt": "A little stone waiting for its first adventure",
     "stepName": "Give me a name",
     "stepLook": "Choose my look",
     "stepBirth": "Let me be born",
@@ -117,7 +114,15 @@ const BIRTH_TRANSLATIONS = {
     "cameraUnavailable": "Camera access is unavailable. Allow it in your browser or upload a photo.",
     "photoTooLarge": "Choose a photo smaller than 20 MB.",
     "photoInvalid": "This photo could not be opened. Please try a JPG, PNG or another supported image.",
-    "photoReady": "Your stone’s photo is ready."
+    "photoReady": "Your stone’s photo is ready.",
+    "stepWatch": "Watchdog",
+    "watchHeading": "Watchdog · Stay part of my journey.",
+    "watchIntro": "Get an email whenever your stone is found or its status changes.",
+    "watchEmail": "Email addresses (optional)",
+    "watchPlaceholder": "you@example.com",
+    "watchHelp": "Add up to five emails, separated by commas. Each person confirms their own email. You can enable Watchdog later and turn it off at any time using the link in an email. Email addresses stay private.",
+    "watchTooMany": "Enter up to five email addresses.",
+    "zoomLabel": "Photo zoom"
   },
   "sk": {
     "pageTitle": "Kamienok sa rodí · Living Stones",
@@ -127,9 +132,6 @@ const BIRTH_TRANSLATIONS = {
     "intro": "Tento kamienok sa ešte nenarodil. Daj mu meno, podobu a miesto na svete — a jeho cesta sa môže začať.",
     "explanation": "Namaľuj ho, vezmi ho na dobrodružstvo a nechaj ho na bezpečnom mieste pre ďalšieho kamaráta. QR kód otvorí jeho príbeh a každý nález pridá novú spomienku.",
     "moreInfo": "Čo je Living Stones? Zisti viac ↗",
-    "friend": "Tvoj malý cestujúci kamarát",
-    "world": "Celý svet čaká na objavenie.",
-    "heroAlt": "Kamienok čakajúci na prvé dobrodružstvo",
     "stepName": "Daj mi meno",
     "stepLook": "Vyber moju podobu",
     "stepBirth": "Nechaj ma narodiť sa",
@@ -235,7 +237,15 @@ const BIRTH_TRANSLATIONS = {
     "cameraUnavailable": "Kamera nie je dostupná. Povoľ prístup v prehliadači alebo nahraj fotku.",
     "photoTooLarge": "Vyber fotku menšiu ako 20 MB.",
     "photoInvalid": "Fotku sa nepodarilo otvoriť. Skús JPG, PNG alebo iný podporovaný obrázok.",
-    "photoReady": "Fotka kamienka je pripravená."
+    "photoReady": "Fotka kamienka je pripravená.",
+    "stepWatch": "Watchdog",
+    "watchHeading": "Watchdog · Zostaň súčasťou môjho príbehu.",
+    "watchIntro": "Dostaneš email vždy, keď sa kamienok nájde alebo sa zmení jeho stav.",
+    "watchEmail": "Emailové adresy (voliteľné)",
+    "watchPlaceholder": "tvoj@email.sk",
+    "watchHelp": "Môžeš pridať najviac päť emailov oddelených čiarkami. Každý potvrdí svoj vlastný email. Sledovanie si vieš nastaviť aj neskôr a kedykoľvek ho vypnúť cez odkaz v emaile. Emailové adresy zostanú súkromné.",
+    "watchTooMany": "Zadaj najviac päť emailových adries.",
+    "zoomLabel": "Priblíženie fotky"
   },
   "hu": {
     "pageTitle": "Egy kis kő születik · Living Stones",
@@ -245,9 +255,6 @@ const BIRTH_TRANSLATIONS = {
     "intro": "Ez a kis kő még nem született meg. Adj neki nevet, arcot és egy helyet a világban — aztán indulhat az útja.",
     "explanation": "Fesd ki, vidd magaddal egy kalandra, majd hagyd biztonságos helyen a következő barátjának. A QR-kód megnyitja a történetét; minden új megtalálás új emléket ad hozzá.",
     "moreInfo": "Mi az a Living Stones? Tudj meg többet ↗",
-    "friend": "A kis utazó barátod",
-    "world": "Egy egész világ vár felfedezésre.",
-    "heroAlt": "Egy kis kő az első kalandjára vár",
     "stepName": "Adj nekem nevet",
     "stepLook": "Válaszd ki a külsőmet",
     "stepBirth": "Hadd szülessek meg",
@@ -353,7 +360,15 @@ const BIRTH_TRANSLATIONS = {
     "cameraUnavailable": "A kamera nem érhető el. Engedélyezd a böngészőben, vagy tölts fel egy fotót.",
     "photoTooLarge": "Válassz 20 MB-nál kisebb fotót.",
     "photoInvalid": "A fotó nem nyitható meg. Próbálj JPG, PNG vagy más támogatott képet.",
-    "photoReady": "A kavics fotója elkészült."
+    "photoReady": "A kavics fotója elkészült.",
+    "stepWatch": "Watchdog",
+    "watchHeading": "Watchdog · Maradj a történetem része.",
+    "watchIntro": "Emailt kapsz, amikor megtalálják a kavicsot vagy megváltozik az állapota.",
+    "watchEmail": "Email-címek (nem kötelező)",
+    "watchPlaceholder": "te@pelda.hu",
+    "watchHelp": "Legfeljebb öt emailt adhatsz meg, vesszővel elválasztva. Mindenki megerősíti a saját emailjét. A követést később is bekapcsolhatod, és bármikor kikapcsolhatod az emailben található linken. Az email-címek nem nyilvánosak.",
+    "watchTooMany": "Legfeljebb öt email-címet adj meg.",
+    "zoomLabel": "Fotó nagyítása"
   },
   "de": {
     "pageTitle": "Ein kleiner Stein wird geboren · Living Stones",
@@ -363,9 +378,6 @@ const BIRTH_TRANSLATIONS = {
     "intro": "Dieser kleine Stein wurde noch nicht geboren. Gib ihm einen Namen, ein Gesicht und einen Platz auf der Welt — dann kann seine Reise beginnen.",
     "explanation": "Bemale ihn, nimm ihn mit auf ein Abenteuer und lasse ihn an einem sicheren Ort für seinen nächsten Freund. Der QR-Code öffnet seine Geschichte; jeder Fund fügt eine Erinnerung hinzu.",
     "moreInfo": "Was ist Living Stones? Mehr erfahren ↗",
-    "friend": "Dein kleiner Reisebegleiter",
-    "world": "Eine ganze Welt wartet auf dich.",
-    "heroAlt": "Ein kleiner Stein wartet auf sein erstes Abenteuer",
     "stepName": "Gib mir einen Namen",
     "stepLook": "Wähle mein Aussehen",
     "stepBirth": "Lass mich geboren werden",
@@ -471,6 +483,14 @@ const BIRTH_TRANSLATIONS = {
     "cameraUnavailable": "Die Kamera ist nicht verfügbar. Erlaube den Zugriff im Browser oder lade ein Foto hoch.",
     "photoTooLarge": "Wähle ein Foto kleiner als 20 MB.",
     "photoInvalid": "Das Foto konnte nicht geöffnet werden. Versuche JPG, PNG oder ein anderes unterstütztes Bild.",
-    "photoReady": "Das Foto deines Steins ist bereit."
+    "photoReady": "Das Foto deines Steins ist bereit.",
+    "stepWatch": "Watchdog",
+    "watchHeading": "Watchdog · Bleib Teil meiner Geschichte.",
+    "watchIntro": "Du erhältst eine E-Mail, wenn dein Stein gefunden wird oder sich sein Status ändert.",
+    "watchEmail": "E-Mail-Adressen (optional)",
+    "watchPlaceholder": "du@beispiel.de",
+    "watchHelp": "Bis zu fünf E-Mails, durch Kommas getrennt. Jeder bestätigt seine eigene E-Mail. Du kannst die Benachrichtigungen später aktivieren und jederzeit über den Link in einer E-Mail ausschalten. E-Mail-Adressen bleiben privat.",
+    "watchTooMany": "Gib höchstens fünf E-Mail-Adressen ein.",
+    "zoomLabel": "Fotozoom"
   }
 };

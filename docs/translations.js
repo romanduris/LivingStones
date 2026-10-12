@@ -115,11 +115,8 @@ const SITE_TRANSLATIONS = {
     "Share my story": "Share my story",
     "Watchdog · Follow {0}’s next adventure": "Watchdog · Follow {0}’s next adventure",
     "Leave your email to follow": "Leave your email to follow",
-    ". Watchdog will let you know when a new find is recorded or I move to a new place. Your email stays private.": ". Watchdog will let you know when a new find is recorded or I move to a new place. Your email stays private.",
     "Your email": "Your email",
-    "Save my email": "Save my email",
     "Saving…": "Saving…",
-    "Your email is saved for this stone. Notifications are not active yet; no emails will be sent.": "Your email is saved for this stone. Notifications are not active yet; no emails will be sent.",
     "Close": "Close",
     "{0} journey map": "{0} journey map",
     "Follow my journey.": "Follow my journey.",
@@ -268,7 +265,12 @@ const SITE_TRANSLATIONS = {
     "Let’s keep its story going →": "Let’s keep its story going →",
     "Found me?": "Found me?",
     "Click here to keep its story going →": "Click here to keep its story going →",
-    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue."
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.",
+    ". Watchdog emails you whenever this stone is found or its status changes. You can enable it later and turn it off at any time using a link in an email. Several people can follow the same stone; everyone’s email stays private.": ". Watchdog emails you whenever this stone is found or its status changes. You can enable it later and turn it off at any time using a link in an email. Several people can follow the same stone; everyone’s email stays private.",
+    "Enable notifications": "Enable notifications",
+    "Send me a link to turn notifications off": "Send me a link to turn notifications off",
+    "Check your email to confirm Watchdog or turn notifications off. Each subscriber manages their own notifications.": "Check your email to confirm Watchdog or turn notifications off. Each subscriber manages their own notifications.",
+    "Your email is saved. Email delivery is being configured; your confirmation email will follow once it is ready.": "Your email is saved. Email delivery is being configured; your confirmation email will follow once it is ready."
   },
   "sk": {
     "View ({0}/{1})": "View ({0}/{1})",
@@ -384,11 +386,8 @@ const SITE_TRANSLATIONS = {
     "Share my story": "Zdieľať môj príbeh",
     "Watchdog · Follow {0}’s next adventure": "Sledovanie · Ďalšie dobrodružstvá kamienka {0}",
     "Leave your email to follow": "Zadaj email a sleduj",
-    ". Watchdog will let you know when a new find is recorded or I move to a new place. Your email stays private.": ". Sledovanie ťa upozorní na nový nález alebo nové miesto. Tvoj email zostane súkromný.",
     "Your email": "Tvoj email",
-    "Save my email": "Uložiť email",
     "Saving…": "Ukladám…",
-    "Your email is saved for this stone. Notifications are not active yet; no emails will be sent.": "Tvoj email je uložený k tomuto kamienku. Upozornenia zatiaľ nie sú aktívne; emaily sa neposielajú.",
     "Close": "Zavrieť",
     "{0} journey map": "Mapa cesty kamienka {0}",
     "Follow my journey.": "Sleduj moju cestu.",
@@ -537,7 +536,12 @@ const SITE_TRANSLATIONS = {
     "Let’s keep its story going →": "Pomôžem jeho príbehu pokračovať →",
     "Found me?": "Našiel si ma?",
     "Click here to keep its story going →": "Klikni sem a pokračuj v jeho príbehu →",
-    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Stačí zaznamenať nález a prípadne pridať správu. Potom vezmi kamienok na ďalšie pekné miesto — tak pomôžeš jeho príbehu pokračovať."
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Stačí zaznamenať nález a prípadne pridať správu. Potom vezmi kamienok na ďalšie pekné miesto — tak pomôžeš jeho príbehu pokračovať.",
+    ". Watchdog emails you whenever this stone is found or its status changes. You can enable it later and turn it off at any time using a link in an email. Several people can follow the same stone; everyone’s email stays private.": ". Watchdog ti pošle email vždy, keď sa kamienok nájde alebo sa zmení jeho stav. Sledovanie si vieš nastaviť aj neskôr a kedykoľvek ho vypnúť cez odkaz v emaile. Jeden kamienok môže sledovať viac ľudí; emaily všetkých zostanú súkromné.",
+    "Enable notifications": "Zapnúť upozornenia",
+    "Send me a link to turn notifications off": "Poslať odkaz na vypnutie upozornení",
+    "Check your email to confirm Watchdog or turn notifications off. Each subscriber manages their own notifications.": "Pozri si email a potvrď Watchdog alebo vypni upozornenia. Každý sledovateľ spravuje svoje vlastné upozornenia.",
+    "Your email is saved. Email delivery is being configured; your confirmation email will follow once it is ready.": "Tvoj email je uložený. Odosielanie emailov sa nastavuje; potvrdzovací email príde, keď bude pripravené."
   },
   "hu": {
     "View ({0}/{1})": "View ({0}/{1})",
@@ -653,11 +657,8 @@ const SITE_TRANSLATIONS = {
     "Share my story": "Történetem megosztása",
     "Watchdog · Follow {0}’s next adventure": "Követés · {0} következő kalandja",
     "Leave your email to follow": "Add meg az emailed, és kövesd:",
-    ". Watchdog will let you know when a new find is recorded or I move to a new place. Your email stays private.": ". A követés értesít az új találatokról vagy helyekről. Az emailed nem lesz nyilvános.",
     "Your email": "Email címed",
-    "Save my email": "Email mentése",
     "Saving…": "Mentés…",
-    "Your email is saved for this stone. Notifications are not active yet; no emails will be sent.": "Az emailed mentve lett ehhez a kőhöz. Az értesítések még nem aktívak; nem küldünk emaileket.",
     "Close": "Bezárás",
     "{0} journey map": "{0} útvonalának térképe",
     "Follow my journey.": "Kövesd az utam.",
@@ -806,7 +807,12 @@ const SITE_TRANSLATIONS = {
     "Let’s keep its story going →": "Folytassuk a történetét →",
     "Found me?": "Megtaláltál?",
     "Click here to keep its story going →": "Kattints ide a történet folytatásához →",
-    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Csak rögzítsd a megtalálást, és ha szeretnél, írj üzenetet. Aztán vidd a kavicsot egy másik szép helyre — így segítesz folytatni a történetét."
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Csak rögzítsd a megtalálást, és ha szeretnél, írj üzenetet. Aztán vidd a kavicsot egy másik szép helyre — így segítesz folytatni a történetét.",
+    ". Watchdog emails you whenever this stone is found or its status changes. You can enable it later and turn it off at any time using a link in an email. Several people can follow the same stone; everyone’s email stays private.": ". A Watchdog emailt küld, amikor megtalálják a kavicsot vagy megváltozik az állapota. Később is bekapcsolhatod, és bármikor kikapcsolhatod az emailben található linken. Többen is követhetik ugyanazt a kavicsot; az email-címek nem nyilvánosak.",
+    "Enable notifications": "Értesítések bekapcsolása",
+    "Send me a link to turn notifications off": "Kérek linket az értesítések kikapcsolásához",
+    "Check your email to confirm Watchdog or turn notifications off. Each subscriber manages their own notifications.": "Nézd meg az emailed a Watchdog megerősítéséhez vagy az értesítések kikapcsolásához. Mindenki saját értesítéseit kezeli.",
+    "Your email is saved. Email delivery is being configured; your confirmation email will follow once it is ready.": "Az emailed elmentve. Az emailküldés beállítása folyamatban van; a megerősítő email később érkezik."
   },
   "de": {
     "View ({0}/{1})": "View ({0}/{1})",
@@ -922,11 +928,8 @@ const SITE_TRANSLATIONS = {
     "Share my story": "Meine Geschichte teilen",
     "Watchdog · Follow {0}’s next adventure": "Benachrichtigung · Das nächste Abenteuer von {0}",
     "Leave your email to follow": "Gib deine E-Mail an und begleite",
-    ". Watchdog will let you know when a new find is recorded or I move to a new place. Your email stays private.": ". Die Benachrichtigung informiert dich über neue Funde oder Orte. Deine E-Mail bleibt privat.",
     "Your email": "Deine E-Mail",
-    "Save my email": "E-Mail speichern",
     "Saving…": "Wird gespeichert…",
-    "Your email is saved for this stone. Notifications are not active yet; no emails will be sent.": "Deine E-Mail ist für diesen Stein gespeichert. Benachrichtigungen sind noch nicht aktiv; es werden keine E-Mails versendet.",
     "Close": "Schließen",
     "{0} journey map": "Reisekarte von {0}",
     "Follow my journey.": "Begleite meine Reise.",
@@ -1075,6 +1078,11 @@ const SITE_TRANSLATIONS = {
     "Let’s keep its story going →": "Schreiben wir seine Geschichte weiter →",
     "Found me?": "Hast du mich gefunden?",
     "Click here to keep its story going →": "Hier klicken: Geschichte fortsetzen →",
-    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Trage einfach deinen Fund ein und hinterlasse eine Nachricht, wenn du möchtest. Nimm den Stein dann an einen anderen schönen Ort mit — so hilfst du seiner Geschichte weiter."
+    "Just record your find and add a message if you like. Then take the stone to another lovely place — that’s how you help its story continue.": "Trage einfach deinen Fund ein und hinterlasse eine Nachricht, wenn du möchtest. Nimm den Stein dann an einen anderen schönen Ort mit — so hilfst du seiner Geschichte weiter.",
+    ". Watchdog emails you whenever this stone is found or its status changes. You can enable it later and turn it off at any time using a link in an email. Several people can follow the same stone; everyone’s email stays private.": ". Watchdog sendet dir eine E-Mail, wenn dieser Stein gefunden wird oder sich sein Status ändert. Du kannst es später aktivieren und jederzeit über einen Link in einer E-Mail ausschalten. Mehrere Personen können denselben Stein verfolgen; alle E-Mail-Adressen bleiben privat.",
+    "Enable notifications": "Benachrichtigungen aktivieren",
+    "Send me a link to turn notifications off": "Link zum Ausschalten der Benachrichtigungen senden",
+    "Check your email to confirm Watchdog or turn notifications off. Each subscriber manages their own notifications.": "Prüfe deine E-Mail, um Watchdog zu bestätigen oder Benachrichtigungen auszuschalten. Jeder verwaltet seine eigenen Benachrichtigungen.",
+    "Your email is saved. Email delivery is being configured; your confirmation email will follow once it is ready.": "Deine E-Mail ist gespeichert. Der E-Mail-Versand wird eingerichtet; die Bestätigung folgt, sobald er bereit ist."
   }
 };
