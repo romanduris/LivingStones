@@ -6,6 +6,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   const context=await browser.newContext({...devices['iPhone 13'],locale});const stones=JSON.parse(JSON.stringify(fixture.stones));
   stones.forEach(stone=>stone.finds.forEach((find,i)=>find.id=stone.id+'-find-'+i));
   stones[0].name='Map';stones[0].creator='Finds';stones[0].finds[0].message='Close';stones[0].finds[0].nickname='Countries';
+  stones[0].finds[1].message='Vlajky 🇦🇹 🇨🇿 🇺🇸 <img src=x onerror=alert(1)> AT';
   stones[0].comments=[{id:'first-note',findId:stones[0].finds[0].id,date:stones[0].finds[0].date,nickname:'Countries',message:'Close'}];
   await context.route('http://127.0.0.1:8787/**',route=>{
    const path=new URL(route.request().url()).pathname;let result=path.endsWith('/stones')?{stones}:path.endsWith('/views')?{views:7}:{ok:true};
@@ -36,6 +37,14 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.locator('#detail-title .detail-title-copy').innerText(),'Map');assert.match(await page.locator('.detail-story').innerText(),/Finds/);
   assert.equal(await page.locator('[data-entry="'+stones[0].finds[0].id+'"] .entry-message').innerText(),'“Close”');
+  const flagMessage=page.locator('[data-entry="'+stones[0].finds[1].id+'"] .entry-message');
+  assert.equal(await flagMessage.locator('.comment-flag').count(),3);
+  assert.deepEqual(await flagMessage.locator('.comment-flag').evaluateAll(images=>images.map(img=>new URL(img.src).pathname.split('/').at(-1))),['at.svg','cz.svg','us.svg']);
+  await page.waitForFunction(()=>[...document.querySelectorAll('.comment-flag')].every(img=>img.complete&&img.naturalWidth>0));
+  assert.equal(await flagMessage.locator('img:not(.comment-flag),script').count(),0);
+  assert.match(await flagMessage.innerText(),/<img src=x onerror=alert\(1\)> AT/);
+  assert.equal(await page.evaluate(()=>stoneRepository.get('A1').finds[1].message),stones[0].finds[1].message);
+
   await page.locator('#contact-stone').click();await page.locator('#contact-email').fill('draft@example.invalid');
   await page.setViewportSize({width:320,height:844});
   assert.ok(await page.evaluate(()=>{const save=document.querySelector('#send-contact').getBoundingClientRect(),close=document.querySelector('#close-contact').getBoundingClientRect();return Math.abs(save.top-close.top)<1&&close.left>save.right;}),'Contact buttons share a row at 320px in '+expected);

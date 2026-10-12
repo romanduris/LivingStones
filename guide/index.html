@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f3fa">
+  <meta name="description" content="Stručný návod pre rodičov a tvorcov: namaľujte kamienok, nalepte QR štítok, oživte ho a sledujte jeho cestu. Pripravené na tlač na jednu A4.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'">
+  <title>Ako začať s Living Stones · Návod na vytlačenie</title>
+  <link rel="icon" href="../docs/assets/brand-stone.svg" type="image/svg+xml">
+  <link rel="preload" href="../docs/assets/fonts/nunito-sans-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../docs/assets/fonts/baloo-2-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="guide.css?v=1">
+  <script src="translations.js?v=1" defer></script>
+  <script src="guide.js?v=1" defer></script>
+</head>
+<body>
+  <nav class="toolbar" data-label="controlsLabel" aria-label="Ovládanie návodu">
+    <a href="../">← Living Stones</a>
+    <div class="toolbar-controls"><select id="guide-language" aria-label="Jazyk návodu"><option value="sk">SK · Slovenčina</option><option value="en">EN · English</option><option value="hu">HU · Magyar</option><option value="de">DE · Deutsch</option></select>
+    <button id="print-guide" type="button" data-copy="print">Vytlačiť / Uložiť PDF</button></div>
+  </nav>
+  <main class="sheet">
+    <header class="sheet-header">
+      <a class="brand" href="https://romanduris.github.io/LivingStones/"><img src="../docs/assets/brand-stone.svg" width="34" height="34" alt="">Living Stones</a>
+      <span class="guide-label" data-copy="guideLabel">Návod k QR štítkom</span>
+    </header>
+    <section class="hero" aria-labelledby="guide-title">
+      <div class="hero-copy">
+        <p class="eyebrow" data-copy="eyebrow">PRE MALÝCH TVORCOV A VEĽKÉ DOBRODRUŽSTVÁ</p>
+        <h1 id="guide-title" data-copy="heroTitle">Malý kamienok.<br>Veľký príbeh.</h1>
+        <p data-copy="intro">Living Stones sú maľované kamienky, ktoré cestujú medzi ľuďmi. Každé nájdenie pridá do ich príbehu nové miesto a spomienku.</p>
+      </div>
+      <div class="hero-stones" data-label="examplesLabel" aria-label="Ukážky namaľovaných kamienkov">
+        <span class="stone-orbit" aria-hidden="true"></span>
+        <img class="stone-flower" src="../docs/assets/stone-photos/kvetko.png" width="150" height="150" data-alt="flowerAlt" alt="Kamienok ozdobený farebnými kvietkami">
+        <img class="stone-art" src="../docs/assets/stone-photos/obrazko.png" width="104" height="104" data-alt="artAlt" alt="Kamienok s veselou farebnou maľbou">
+        <span class="spark spark-one" aria-hidden="true">✦</span><span class="spark spark-two" aria-hidden="true">✧</span>
+      </div>
+    </section>
+    <section class="instructions" aria-labelledby="instructions-title">
+      <h2 id="instructions-title" data-copy="instructionsTitle">Ako na to? Päť jednoduchých krokov.</h2>
+      <ol class="steps">
+        <li><span class="step-number" aria-hidden="true">1</span><div><h3 data-copy="s1title">Namaľujte kamienok</h3><p data-copy="s1text">Deti ho môžu pokresliť a ozdobiť podľa seba. Na zadnej strane nechajte miesto na QR štítok.</p></div></li>
+        <li><span class="step-number" aria-hidden="true">2</span><div><h3 data-copy="s2title">Nalepte dodaný QR štítok</h3><p data-copy="s2text">Na každý kamienok patrí <strong>jeden vlastný štítok s QR a číselným kódom</strong>. Nalepte ho tak, aby bol QR čistý a dobre čitateľný.</p></div></li>
+        <li class="activation-step"><span class="step-number" aria-hidden="true">3</span><div><h3 data-copy="s3title">Naskenujte QR a oživte kamienok</h3><p data-copy="s3text">Telefónom naskenujte QR. Zadajte meno kamienka, autora a kód zo štítka, pridajte fotku a polohu. Potom ťuknite na <strong>Oživiť kamienok</strong>.</p><div class="activation-path" data-label="activationLabel" aria-label="Kroky oživenia"><span data-copy="pathName">Meno + kód</span><b aria-hidden="true">→</b><span data-copy="pathPhoto">Fotka</span><b aria-hidden="true">→</b><span data-copy="pathActivate">Poloha + oživenie</span></div></div></li>
+        <li><span class="step-number" aria-hidden="true">4</span><div><h3 data-copy="s4title">Nechajte ho nájsť</h3><p data-copy="s4text">Položte ho na bezpečné miesto, kde si ho niekto všimne — napríklad v parku alebo na prechádzke. Jeho príbeh môže pokračovať!</p></div></li>
+        <li><span class="step-number" aria-hidden="true">5</span><div><h3 data-copy="s5title">Sledujte, kam sa dostane</h3><p data-copy="s5text">Nálezca naskenuje QR a zapíše nájdenie. Môže kamienok vziať na výlet a nechať ho pre ďalšieho. <strong>Jeho cestu sledujete cez QR alebo na webe.</strong></p></div></li>
+      </ol>
+    </section>
+    <footer class="sheet-footer">
+      <div class="web-card">
+        <div><p class="eyebrow" data-copy="webEyebrow">PRÍBEH POKRAČUJE ONLINE</p><h2 data-copy="webTitle">Kam sa váš kamienok vyberie?</h2><p data-copy="webText">Na webe nájdete kamienky, ich miesta a správy od nálezcov.</p><a class="web-address" href="https://romanduris.github.io/LivingStones/">livingstones.rodulab.com</a></div>
+        <figure><img src="website-qr.svg" width="112" height="112" data-alt="websiteQRAlt" alt="QR kód na web Living Stones"><figcaption data-copy="qrCaption">QR na web Living Stones</figcaption></figure>
+      </div>
+      <p class="closing-note"><span data-copy="closingStart">Namaľovať. Oživiť. Pustiť do sveta.</span> <span data-copy="closingEnd">Každé nájdenie je nová kapitola.</span></p>
+    </footer>
+  </main>
+</body>
+</html>

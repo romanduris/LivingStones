@@ -2140,3 +2140,5 @@ body:has(dialog[open]) {
 
 .find-reassurance > span { display:block; }
 .find-reassurance { line-height:1.5; margin-top:10px; }
+
+.comment-flag { display:inline-block; width:1.5em; height:1.5em; vertical-align:-.3em; object-fit:contain; }
