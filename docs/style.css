@@ -2105,13 +2105,20 @@ body:has(dialog[open]) {
   padding: 0 5px;
 }
 
-#contact-fields { border:0; margin:0; padding:0; min-width:0; }
-#contact-form .field { margin-bottom:14px; }
-#contact-message { resize:vertical; }
-
-.contact-section { margin-top:32px; padding:24px 0; border-top:1px solid var(--line); scroll-margin-top:20px; }
-.contact-section p { margin:8px 0 16px; }
-#homepage-contact-form { max-width:620px; }
-#homepage-contact-fields { border:0; padding:0; margin:0; min-width:0; }
-#homepage-contact-form .field { margin-bottom:14px; }
-#homepage-contact-form textarea { resize:vertical; }
+#contact-fields,#homepage-contact-fields { border:0; margin:0; padding:0; min-width:0; }
+.contact-section { margin-top:28px; padding:20px; border:1px solid #514362; border-radius:12px; background:linear-gradient(120deg,#302b3d,#273c40); scroll-margin-top:80px; }
+.contact-section h2 { display:flex; align-items:center; gap:10px; margin:0; font-family:var(--heading-font); font-size:24px; color:var(--purple); }
+.contact-icon { flex:none; color:var(--teal); }
+.contact-section > p { font-family:inherit; font-size:13px; color:var(--muted); line-height:1.6; margin:6px 0 14px; }
+#homepage-contact-form { max-width:620px; margin-top:14px; }
+#contact-form .field,#homepage-contact-form .field { margin:0 0 10px; font-family:inherit; font-weight:400; }
+#contact-form input,#contact-form textarea,#homepage-contact-form input,#homepage-contact-form textarea { font-family:inherit; line-height:1.4; padding:9px 10px; margin-top:4px; background:var(--bg); border-radius:6px; }
+#contact-form textarea,#homepage-contact-form textarea { min-height:0; resize:vertical; }
+#homepage-contact-form .field-hint { display:block; margin:4px 0 0; line-height:1.5; }
+#contact-panel { padding:14px; margin-block:14px; }
+#contact-panel h3 { margin:0; color:var(--purple); }
+#contact-help { margin:5px 0 10px; line-height:1.5; }
+#contact-form .form-actions { margin-top:10px; }
+#contact-status,#homepage-contact-status { font-size:12px; line-height:1.5; margin:8px 0 0; }
+#contact-status:empty,#homepage-contact-status:empty { display:none; }
+@media(max-width:650px) { .contact-section { padding:16px; } }

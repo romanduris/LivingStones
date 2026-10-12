@@ -641,7 +641,7 @@ function renderDetail() {
         <p id="contact-help">Include your email if you’d like a reply. Your message stays private.</p>
         <form id="contact-form"><fieldset id="contact-fields">
           <label class="field" for="contact-email">Your email (optional)<input id="contact-email" name="email" type="email" maxlength="254" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" aria-describedby="contact-help"></label>
-          <label class="field" for="contact-message">Your message<textarea id="contact-message" name="message" required maxlength="2000" rows="5"></textarea></label>
+          <label class="field" for="contact-message">Your message<textarea id="contact-message" name="message" required maxlength="2000" rows="3"></textarea></label>
           <div class="form-actions"><button class="button primary" id="send-contact" type="submit">Send message</button><button class="button secondary" id="close-contact" type="button">Close</button></div>
         </fieldset></form><p id="contact-status" role="status" aria-live="polite"></p>
       </section>
@@ -1333,6 +1333,15 @@ setInterval(() => {
 }, 60000);
 
 const homepageContactForm=$("#homepage-contact-form");
+const homepageContactToggle=$("#homepage-contact-toggle");
+homepageContactToggle.addEventListener('click',()=>{
+  homepageContactForm.hidden=!homepageContactForm.hidden;
+  homepageContactToggle.setAttribute('aria-expanded',String(!homepageContactForm.hidden));
+  if(!homepageContactForm.hidden){
+    $("#homepage-contact-email").focus({preventScroll:true});
+    homepageContactForm.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+});
 let homepageContactDraft=null;
 homepageContactForm.addEventListener('input',()=>{homepageContactDraft=null;});
 homepageContactForm.addEventListener('submit',async event=>{

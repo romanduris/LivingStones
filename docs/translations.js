@@ -274,7 +274,8 @@ const SITE_TRANSLATIONS = {
     "Include your email if you’d like a reply. Your message stays private.": "Include your email if you’d like a reply. Your message stays private.",
     "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.",
     "Story openings / QR openings until the next entry": "Story openings / QR openings until the next entry",
-    "Views ({0}/{1})": "Views ({0}/{1})"
+    "Views ({0}/{1})": "Views ({0}/{1})",
+    "Contact us": "Contact us"
   },
   "sk": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
@@ -549,7 +550,8 @@ const SITE_TRANSLATIONS = {
     "Include your email if you’d like a reply. Your message stays private.": "Ak chceš odpoveď, pridaj email. Správa zostane súkromná.",
     "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 otvorení, z toho 2 cez QR. Počítané do pridania ďalšieho záznamu.",
     "Story openings / QR openings until the next entry": "Otvorenia príbehu / cez QR do ďalšieho záznamu",
-    "Views ({0}/{1})": "Views ({0}/{1})"
+    "Views ({0}/{1})": "Views ({0}/{1})",
+    "Contact us": "Kontaktujte nás"
   },
   "hu": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
@@ -824,7 +826,8 @@ const SITE_TRANSLATIONS = {
     "Include your email if you’d like a reply. Your message stays private.": "Ha választ szeretnél, add meg az email címed. Az üzeneted privát marad.",
     "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 megnyitás, ebből 2 QR-kóddal. A következő bejegyzésig számolva.",
     "Story openings / QR openings until the next entry": "Megnyitások / QR-megnyitások a következő bejegyzésig",
-    "Views ({0}/{1})": "Views ({0}/{1})"
+    "Views ({0}/{1})": "Views ({0}/{1})",
+    "Contact us": "Írj nekünk"
   },
   "de": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
@@ -1099,6 +1102,7 @@ const SITE_TRANSLATIONS = {
     "Include your email if you’d like a reply. Your message stays private.": "Gib deine E-Mail an, wenn du eine Antwort möchtest. Deine Nachricht bleibt privat.",
     "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 Aufrufe, davon 2 per QR. Gezählt bis zum nächsten Eintrag.",
     "Story openings / QR openings until the next entry": "Aufrufe / QR-Aufrufe bis zum nächsten Eintrag",
-    "Views ({0}/{1})": "Views ({0}/{1})"
+    "Views ({0}/{1})": "Views ({0}/{1})",
+    "Contact us": "Kontaktiere uns"
   }
 };

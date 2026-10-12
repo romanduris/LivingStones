@@ -25,12 +25,12 @@
       crossorigin
     />
     <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="style.css?v=87" />
+    <link rel="stylesheet" href="style.css?v=88" />
     <script src="vendor/leaflet/leaflet.js" defer></script>
     <script src="config.js?v=1" defer></script>
-    <script src="translations.js?v=12" defer></script>
+    <script src="translations.js?v=13" defer></script>
     <script src="i18n.js?v=2" defer></script>
-    <script src="app.js?v=84" defer></script>
+    <script src="app.js?v=85" defer></script>
   </head>
   <body>
     <svg class="map-tone-defs" xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="map-petrol-tone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="-.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 -.2126 -.7152 -.0722 0 1 0 0 0 1 0" result="inverted"/><feComponentTransfer in="inverted" result="petrol"><feFuncR type="table" tableValues=".075 .18 .5 .76 .94"/><feFuncG type="table" tableValues=".155 .28 .56 .76 .90"/><feFuncB type="table" tableValues=".17 .29 .46 .60 .72"/></feComponentTransfer><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 .82 0 0 0 0 .70 0 0 0 0 .43 0 -6 6 0 -.25" result="border-colors"/><feComponentTransfer in="border-colors" result="borders"><feFuncA type="discrete" tableValues="0 0 0 0 .75"/></feComponentTransfer><feMerge><feMergeNode in="petrol"/><feMergeNode in="borders"/></feMerge></filter></defs></svg>
@@ -227,11 +227,12 @@
         </div>
       </section>
       <section id="contact" class="contact-section" aria-labelledby="homepage-contact-title">
-        <h2 id="homepage-contact-title">Contact</h2>
+        <h2 id="homepage-contact-title"><svg class="contact-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Contact</h2>
         <p>Have a question, idea or suggestion? Feel free to write to us.</p>
-        <form id="homepage-contact-form"><fieldset id="homepage-contact-fields">
+        <button id="homepage-contact-toggle" class="button primary" type="button" aria-expanded="false" aria-controls="homepage-contact-form">Contact us</button>
+        <form id="homepage-contact-form" hidden><fieldset id="homepage-contact-fields">
           <label class="field" for="homepage-contact-email">Your email (optional)<input id="homepage-contact-email" name="email" type="email" maxlength="254" autocomplete="email"><small class="field-hint">Include your email if you’d like a reply. Your message stays private.</small></label>
-          <label class="field" for="homepage-contact-message">Your message<textarea id="homepage-contact-message" name="message" required maxlength="2000" rows="4"></textarea></label>
+          <label class="field" for="homepage-contact-message">Your message<textarea id="homepage-contact-message" name="message" required maxlength="2000" rows="3"></textarea></label>
           <button id="homepage-send-contact" class="button primary" type="submit">Send message</button>
         </fieldset><p id="homepage-contact-status" role="status" aria-live="polite"></p></form>
       </section>
