@@ -454,7 +454,7 @@ process.on("exit", () => server?.kill());
     assert.equal(await phone.evaluate(() => document.activeElement.id), "find-code");
     assert.match(
       await phone.locator("#find-container .find-panel").innerText(),
-      /enjoy my company/,
+      /Code beside the QR/,
     );
     await phone.locator("#find-code").fill("WRONG");
     await phone.locator("#find-form button[type=submit]").click();
@@ -672,6 +672,7 @@ process.on("exit", () => server?.kill());
     await phone.evaluate(() => window.releaseGPS());
     assert.match(await phone.locator("#location-status").innerText(), /Manual city location:.*Bratislava/);
     assert.equal(await phone.locator("#location-next").isEnabled(), true);
+    await phone.locator("#choose-city").click();
     await phone.locator("#manual-city").fill("Ba");
     assert.equal(await phone.locator("#location-next").isEnabled(), false);
     await phone.locator("#cancel-find").click();

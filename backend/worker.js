@@ -1,6 +1,7 @@
 import { fail, sha256, text, requireOrigin, jsonBody, limit } from "./common.js";
 import { EmailMessage } from 'cloudflare:email';
 import { sendContact } from './contact.js';
+import { eventEmailStatement, deliverEventEmails } from './event-emails.js';
 import { recordTraffic } from "./traffic.js";
 import { handleManagement } from "./management.js";
 import { initializeStone, availableImages } from "./initialization.js";
@@ -223,6 +224,10 @@ async function handle(request, env) {
         message,
       ),
     );
+  if (kind === "finds") {
+    const namedStone=await env.DB.prepare('SELECT name FROM stones WHERE id=?').bind(id).first();
+    statements.push(eventEmailStatement(env.DB,recordId,id,'find',{name:namedStone.name,city:place.city,country:place.country,nickname,message,date}));
+  }
   // D1 batch is transactional: a find and its message are committed together.
   try {
     await env.DB.batch(statements);
@@ -243,7 +248,10 @@ async function handle(request, env) {
   return { stone: (await listStones(env.DB, id))[0], recordId };
 }
 export default {
-  async fetch(request, env) {
+  async scheduled(controller,env) {
+    await deliverEventEmails(env,message=>new EmailMessage(message.from,message.to,message.raw));
+  },
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin");
     const allowed = (env.ALLOWED_ORIGINS || "").split(",").includes(origin);
     const headers = {
@@ -265,6 +273,10 @@ export default {
       });
     try {
       const result=await handle(request, env);
+      if(request.method==='POST'&&/\/(finds|initialize)$/.test(new URL(request.url).pathname)){
+        ctx.waitUntil(deliverEventEmails(env,message=>new EmailMessage(message.from,message.to,message.raw))
+          .catch(error=>console.error('Owner email queue failed:',error.code||'queue_failed')));
+      }
       if(result instanceof Response)return result;
       return new Response(JSON.stringify(result), {
         headers,

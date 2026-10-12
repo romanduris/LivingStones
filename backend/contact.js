@@ -22,18 +22,23 @@ const labels={
  de:{subject:'Frage oder Vorschlag',stone:'Stein',sender:'Absender',email:'Antwortadresse',message:'Nachricht',story:'Geschichte des Steins'}
 };
 export function contactMessage(stone,body,env,key) {
-  const c=labels[body.language]||labels.en,from=contactEmail(env.CONTACT_FROM),to=contactEmail(env.CONTACT_TO);
+  const c=labels[body.language]||labels.en;
   const story=stone ? new URL('/?'+new URLSearchParams({stone:stone.id}),env.CONTACT_SITE_URL).href : null;
   const content=[...(stone?[c.stone+': '+stone.name+' ('+stone.id+')',c.story+': '+story]:['Living Stones']),...(body.email?[c.email+': '+body.email]:[]),'',c.message+':',body.message].join('\n');
+  return mailMessage('[Living Stones] '+c.subject+(stone?' · '+stone.name:''),content,env,key,body.email);
+}
+export function mailMessage(subject,content,env,key,replyEmail='') {
+  const from=contactEmail(env.CONTACT_FROM),to=contactEmail(env.CONTACT_TO);
   const raw=[
-    'From: Living Stones <'+from+'>','To: <'+to+'>',...(body.email?['Reply-To: <'+body.email+'>']:[]),
-    'Subject: '+encodedHeader('[Living Stones] '+c.subject+(stone?' · '+stone.name:'')),
+    'From: Living Stones <'+from+'>','To: <'+to+'>',...(replyEmail?['Reply-To: <'+contactEmail(replyEmail)+'>']:[]),
+    'Subject: '+encodedHeader(subject),
     'Date: '+new Date().toUTCString(),'Message-ID: <'+key+'@'+from.split('@')[1]+'>',
     'MIME-Version: 1.0','Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',
     base64(content).match(/.{1,76}/g).join('\r\n'),'',''
   ].join('\r\n');
   return {from,to,raw};
 }
+
 export async function sendContact(request,env,id,body,createMessage) {
   await limit(request,env,'stone-contact',5);
   const stone=id ? await env.DB.prepare('SELECT id,name,initialized FROM stones WHERE id=?').bind(id).first() : null;

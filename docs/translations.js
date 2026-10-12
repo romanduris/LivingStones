@@ -272,10 +272,15 @@ const SITE_TRANSLATIONS = {
     "Have a question, idea or suggestion? Feel free to write to us.": "Have a question, idea or suggestion? Feel free to write to us.",
     "Your email (optional)": "Your email (optional)",
     "Include your email if you’d like a reply. Your message stays private.": "Include your email if you’d like a reply. Your message stays private.",
-    "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.",
     "Story openings / QR openings until the next entry": "Story openings / QR openings until the next entry",
     "Views ({0}/{1})": "Views ({0}/{1})",
-    "Contact us": "Contact us"
+    "Contact us": "Contact us",
+    "Views (20/2): 20 openings, 2 via QR.": "Views (20/2): 20 openings, 2 via QR.",
+    "Code beside the QR on the stone.": "Code beside the QR on the stone.",
+    "Allow GPS to locate your find. Addresses and city searches use Photon.": "Allow GPS to locate your find. Addresses and city searches use Photon.",
+    "Choose a city from the results.": "Choose a city from the results.",
+    "Your location, nickname and message will be public.": "Your location, nickname and message will be public.",
+    "Demo code: {0}": "Demo code: {0}"
   },
   "sk": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Malé kamienky. Veľké príbehy.",
@@ -548,10 +553,15 @@ const SITE_TRANSLATIONS = {
     "Have a question, idea or suggestion? Feel free to write to us.": "Máš otázku, nápad alebo pripomienku? Pokojne nám napíš.",
     "Your email (optional)": "Tvoj email (voliteľný)",
     "Include your email if you’d like a reply. Your message stays private.": "Ak chceš odpoveď, pridaj email. Správa zostane súkromná.",
-    "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 otvorení, z toho 2 cez QR. Počítané do pridania ďalšieho záznamu.",
     "Story openings / QR openings until the next entry": "Otvorenia príbehu / cez QR do ďalšieho záznamu",
     "Views ({0}/{1})": "Views ({0}/{1})",
-    "Contact us": "Kontaktujte nás"
+    "Contact us": "Kontaktujte nás",
+    "Views (20/2): 20 openings, 2 via QR.": "Views (20/2): 20 otvorení, z toho 2 cez QR.",
+    "Code beside the QR on the stone.": "Kód je vedľa QR na kamienku.",
+    "Allow GPS to locate your find. Addresses and city searches use Photon.": "Povoľ GPS pre miesto nájdenia. Adresy a mestá vyhľadávame cez Photon.",
+    "Choose a city from the results.": "Vyber mesto z výsledkov.",
+    "Your location, nickname and message will be public.": "Poloha, prezývka a správa budú verejné.",
+    "Demo code: {0}": "Demo kód: {0}"
   },
   "hu": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kis kövek. Nagy történetek.",
@@ -824,10 +834,15 @@ const SITE_TRANSLATIONS = {
     "Have a question, idea or suggestion? Feel free to write to us.": "Kérdésed, ötleted vagy javaslatod van? Írj nekünk bátran.",
     "Your email (optional)": "Email címed (nem kötelező)",
     "Include your email if you’d like a reply. Your message stays private.": "Ha választ szeretnél, add meg az email címed. Az üzeneted privát marad.",
-    "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 megnyitás, ebből 2 QR-kóddal. A következő bejegyzésig számolva.",
     "Story openings / QR openings until the next entry": "Megnyitások / QR-megnyitások a következő bejegyzésig",
     "Views ({0}/{1})": "Views ({0}/{1})",
-    "Contact us": "Írj nekünk"
+    "Contact us": "Írj nekünk",
+    "Views (20/2): 20 openings, 2 via QR.": "Views (20/2): 20 megnyitás, ebből 2 QR-kóddal.",
+    "Code beside the QR on the stone.": "A kód a kavicson a QR-kód mellett van.",
+    "Allow GPS to locate your find. Addresses and city searches use Photon.": "Engedélyezd a GPS-t a találat helyéhez. A címeket és városokat a Photon keresi.",
+    "Choose a city from the results.": "Válassz várost a találatokból.",
+    "Your location, nickname and message will be public.": "A hely, becenév és üzenet nyilvános lesz.",
+    "Demo code: {0}": "Demo kód: {0}"
   },
   "de": {
     "Living Stones — Small stones. Big stories.": "Living Stones — Kleine Steine. Große Geschichten.",
@@ -1100,9 +1115,14 @@ const SITE_TRANSLATIONS = {
     "Have a question, idea or suggestion? Feel free to write to us.": "Hast du eine Frage, Idee oder Anregung? Schreib uns gerne.",
     "Your email (optional)": "Deine E-Mail (optional)",
     "Include your email if you’d like a reply. Your message stays private.": "Gib deine E-Mail an, wenn du eine Antwort möchtest. Deine Nachricht bleibt privat.",
-    "Views (20/2): 20 openings, 2 via QR. Counted until the next entry.": "Views (20/2): 20 Aufrufe, davon 2 per QR. Gezählt bis zum nächsten Eintrag.",
     "Story openings / QR openings until the next entry": "Aufrufe / QR-Aufrufe bis zum nächsten Eintrag",
     "Views ({0}/{1})": "Views ({0}/{1})",
-    "Contact us": "Kontaktiere uns"
+    "Contact us": "Kontaktiere uns",
+    "Views (20/2): 20 openings, 2 via QR.": "Views (20/2): 20 Aufrufe, davon 2 per QR.",
+    "Code beside the QR on the stone.": "Der Code steht neben dem QR-Code auf dem Stein.",
+    "Allow GPS to locate your find. Addresses and city searches use Photon.": "Erlaube GPS für den Fundort. Adressen und Städte suchen wir mit Photon.",
+    "Choose a city from the results.": "Wähle eine Stadt aus den Ergebnissen.",
+    "Your location, nickname and message will be public.": "Standort, Spitzname und Nachricht werden öffentlich.",
+    "Demo code: {0}": "Demo-Code: {0}"
   }
 };

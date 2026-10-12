@@ -1,4 +1,5 @@
 import { fail, sha256, text, limit } from './common.js';
+import { eventEmailStatement } from './event-emails.js';
 
 // Used by both the picker and management; never offer an image still in use.
 const available = "claimed_at IS NULL AND NOT EXISTS(SELECT 1 FROM stones WHERE initialized=1 AND stones.image=stone_image_pool.image)";
@@ -82,6 +83,7 @@ export async function initializeStone(request, env, id, body, listStones) {
   if(photo)statements.push(env.DB.prepare('INSERT INTO stone_photos(stone_id,png) SELECT ?,? WHERE EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?) ON CONFLICT(stone_id) DO NOTHING').bind(id,photo,key,id));
   else statements.push(env.DB.prepare('UPDATE stone_image_pool SET stone_id=?,claimed_at=? WHERE id=? AND claimed_at IS NULL AND EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?)').bind(id,date,imageId,key,id));
   if(message)statements.push(env.DB.prepare("INSERT INTO comments(id,stone_id,find_id,created_at,nickname,message) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM stone_initializations WHERE id=? AND stone_id=?) AND NOT EXISTS(SELECT 1 FROM comments WHERE id=?)").bind('birth-wish-'+id,id,'birth-'+id,date,creator.slice(0,40),message,key,id,'birth-wish-'+id));
+  statements.push(eventEmailStatement(env.DB,'birth-'+id,id,'birth',{name,city:place.city,country:place.country,nickname:creator,message,date},key));
   let results;
   try {results=await env.DB.batch(statements);} catch(error) {
     const saved=await replay();if(saved)return saved;

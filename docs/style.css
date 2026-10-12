@@ -2106,7 +2106,7 @@ body:has(dialog[open]) {
 }
 
 #contact-fields,#homepage-contact-fields { border:0; margin:0; padding:0; min-width:0; }
-.contact-section { margin-top:28px; padding:20px; border:1px solid #514362; border-radius:12px; background:linear-gradient(120deg,#302b3d,#273c40); scroll-margin-top:80px; }
+.contact-section { margin-top:28px; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--surface); scroll-margin-top:80px; }
 .contact-section h2 { display:flex; align-items:center; gap:10px; margin:0; font-family:var(--heading-font); font-size:24px; color:var(--purple); }
 .contact-icon { flex:none; color:var(--teal); }
 .contact-section > p { font-family:inherit; font-size:13px; color:var(--muted); line-height:1.6; margin:6px 0 14px; }
@@ -2122,3 +2122,18 @@ body:has(dialog[open]) {
 #contact-status,#homepage-contact-status { font-size:12px; line-height:1.5; margin:8px 0 0; }
 #contact-status:empty,#homepage-contact-status:empty { display:none; }
 @media(max-width:650px) { .contact-section { padding:16px; } }
+
+#find-container .find-panel { padding:12px; margin-top:12px; }
+#find-container .find-steps { gap:8px; margin:8px 0 10px; font-size:11px; }
+#find-container .field { margin:8px 0; font-weight:400; }
+#find-container .field input,#find-container .field textarea { padding:8px 10px; margin-top:4px; line-height:1.4; }
+#find-container .field textarea { min-height:0; }
+#find-container .field-hint,#find-container .location-consent { font-size:12px; line-height:1.45; margin:5px 0 8px; }
+#find-container .location-status { font-size:12px; line-height:1.45; margin:6px 0; }
+#find-container .location-preview-frame { margin-top:8px; }
+#find-container .location-preview-map { height:110px; min-height:110px; }
+#find-container .review-location { margin-top:0; padding:7px 9px; font-size:12px; line-height:1.4; }
+#find-container .form-actions { gap:6px; margin-top:10px; flex-wrap:wrap; }
+#find-container .form-actions .button { padding-inline:10px; font-size:12px; min-height:42px; }
+#find-container .city-results { max-height:140px; overflow-y:auto; }
+#find-error:empty { display:none; }

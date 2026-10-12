@@ -234,6 +234,8 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
       (await call("/stones/A1/finds", find, key)).body.replayed,
       true,
     );
+    const queuedFinds=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',"SELECT id,kind FROM owner_event_emails WHERE stone_id='A1'"]));
+    assert.deepEqual(queuedFinds[0].results,[{id:concurrent[0].body.recordId,kind:'find'}],'Duplicate finds queue only one owner email; standalone notes queue none');
     // Re-seeding cannot overwrite or erase new records, even after deployment.
     cli([
       "d1",
@@ -380,6 +382,8 @@ async function call(endpoint, body, key = randomUUID(), custom = {}) {
     assert.ok((await call('/stones')).body.stones.some(s=>s.id===winner.stone.id));
     const retryBirth=await call('/stones/'+winner.stone.id+'/initialize',winningBody,winningKey,freshHeaders);
     assert.equal(retryBirth.status,200);assert.equal(retryBirth.body.replayed,true);assert.equal(retryBirth.body.stone.comments.length,1);assert.equal(retryBirth.body.stone.finds.length,1);
+    const queuedBirths=JSON.parse(cli(['d1','execute','livingstones-local-db','--local','--persist-to',state,'--json','--command',`SELECT stone_id,kind FROM owner_event_emails WHERE kind='birth'`]));
+    assert.deepEqual(queuedBirths[0].results,[{stone_id:winner.stone.id,kind:'birth'}],'Only the successful birth queues an email; retries and losing portrait races queue none');
     assert.equal((await call('/stones/'+winner.stone.id+'/initialize',{...winningBody,message:'Changed wish'},winningKey,freshHeaders)).status,409);
     assert.equal((await call('/stones/'+winner.stone.id+'/initialize',{...winningBody,name:'Overwrite'},winningKey,freshHeaders)).status,409);
     assert.equal((await call('/stones/'+winner.stone.id+'/initialize',winningBody,randomUUID(),freshHeaders)).status,409);

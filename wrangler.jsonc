@@ -11,7 +11,7 @@
     "CONTACT_SITE_URL": "https://livingstones.rodulab.com",
     "ALLOWED_ORIGINS": "https://romanduris.github.io,https://livingstones.rodulab.com",
   },
-  "triggers": { "crons": [] },
+  "triggers": { "crons": ["*/5 * * * *"] },
   "send_email": [{ "name": "EMAIL", "destination_address": "roman.duris@gmail.com" }],
   "d1_databases": [
     {
