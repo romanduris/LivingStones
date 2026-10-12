@@ -1,74 +1,83 @@
-.birth-header { max-width:1120px; margin:auto; padding:22px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px; border-bottom:1px solid var(--line); }
+.birth-header { max-width:960px; margin:auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--line); }
 .birth-header a { text-decoration:none; }
-.birth-header > a:last-child { font-size:13px; color:var(--muted); }
-.birth-wrap { max-width:1000px; margin:auto; padding:48px 24px 28px; }
-.birth-intro { display:grid; grid-template-columns:1fr; gap:42px; align-items:center; }
-.eyebrow { color:var(--purple); font-size:11px; letter-spacing:1.8px; font-weight:600; }
-.birth-intro h1 { font-size:clamp(30px,4.5vw,48px); line-height:1.15; margin:12px 0 20px; }
-.birth-intro p:not(.eyebrow) { color:var(--muted); font-size:15px; line-height:1.8; }
-.birth-intro a { color:var(--teal); font-size:13px; }
-.birth-steps { display:flex; gap:28px; padding:22px 0; margin:34px 0; border-block:1px solid var(--line); list-style:none; }
-.birth-steps li { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
-.birth-steps span,.step-number { background:#b49aff1a; border:1px solid #b49aff44; color:var(--purple); border-radius:50%; width:30px; height:30px; flex-shrink:0; display:grid; place-items:center; }
+.birth-header .wordmark { font-size:20px; }
+.birth-header .brand-symbol { width:32px; height:32px; }
+.birth-header-actions { display:flex; align-items:center; gap:14px; }
+.birth-header-actions > a { font-size:12px; color:var(--muted); }
+.birth-wrap { max-width:600px; margin:auto; padding:20px 20px 12px; }
+.birth-intro h1 { font-size:26px; line-height:1.2; margin:0 0 6px; }
+.birth-intro p { font-size:13px; color:var(--muted); line-height:1.5; margin:0; }
+.birth-steps { display:flex; justify-content:space-between; gap:10px; padding:0; margin:16px 0; list-style:none; }
+.birth-steps li { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+.birth-steps li > span:first-child { display:grid; place-items:center; width:24px; height:24px; border:1px solid var(--line); border-radius:50%; }
+.birth-steps li[aria-current="step"] { color:var(--ink); font-weight:600; }
+.birth-steps li[aria-current="step"] > span:first-child { color:var(--purple); border-color:var(--purple); background:#b49aff18; }
+.birth-steps li[data-complete="true"] > span:first-child { color:var(--teal); border-color:var(--teal); }
 #birth-fields { border:0; padding:0; margin:0; min-width:0; }
-.birth-panel { padding:28px; border:1px solid var(--line); border-radius:16px; background:var(--surface); margin-bottom:20px; }
-.birth-section-heading { display:flex; gap:14px; align-items:center; margin-bottom:24px; }
-.step-number { border-radius:10px; width:44px; height:44px; font-weight:600; font-size:14px; }
-.birth-section-heading h2 { margin:0; font-size:25px; line-height:1.3; }
-.birth-section-heading p { margin:5px 0 0; color:var(--muted); font-size:13px; }
-.birth-input-grid { display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:center; }
-.birth-help { font-size:12px; color:var(--muted); line-height:1.7; margin:6px 0; }
-.birth-panel .field { display:flex; flex-direction:column; gap:8px; font-size:13px; color:var(--ink); }
-.birth-panel input,.birth-panel select,.birth-panel textarea { background:var(--bg); border:1px solid #526170; border-radius:8px; color:var(--ink); font:inherit; padding:12px; width:100%; min-width:0; }
-.birth-panel input:focus,.birth-panel select:focus,.birth-panel textarea:focus { outline:2px solid var(--purple); outline-offset:2px; }
-.portrait-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:20px 0; }
-.portrait-option { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; cursor:pointer; border:1px solid var(--line); border-radius:12px; background:var(--bg); padding:8px 6px 12px; text-align:center; transition:border-color .15s,background .15s; }
-.portrait-option img { width:100%; height:auto; aspect-ratio:340/280; object-fit:contain; }
-.portrait-option span { max-width:100%; overflow-wrap:anywhere; font-size:11px; color:var(--muted); }
-.portrait-option input { position:absolute; top:8px; right:8px; width:15px; height:15px; accent-color:var(--purple); padding:0; }
-.portrait-option:has(input:checked) { border:2px solid var(--purple); background:#b49aff15; padding:7px 5px 11px; }
-.portrait-option:has(input:checked) span { color:var(--ink); }
-.portrait-option:focus-within { outline:2px solid var(--purple); outline-offset:3px; }
-.portrait-footer { display:flex; gap:15px; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-.birth-final { border-color:#62d7cb55; }
-.birth-final .step-number { background:#62d7cb12; color:var(--teal); border-color:#62d7cb44; }
-.birth-location { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:20px; }
-.birth-location strong { display:block; font-size:20px; color:var(--teal); }
-#location-status,#form-status,#page-status { font-size:13px; color:var(--muted); line-height:1.7; overflow-wrap:anywhere; }
-#form-status.error,#page-status.error { color:#ffa399; }
-.birth-submit { display:flex; justify-content:space-between; align-items:center; gap:20px; border-top:1px solid var(--line); padding-top:22px; margin-top:22px; }
-.birth-submit span { font-size:14px; color:var(--muted); line-height:1.6; }
-.birth-submit button { padding:14px 24px; }
+.birth-panel { padding:18px; border:1px solid var(--line); border-radius:14px; background:var(--surface); }
+.birth-section-heading { margin-bottom:14px; }
+.birth-section-heading h2 { margin:0; font-size:22px; line-height:1.3; outline:none; }
+.birth-section-heading p { margin:5px 0 0; font-size:13px; color:var(--muted); line-height:1.5; }
+.birth-input-grid { display:grid; gap:12px; }
+.birth-panel .field { display:flex; flex-direction:column; gap:5px; font-size:13px; color:var(--ink); }
+.birth-panel input,.birth-panel textarea { background:var(--bg); border:1px solid #526170; border-radius:8px; color:var(--ink); font:inherit; font-size:16px; padding:10px 12px; width:100%; min-width:0; }
+.birth-panel input:focus,.birth-panel textarea:focus { outline:2px solid var(--purple); outline-offset:2px; }
+.birth-help { font-size:12px; color:var(--muted); line-height:1.5; margin:7px 0; }
+p:empty { display:none; }
+.birth-wish { margin-top:12px; }
+.birth-wish summary { cursor:pointer; color:var(--teal); font-size:12px; padding:6px 0; }
+.birth-wish textarea { margin-top:6px; resize:vertical; }
+.wizard-nav { display:flex; gap:10px; position:sticky; bottom:0; padding:12px 0; background:var(--bg); z-index:3; }
+.wizard-nav .button { flex:1; min-height:44px; }
+#birth-back { flex:0 0 30%; }
 button:disabled { opacity:.5; cursor:not-allowed; }
-.birth-footnote { padding-top:10px; text-align:center; color:var(--muted); font-size:12px; }
-.birth-footnote a { margin-left:10px; }
-@media(max-width:650px) { .birth-header { padding:16px; gap:10px; } .birth-header .wordmark { font-size:20px; } .birth-header > a:last-child { max-width:110px; text-align:right; font-size:11px; } .birth-wrap { padding:28px 16px; } .birth-intro { grid-template-columns:1fr; gap:10px; } .birth-steps { gap:10px; justify-content:space-between; margin:26px 0; } .birth-steps li { font-size:11px; gap:6px; } .birth-steps span { width:23px; height:23px; } .birth-panel { padding:20px 16px; } .birth-section-heading h2 { font-size:21px; } .birth-input-grid,.birth-location { grid-template-columns:1fr; gap:16px; } .portrait-options { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; } .birth-submit { flex-direction:column; align-items:stretch; } .birth-submit span { text-align:center; } }
-@media(prefers-reduced-motion:reduce) { .portrait-option { transition:none; } }
-#birth-location-preview-frame { margin:18px 0; }
-.birth-header-actions { display:flex; align-items:center; gap:18px; }
-.birth-header-actions > a { font-size:13px; color:var(--muted); }
-.birth-intro h1,[data-i18n="submitHelp"] { white-space:pre-line; }
-.birth-steps li > span[data-i18n] { display:inline; width:auto; height:auto; border:0; border-radius:0; background:none; color:var(--muted); }
-@media(max-width:650px) { .birth-header-actions { gap:8px; } .birth-header-actions > a { display:none; } }
-
-.birth-wish { margin-top:22px; }
-.birth-wish textarea { resize:vertical; }
-@media(max-width:650px) { .portrait-option { padding:17px 2px 7px; border-radius:8px; min-height:90px; } .portrait-option:has(input:checked) { padding:16px 1px 6px; } .portrait-option input { top:5px; right:5px; width:13px; height:13px; } .portrait-option span { font-size:9px; line-height:1.3; } }
-.stone-photo-actions { display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
-.photo-link { border:0; background:none; color:var(--teal); font:inherit; font-size:12px; text-decoration:underline; text-underline-offset:3px; padding:6px 0; cursor:pointer; }
-.photo-link:focus-visible { outline:2px solid var(--purple); outline-offset:4px; }
-.photo-stage { position:relative; width:min(100%,360px); aspect-ratio:1; margin:16px auto; overflow:hidden; border-radius:16px; background:var(--bg); }
+.birth-footnote { text-align:center; font-size:11px; }
+.birth-footnote a { color:var(--muted); }
+#location-status,#form-status,#page-status { font-size:12px; color:var(--muted); line-height:1.5; overflow-wrap:anywhere; margin:8px 0; }
+#form-status.error,#page-status.error { color:#ffa399; }
+.birth-summary { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.birth-summary img { object-fit:contain; flex:none; }
+.birth-summary strong { display:block; font-size:15px; overflow-wrap:anywhere; }
+.birth-summary small { color:var(--muted); font-size:11px; }
+#use-birth-gps { width:100%; min-height:44px; }
+#choose-city { margin:0; padding-block:9px; }
+#manual-location { margin:6px 0; }
+#birth-location-preview-frame { margin:10px 0; }
+#birth-location-preview { height:140px; min-height:140px; }
+.stone-photo-actions { display:flex; flex-direction:column; align-items:stretch; gap:4px; }
+.stone-photo-actions > .button { min-height:44px; }
+.photo-links { display:flex; justify-content:space-between; gap:12px; }
+.photo-link { border:0; background:none; color:var(--teal); font:inherit; font-size:12px; text-decoration:underline; text-underline-offset:3px; padding:8px 0; min-height:36px; cursor:pointer; }
+.photo-link:focus-visible { outline:2px solid var(--purple); outline-offset:3px; }
+.photo-stage { position:relative; width:min(100%,280px,max(160px,calc(100svh - 460px))); aspect-ratio:1; margin:8px auto; overflow:hidden; border-radius:12px; background:var(--bg); --photo-scale:3; }
 .photo-stage video,.photo-stage img,.stone-outline { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.photo-stage video,.photo-stage img { transform:scale(var(--photo-scale)); }
 .stone-outline { pointer-events:none; }
 .stone-outline path { fill:none; stroke:#fff; stroke-width:.7; stroke-dasharray:2 1; filter:drop-shadow(0 1px 2px #000); }
-.photo-editor-actions { display:flex; align-items:center; justify-content:center; gap:22px; }
-.stone-photo-preview { text-align:center; margin-top:18px; }
-.stone-photo-preview img { width:220px; height:220px; max-width:100%; object-fit:contain; filter:drop-shadow(0 8px 12px #0003); }
-.birth-steps { flex-wrap:wrap; justify-content:space-between; }
-.photo-stage[data-zoom="2"] video,.photo-stage[data-zoom="2"] img { transform:scale(2); }
-.photo-stage[data-zoom="3"] video,.photo-stage[data-zoom="3"] img { transform:scale(3); }
-.photo-zoom { display:flex; justify-content:center; gap:8px; margin:12px 0; }
-.photo-zoom button { border:1px solid var(--line); border-radius:20px; background:var(--bg); color:var(--ink); padding:8px 14px; cursor:pointer; }
+.photo-zoom { display:flex; align-items:center; justify-content:center; gap:6px; margin:6px 0; }
+.photo-zoom button { border:1px solid var(--line); border-radius:20px; background:var(--bg); color:var(--ink); padding:8px 12px; min-height:36px; cursor:pointer; font-size:12px; }
 .photo-zoom button[aria-pressed="true"] { border-color:var(--teal); color:var(--teal); }
-#photo-editor,#stone-photo-preview { scroll-margin-top:18px; }
-@media(max-width:650px) { .birth-steps { display:grid; grid-template-columns:1fr 1fr; gap:14px; } }
+.photo-editor-actions { display:flex; align-items:center; justify-content:center; gap:20px; }
+.photo-editor-actions .button { min-height:44px; }
+.native-camera-fallback { display:block; margin:auto; }
+.stone-photo-preview { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:10px; }
+.stone-photo-preview img { width:100px; height:100px; object-fit:contain; filter:drop-shadow(0 6px 8px #0003); }
+.portrait-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; margin:12px 0; }
+.portrait-option { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; cursor:pointer; border:1px solid var(--line); border-radius:8px; background:var(--bg); padding:18px 3px 6px; text-align:center; }
+.portrait-option img { width:100%; height:auto; aspect-ratio:340/280; object-fit:contain; }
+.portrait-option span { max-width:100%; overflow-wrap:anywhere; font-size:9px; color:var(--muted); }
+.portrait-option input { position:absolute; top:5px; right:5px; width:13px; height:13px; accent-color:var(--purple); padding:0; }
+.portrait-option:has(input:checked) { border-color:var(--purple); background:#b49aff15; }
+.portrait-option:focus-within { outline:2px solid var(--purple); outline-offset:3px; }
+.portrait-footer { display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; }
+#photo-editor,#stone-photo-preview { scroll-margin-top:10px; }
+[hidden] { display:none !important; }
+@media(max-width:650px) { .birth-header { padding:10px 14px; } .birth-header-actions > a { display:none; } .birth-wrap { padding:14px 14px 10px; } .birth-intro h1 { font-size:24px; } .birth-panel { padding:14px; } .birth-section-heading h2 { font-size:20px; } .birth-steps { margin:12px 0; } }
+
+body[data-photo-editing="true"] .birth-footnote { display:none; }
+.birth-summary > div { min-width:0; }
+.birth-summary strong { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.birth-panel .field { margin:0; }
+.birth-panel .field input,.birth-panel .field textarea { margin-top:0; }
+.birth-panel .field textarea { min-height:64px; }
+.birth-footnote { display:block; border:0; padding:0; line-height:16px; }
