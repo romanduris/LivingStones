@@ -287,3 +287,18 @@ test("collection sorting supports both directions and leaves journey data intact
     assert.equal(desc.length, stones.length);
   }
 });
+
+test('manual search keeps named places and house addresses while city-only results remain approximate', () => {
+  vm.runInContext(source.slice(source.indexOf('function manualSearchPlace('), source.indexOf('function bindCitySearch(')), context);
+  const feature = properties => ({geometry:{type:'Point',coordinates:[17.1,48.1]},properties:{country:'Slovakia',...properties}});
+  const house = context.manualSearchPlace(feature({name:'Gallery',street:'Panská',housenumber:'19',city:'Bratislava',type:'house'}));
+  assert.equal(house.place.city,'Bratislava');
+  assert.equal(house.place.address,'Gallery, Panská 19, Bratislava, Slovakia');
+  assert.equal(house.place.source,'manual');
+  assert.equal(house.place.accuracy,null);
+  const park = context.manualSearchPlace(feature({name:'Forest park',type:'other'}));
+  assert.equal(park.place.address,'Forest park, Slovakia');
+  assert.equal(context.manualSearchPlace(feature({name:'Bratislava',type:'city'})).place.address,'Approximate city location');
+  assert.equal(context.manualSearchPlace(null),null);
+  assert.equal(context.manualSearchPlace(feature({name:'No country',country:''})),null);
+});

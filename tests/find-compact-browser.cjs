@@ -9,7 +9,7 @@ const server=spawn('python3',['-u','-m','http.server','8149']);process.on('exit'
    const stones=JSON.parse(JSON.stringify(fixture.stones));stones[0].demo=false;delete stones[0].code;
    await context.route('http://127.0.0.1:8787/**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(route.request().method()==='GET'?{stones}:{ok:true,views:0})}));
    await context.route('https://photon.komoot.io/reverse**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({features:[{properties:{city:'Bratislava',country:'Slovakia',street:'Panská cesta',housenumber:'25',district:'Petržalka'}}]})}));
-   await context.route('https://photon.komoot.io/api/**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({features:[{geometry:{type:'Point',coordinates:[17.1,48.1]},properties:{name:'Bratislava',country:'Slovakia'}}]})}));
+   await context.route('https://photon.komoot.io/api/**',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({features:[{geometry:{type:'Point',coordinates:[17.1,48.1]},properties:{street:'Panská cesta',housenumber:'25',city:'Bratislava',district:'Petržalka',postcode:'851 01',country:'Slovakia',type:'house'}}]})}));
    await context.route('https://tile.openstreetmap.org/**',route=>route.abort());
    const page=await context.newPage();await page.goto('http://127.0.0.1:8149/?stone=A1&source=qr');await page.locator('#start-find').click();await page.evaluate(()=>document.fonts.ready);
    const fit=async label=>{
@@ -22,10 +22,10 @@ const server=spawn('python3',['-u','-m','http.server','8149']);process.on('exit'
    await fit('Code');await page.locator('#find-code').fill('0123');await page.locator('#find-form button[type=submit]').click();await page.locator('#location-status.ready').waitFor();await fit('GPS location');
    await page.locator('#location-next').click();await fit('Nickname and message');assert.equal(await page.locator('#find-message').getAttribute('rows'),'2');
    await page.locator('#nickname').fill('Roman');await page.locator('#find-message').fill('Pekný kamienok');await page.locator('#flow-back').click();
-   await page.locator('#choose-city').click();await page.locator('#manual-city').fill('Bra');await page.locator('.city-result').click();assert.equal(await page.locator('#manual-location').isVisible(),false);await fit('Selected city');
+   await page.locator('#choose-city').click();await page.locator('#manual-city').fill('Bra');await page.locator('.city-result').click();assert.equal(await page.locator('#manual-location').isVisible(),false);assert.match(await page.locator('#location-status').innerText(),/Panská cesta 25/);await fit('Selected address');
    await page.locator('#location-next').click();assert.equal(await page.locator('#nickname').inputValue(),'Roman');assert.equal(await page.locator('#find-message').inputValue(),'Pekný kamienok');await fit('Preserved draft');
    await context.close();
   }
-  console.log('Passed: three find steps fit 320×640 / 375×740 / 390×844 phones, numeric keyboard for private real codes, compact GPS/manual location, collapsed city search and preserved drafts.');
+  console.log('Passed: three find steps fit 320×640 / 375×740 / 390×844 phones, numeric keyboard for private real codes, compact GPS/manual location, collapsed address search and preserved drafts.');
  }finally{await browser.close();server.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

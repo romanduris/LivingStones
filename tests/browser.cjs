@@ -40,6 +40,13 @@ process.on("exit", () => server?.kill());
     context.dropNextFindReply = false;
     await context.route("https://photon.komoot.io/api/**", async (route) => {
       const q = new URL(route.request().url()).searchParams.get("q");
+      assert.equal(new URL(route.request().url()).searchParams.has('layer'),false,'Manual search includes addresses and places');
+      if(q==='Horná Banská Bystrica'){
+        const house=(number,lon=19.1458)=>({properties:{street:'Horná',housenumber:number,city:'Banská Bystrica',country:'Slovakia',postcode:'974 01'},geometry:{type:'Point',coordinates:[lon,48.7355]}});
+        const features=[house('25'),house('27'),house('25'),{properties:{name:'Park <img src=x onerror=alert(1)>',city:'Banská Bystrica',country:'Slovakia'},geometry:{type:'Point',coordinates:[19.146,48.736]}},house('Invalid',300)];
+        return route.fulfill({contentType:'application/json',body:JSON.stringify({features})});
+      }
+
       if (q === "failure") return route.fulfill({status:503,body:"Unavailable"});
       const cities = [
         {name:"Banská Bystrica", country:"Slovakia", state:"Banskobystrický kraj", coordinates:[19.1457338,48.735429]},
@@ -72,6 +79,7 @@ process.on("exit", () => server?.kill());
           else {
             const recordId = String(Date.now()) + Math.random(),
               date = new Date().toISOString();
+            if (kind === "finds") context.lastFindPlace = structuredClone(body.place);
             if (kind === "finds")
               stone.finds.push({
                 ...body.place,
@@ -492,10 +500,26 @@ process.on("exit", () => server?.kill());
     await phone.locator("#manual-city").fill("zzzz");
     await phone.waitForFunction(() => document.querySelector("#city-search-status").textContent.includes("No matching"));
     await chooseCity(phone, "Banská Bystrica");
+    await phone.locator('#choose-city').click();
+    await phone.locator('#manual-city').fill('Horná Banská Bystrica');
+    await phone.locator('.city-result').first().waitFor();
+    assert.equal(await phone.locator('.city-result').count(),3,'Distinct addresses in the same city survive; duplicates and invalid points are skipped');
+    assert.equal(await phone.locator('#city-results img, #city-results script').count(),0);
+    assert.match(await phone.locator('.city-result').last().innerText(),/<img src=x onerror=alert\(1\)>/);
+    await phone.locator('#manual-city').press('ArrowDown');
+    assert.match(await phone.locator('.city-result:focus').innerText(),/Horná 25/);
+    await phone.keyboard.press('ArrowDown');assert.match(await phone.locator('.city-result:focus').innerText(),/Horná 27/);
+    await phone.keyboard.press('ArrowUp');await phone.keyboard.press('Enter');
+    assert.match(await phone.locator('#location-status').innerText(),/Horná 25/);
+    await phone.locator('#choose-city').click();
+    assert.match(await phone.locator('#manual-city').inputValue(),/Horná 25/,'Selected address stays visible when editing');
+    await phone.locator('#manual-city').fill('Horná Banská Bystrica');
+    assert.equal(await phone.locator('#location-next').isEnabled(),false,'Editing requires selecting a result again');
+    await phone.locator('.city-result').first().click();
     assert.deepEqual(await phone.evaluate(() => {
       const p = mapInstances.get("location-preview").markers[0].getLatLng();
       return [p.lat,p.lng];
-    }), [48.735429,19.1457338]);
+    }), [48.7355,19.1458]);
     assert.equal(
       await phone.locator("#location-preview .leaflet-marker-icon").count(),
       1,
@@ -510,6 +534,7 @@ process.on("exit", () => server?.kill());
       "A location preview does not record a find",
     );
     await phone.locator("#location-next").click();
+    assert.match(await phone.locator('.review-location').innerText(),/Horná 25/,'Review shows the full address');
     await phone.locator("#nickname").fill("<b>Tester</b>");
     await phone
       .locator("#find-message")
@@ -525,6 +550,9 @@ process.on("exit", () => server?.kill());
     }));
     assert.deepEqual(await phone.locator(".success-panel > p").allTextContents(), ["Take me along, then leave me somewhere new for my next friend.", "Your moment is saved in my story."]);
     assert.equal(await phone.locator(rows).count(), 6);
+    assert.deepEqual(phone.context().lastFindPlace, {city:'Banská Bystrica',country:'Slovakia',lat:48.7355,lon:19.1458,address:'Horná 25, 974 01 Banská Bystrica, Slovakia',source:'manual',accuracy:null});
+    assert.match(await phone.locator(rows).first().locator('.entry-address').innerText(),/Horná 25/);
+
     assert.match(
       await phone.locator(rows).first().innerText(),
       /Banská Bystrica/,

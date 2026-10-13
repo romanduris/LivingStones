@@ -848,9 +848,9 @@ function renderFlow() {
   if (flow.step === 1)
     content = ui`<label class="field" for="find-code">Find Code<input id="find-code" name="code" required maxlength="32" inputmode="${!stone.code || /^\d+$/.test(stone.code) ? "numeric" : "text"}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="The code on the stone" value="${escapeHTML(flow.code)}" aria-describedby="code-hint find-error"></label><p class="field-hint" id="code-hint">Code beside the QR on the stone. <span>${stone.demo ? uiText("Demo code: {0}",[stone.code]) : ""}</span></p><div class="form-actions"><button class="button primary" type="submit">Continue &amp; locate <span aria-hidden="true">→</span></button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
   if (flow.step === 2)
-    content = ui`<p class="location-consent">Allow GPS to locate your find. Addresses and city searches use Photon.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : uiText("No location selected yet.")}</p><div class="map-frame location-preview-frame" id="location-preview-frame" ${flow.place ? "" : "hidden"}><div class="map-panel location-preview-map" id="location-preview" role="region" aria-label="Preview of your find location"></div></div><button class="manual-location-toggle" id="choose-city" type="button" aria-expanded="${Boolean(flow.manualOpen)}" aria-controls="manual-location">Location not working? Choose a city</button><div id="manual-location" ${flow.manualOpen ? "" : "hidden"}><label class="field" for="manual-city">City<input id="manual-city" maxlength="120" autocomplete="off" placeholder="Start typing a city…" value="${flow.place?.source === "manual" ? escapeHTML(flow.place.city) : ""}" aria-describedby="city-search-status"></label><p class="field-hint">Choose a city from the results.</p><p class="field-hint" id="city-search-status" role="status"></p><div id="city-results" class="city-results" aria-label="Matching cities"></div></div><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
+    content = ui`<p class="location-consent">Allow GPS to locate your find, or search for an address or place.</p><button class="button secondary" id="use-gps" type="button">⌖ Use my location</button><p class="location-status ${flow.place ? "ready" : ""}" id="location-status" role="status">${flow.place ? placeLabel(flow.place) : uiText("No location selected yet.")}</p><div class="map-frame location-preview-frame" id="location-preview-frame" ${flow.place ? "" : "hidden"}><div class="map-panel location-preview-map" id="location-preview" role="region" aria-label="Preview of your find location"></div></div><button class="manual-location-toggle" id="choose-city" type="button" aria-expanded="${Boolean(flow.manualOpen)}" aria-controls="manual-location">Location not working? Search for a place</button><div id="manual-location" ${flow.manualOpen ? "" : "hidden"}><label class="field" for="manual-city">Address or place<input id="manual-city" maxlength="120" autocomplete="off" placeholder="Street, house number, city or place…" value="${escapeHTML(flow.manualQuery || (flow.place?.source === "manual" ? flow.place.city : ""))}" aria-describedby="city-search-status"></label><p class="field-hint">Choose a result from the list. Include the city for better matches.</p><p class="field-hint" id="city-search-status" role="status"></p><div id="city-results" class="city-results" aria-label="Matching places"></div></div><div class="form-actions"><button class="button primary" id="location-next" type="submit" ${flow.place ? "" : "disabled"}>Continue <span aria-hidden="true">→</span></button><button class="button secondary" id="flow-back" type="button">Back</button><button class="button secondary" id="cancel-find" type="button">Cancel</button></div>`;
   if (flow.step === 3)
-    content = ui`<div class="review-location">⌖ ${escapeHTML(flow.place.source === "manual" ? flow.place.city + ", " + flow.place.country : flow.place.address || flow.place.city + ", " + flow.place.country)}${flow.place.source === "manual" ? uiText(" · Manual city location") : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" rows="2" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">Your location, nickname and message will be public.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
+    content = ui`<div class="review-location">⌖ ${escapeHTML(flow.place.address && flow.place.address !== "Approximate city location" ? flow.place.address : flow.place.city + ", " + flow.place.country)}${flow.place.source === "manual" ? uiText(" · Manually selected") : ""}</div><label class="field" for="nickname">Your nickname <small>optional</small><input id="nickname" name="nickname" maxlength="40" autocomplete="nickname" placeholder="A kind stranger" value="${escapeHTML(flow.nickname)}"></label><label class="field" for="find-message">Leave a little message <small>optional</small><textarea id="find-message" name="message" rows="2" maxlength="400" placeholder="Tell me about our little moment.">${escapeHTML(flow.message)}</textarea></label><p class="field-hint">Your location, nickname and message will be public.</p><div class="form-actions"><button class="button primary" type="submit">Add my chapter <span aria-hidden="true">↗</span></button><button class="button secondary" type="button" id="flow-back">Back</button><button class="button secondary" type="button" id="cancel-find">Cancel</button></div>`;
   target.innerHTML = ui`<section class="find-panel" aria-labelledby="find-title"><h3 id="find-title" tabindex="-1">I’m glad you found me.</h3>${steps}<form id="find-form">${content}<p id="find-error" class="error" role="alert"></p></form></section>`;
   $("#cancel-find").addEventListener("click", () => {
     flow = null;
@@ -946,6 +946,20 @@ function renderFlow() {
   $("#use-gps")?.addEventListener("click", requestLocation);
   if (flow.step === 2 && flow.place) renderLocationPreview();
 }
+function manualSearchPlace(feature) {
+  const [lon,lat] = feature?.geometry?.coordinates || [];
+  if (feature?.geometry?.type !== 'Point' || !validCoordinates(lat,lon)) return null;
+  const properties = feature.properties || {};
+  const clean = key => typeof properties[key] === 'string' ? properties[key].trim() : '';
+  const name=clean('name'),city=clean('city')||clean('town')||clean('village')||clean('locality')||clean('district')||clean('county')||name,country=clean('country');
+  if (!city || !country || city.length>120 || country.length>80) return null;
+  const street=clean('street')||(clean('type')==='street'?name:''),number=clean('housenumber');
+  const type=clean('type')||clean('osm_value');
+  const cityOnly=!street&&!number&&(!name||name===city)&&(!type||['city','town','village','locality','district','county','state','country'].includes(type));
+  const parts=[name&&name!==city&&name!==street?name:'',[street,number].filter(Boolean).join(' '),clean('district'),[clean('postcode'),city].filter(Boolean).join(' '),clean('state'),country];
+  const label=[...new Set(parts.filter(Boolean))].join(', ');
+  return {label,key:label+'|'+lat+'|'+lon,place:{city,country,lat,lon,address:cityOnly?'Approximate city location':label.slice(0,300),source:'manual',accuracy:null}};
+}
 function bindCitySearch() {
   const activeFlow = flow;
   const input = $("#manual-city"), results = $("#city-results"), status = $("#city-search-status");
@@ -954,7 +968,7 @@ function bindCitySearch() {
   const cancel = () => { clearTimeout(timer); controller?.abort(); };
   const updatePlace = (place) => {
     flow.place = place;
-    say($("#location-status"),place ? placeLabel(place) : "Choose a city from the suggestions.");
+    say($("#location-status"),place ? placeLabel(place) : "Choose an address or place from the suggestions.");
     $("#location-status").classList.toggle("ready", Boolean(place));
     $("#location-next").disabled = !place;
     renderLocationPreview();
@@ -976,29 +990,28 @@ function bindCitySearch() {
     results.replaceChildren();
     updatePlace(null);
     const query = input.value.trim();
-    say(status,query.length < 2 ? "Type at least two letters." : "Searching cities…");
+    activeFlow.manualQuery = input.value;
+    const locationRun = activeFlow.locationRun || 0;
+    say(status,query.length < 2 ? "Type at least two letters." : "Searching places…");
     if (query.length < 2) return;
     timer = setTimeout(async () => {
       if (!current()) return;
       const request = controller = new AbortController();
       const timeout = setTimeout(() => request.abort(), 8000);
-      const valid = () => current() && controller === request && input.value.trim() === query && !input.disabled;
+      const valid = () => current() && controller === request && (activeFlow.locationRun || 0) === locationRun && input.value.trim() === query && !input.disabled;
       try {
         const url = new URL("https://photon.komoot.io/api/");
-        url.search = new URLSearchParams({ q: query, limit: "6", lang: "en", layer: "city" });
-        const response = await fetch(url, { signal: request.signal });
-        if (!response.ok) throw Error("City search unavailable");
+        url.search = new URLSearchParams({ q: query, limit: "8", lang: "en" });
+        const response = await fetch(url, { signal: request.signal, credentials: "omit", referrerPolicy: "no-referrer" });
+        if (!response.ok) throw Error("Place search unavailable");
         const data = await response.json();
         if (!valid()) return;
         const seen = new Set();
         for (const feature of data.features || []) {
-          const [lon, lat] = feature.geometry?.coordinates || [];
-          const p = feature.properties || {};
-          const city = p.name || p.city, country = p.country;
-          if (!city || !country || !validCoordinates(lat, lon) || feature.geometry?.type !== "Point") continue;
-          const label = [city, p.state, country].filter(Boolean).join(", ");
-          if (seen.has(label)) continue;
-          seen.add(label);
+          const result = manualSearchPlace(feature);
+          if (!result || seen.has(result.key)) continue;
+          seen.add(result.key);
+          const {label, place} = result;
           const button = document.createElement("button");
           button.type = "button";
           button.className = "city-result";
@@ -1007,18 +1020,19 @@ function bindCitySearch() {
             if (!valid()) return;
             cancel();
             activeFlow.locationRun = (activeFlow.locationRun || 0) + 1;
-            input.value = city;
+            input.value = label;
+            activeFlow.manualQuery = label;
             results.replaceChildren();
-            say(status,"City selected — approximate location.");
-            updatePlace({ city, country, lat, lon, address: "Approximate city location", source: "manual", accuracy: null });
+            say(status,"Location selected. Check the pin on the map.");
+            updatePlace(place);
             activeFlow.manualOpen=false;$('#manual-location').hidden=true;
             $('#choose-city').setAttribute('aria-expanded','false');$('#choose-city').focus({preventScroll:true});
           };
           results.append(button);
         }
-        say(status,results.children.length ? "Choose your city below." : "No matching cities. Try a different spelling.");
+        say(status,results.children.length ? "Choose your location below." : "No matching places. Add the city or try a different spelling.");
       } catch {
-        if (valid()) say(status,"City search is unavailable. Try typing again or use GPS.");
+        if (valid()) say(status,"Place search is unavailable. Try typing again or use GPS.");
       } finally { clearTimeout(timeout); }
     }, 350);
   });
@@ -1060,7 +1074,10 @@ function saveDraft() {
   }
 }
 function placeLabel(place) {
-  if(place.source==='manual')return t('Manual city location: {0}, {1} · approximate location',[place.city,place.country]);
+  if(place.source==='manual'){
+    if(place.address==='Approximate city location')return t('Manual city location: {0}, {1} · approximate location',[place.city,place.country]);
+    return t('Manually selected location: {0}',[place.address||place.city+', '+place.country]);
+  }
   return t('Device location: {0}{1}',[place.address||place.city+', '+place.country,place.accuracy!=null?t(' · accuracy ~{0} m',[Math.round(place.accuracy)]):'']);
 }
 const placeCache = new Map();
@@ -1112,7 +1129,7 @@ function requestLocation() {
   const current = () =>
     flow === activeFlow && flow.step === 2 && $("#use-gps") === button && activeFlow.locationRun === run;
   if (!navigator.geolocation) {
-    say(status,"GPS is unavailable in this browser. Choose a city to continue.");
+    say(status,"GPS is unavailable in this browser. Search for a place to continue.");
     return;
   }
   activeFlow.busy = true;
@@ -1131,11 +1148,11 @@ function requestLocation() {
   const fail = (error) => {
     if (!current()) return;
     say(status,{
-        1: "Location permission was denied. You can enable it in browser settings, or choose a city.",
-        2: "Your location is unavailable. Try again or choose a city.",
-        3: "Location took too long. Try again or choose a city.",
+        1: "Location permission was denied. Enable it in browser settings, or search for a place.",
+        2: "Your location is unavailable. Try again or search for a place.",
+        3: "Location took too long. Try again or search for a place.",
       }[error.code] ||
-      "Could not get your location. Choose a city to continue.");
+      "Could not get your location. Search for a place to continue.");
     unlock();
   };
   try {
