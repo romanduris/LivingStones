@@ -15,6 +15,7 @@ function notice(message, error=false) {
 function signedOut() {
   $('#owner-email-enabled').disabled=true;$('#owner-email-status').textContent='';
   creationKey=null;draft=null;qrLabelCodes.clear();auth=null;sessionStorage.removeItem(sessionKey);stones=[];selected=null;
+  closeStoneFilter();stoneFilters.clear();stoneSort={key:'id',direction:'ascending'};$('#stone-list').replaceChildren();$('#stone-table-count').textContent='';
   statsRun++;statsData=null;$('#admin-tabs').hidden=true;$('#management-panel').hidden=true;$('#statistics').hidden=true;
   $('#login').hidden=false;$('#dashboard').hidden=true;$('#editor').hidden=true;$('#editor').replaceChildren();$('#logout').hidden=true;
   if ($('#record-dialog').open) $('#record-dialog').close();
@@ -38,16 +39,87 @@ const imageURL = s => new URL(s.image,new URL('../docs/assets/',location.href)).
 const formatDate = value => new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value));
 const formatMoment = value => new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value));
 const statsHTML = items => items.map(([number,label])=>`<div><strong>${number}</strong><span>${label}</span></div>`).join('');
-function renderList() {
-  const query=$('#search').value.trim().toLocaleLowerCase(),type=$('#type-filter').value,sort=$('#sort').value;
-  const all=[...stones].filter(s=>(type==='all'||(type==='new'?s.initialized===false:type==='demo'?s.demo:!s.demo))&&[s.name,s.id,s.shortId,s.finds.at(-1)?.city].join(' ').toLocaleLowerCase().includes(query));
-  all.sort((a,b)=>sort==='views'?(b.views-a.views||a.name.localeCompare(b.name)):sort==='name'?a.name.localeCompare(b.name):Date.parse(b.finds.at(-1)?.date)-Date.parse(a.finds.at(-1)?.date)||a.id.localeCompare(b.id));
-  $('#summary').innerHTML=statsHTML([[stones.length,'Stones'],[stones.reduce((n,s)=>n+s.finds.length,0),'Finds'],[stones.reduce((n,s)=>n+(s.views||0),0),'Story views'],[stones.filter(s=>!s.demo).length,'Real stones'],[stones.reduce((n,s)=>n+(s.qrViews||0),0),'QR story opens']]);
-  $('#stone-list').innerHTML=all.map(s=>{
-    const last=s.finds.at(-1);
-    return `<button class="admin-stone-card" data-stone="${escapeHTML(s.id)}"><img src="${escapeHTML(imageURL(s))}" alt=""><span class="card-copy"><strong>${escapeHTML(s.name)}<span class="stone-type ${s.demo?'':'real'}">${s.initialized===false?'Not born':s.demo?'Demo':'Real'}</span></strong><span class="card-meta">${escapeHTML(s.shortId||s.id)} · ${s.initialized===false?'Ready for setup':'Born '+formatDate(s.started)}</span><span class="card-meta">${last?escapeHTML(last.city)+' · '+formatDate(last.date):'No finds'}</span><span class="card-numbers"><span><b>${s.finds.length}</b> finds</span><span><b>${s.views||0}</b> views</span></span></span><span class="card-arrow" aria-hidden="true">↗</span></button>`;
-  }).join('') || '<p>No stones match your search.</p>';
+const stoneColumns = [
+  {key:'name',label:'Name'}, {key:'type',label:'Type'}, {key:'id',label:'ID'},
+  {key:'code',label:'Find Code'}, {key:'note',label:'Private note'}, {key:'creator',label:'Painted by'}
+];
+const stoneCollator = new Intl.Collator('en',{numeric:true,sensitivity:'base'});
+let stoneSort={key:'id',direction:'ascending'},stoneFilters=new Map(),openStoneFilter=null;
+function stoneValue(stone,key) {
+  if(key==='type')return stone.initialized===false?'Not born':stone.demo?'Demo':'Real';
+  if(key==='id')return String(stone.shortId||stone.id);
+  if(key==='code')return String(labelCode(stone)||'');
+  if(key==='note')return stone.adminNote||'';
+  return stone[key]||'';
 }
+function renderList() {
+  const query=$('#search').value.trim().toLocaleLowerCase();
+  const all=stones.filter(stone=>[stone.name,stone.id,stone.shortId,stone.finds.at(-1)?.city].join(' ').toLocaleLowerCase().includes(query)
+    && stoneColumns.every(({key})=>!stoneFilters.has(key)||stoneFilters.get(key).has(stoneValue(stone,key))));
+  const direction=stoneSort.direction==='ascending'?1:-1;
+  all.sort((a,b)=>direction*stoneCollator.compare(stoneValue(a,stoneSort.key),stoneValue(b,stoneSort.key))||stoneCollator.compare(a.id,b.id));
+  $('#summary').innerHTML=statsHTML([[stones.length,'Stones'],[stones.reduce((n,s)=>n+s.finds.length,0),'Finds'],[stones.reduce((n,s)=>n+(s.views||0),0),'Story views'],[stones.filter(s=>!s.demo).length,'Real stones'],[stones.reduce((n,s)=>n+(s.qrViews||0),0),'QR story opens']]);
+  $('#stone-table-count').textContent=`${all.length} of ${stones.length} stones`;
+  const headers=stoneColumns.map(({key,label})=>{
+    const active=stoneSort.key===key,filtered=stoneFilters.has(key);
+    return `<th scope="col" data-column="${key}" aria-sort="${active?stoneSort.direction:'none'}"><div class="stone-column-heading"><button data-stone-sort="${key}" aria-label="Sort by ${label}${active?', currently '+stoneSort.direction:''}">${label}<span aria-hidden="true">${active?(stoneSort.direction==='ascending'?' ↑':' ↓'):''}</span></button><button class="stone-filter-toggle${filtered?' is-filtered':''}" data-stone-filter="${key}" aria-label="Filter ${label}${filtered?', filter active':''}" aria-controls="stone-column-filter" aria-haspopup="dialog" aria-expanded="${openStoneFilter===key}"><span aria-hidden="true">▾</span></button></div></th>`;
+  }).join('');
+  const rows=all.map(stone=>`<tr class="admin-stone-row"><td><button class="stone-image-button" data-image-stone="${escapeHTML(stone.id)}" aria-label="Open ${escapeHTML(stone.name)}"><img src="${escapeHTML(imageURL(stone))}" alt="" width="44" height="44" loading="lazy"></button></td>${stoneColumns.map(({key})=>{
+    const value=stoneValue(stone,key),text=escapeHTML(value)||'<span class="admin-cell-empty">—</span>';
+    return `<td class="stone-cell-${key}">${key==='name'?`<button class="stone-name-button" data-stone="${escapeHTML(stone.id)}">${text}</button>`:key==='type'?`<span class="stone-table-type${value==='Real'?' real':''}">${text}</span>`:text}</td>`;
+  }).join('')}</tr>`).join('');
+  $('#stone-list').innerHTML=`<table class="admin-stone-table"><caption class="sr-only">Manage stones. Sort by a column name or filter using its arrow.</caption><thead><tr><th scope="col">Image</th>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="7" class="stone-table-empty">No stones match your search or filters.</td></tr>'}</tbody></table>`;
+}
+function closeStoneFilter(restoreFocus=false) {
+  const key=openStoneFilter;openStoneFilter=null;
+  $('#stone-column-filter').hidden=true;$('#stone-column-filter').replaceChildren();
+  const trigger=document.querySelector(`[data-stone-filter="${key}"]`);
+  trigger?.setAttribute('aria-expanded','false');if(restoreFocus)trigger?.focus();
+}
+function showStoneFilter(key) {
+  if(openStoneFilter===key){closeStoneFilter(true);return;}
+  closeStoneFilter();openStoneFilter=key;
+  const column=stoneColumns.find(column=>column.key===key),values=[...new Set(stones.map(stone=>stoneValue(stone,key)))].sort(stoneCollator.compare);
+  const selection=stoneFilters.get(key),popup=$('#stone-column-filter');
+  popup.innerHTML=`<div class="stone-filter-heading"><h2 id="stone-filter-title">Filter ${column.label}</h2><button data-close-stone-filter aria-label="Close filter">×</button></div><div class="stone-filter-actions"><button data-filter-select="all">Select all</button><button data-filter-select="none">Clear all</button></div><div class="stone-filter-options">${values.map(value=>`<label><input type="checkbox" data-filter-value="${escapeHTML(value)}" ${!selection||selection.has(value)?'checked':''}><span>${escapeHTML(value)||'(Empty)'}</span></label>`).join('')||'<p>No values available.</p>'}</div>`;
+  popup.hidden=false;
+  const trigger=document.querySelector(`[data-stone-filter="${key}"]`);trigger.setAttribute('aria-expanded','true');
+  const rect=trigger.getBoundingClientRect(),width=Math.min(300,innerWidth-24);
+  popup.style.width=width+'px';popup.style.left=Math.max(12,Math.min(rect.left,innerWidth-width-12))+'px';
+  const below=innerHeight-rect.bottom-20,above=rect.top-20,placeBelow=below>=above;
+  popup.style.maxHeight=Math.max(120,placeBelow?below:above)+'px';
+  popup.style.top=Math.max(12,placeBelow?rect.bottom+8:rect.top-popup.offsetHeight-8)+'px';
+  popup.querySelector('input,button').focus();
+}
+function applyStoneFilter() {
+  const inputs=[...$('#stone-column-filter').querySelectorAll('[data-filter-value]')];
+  const checked=inputs.filter(input=>input.checked);
+  if(checked.length===inputs.length)stoneFilters.delete(openStoneFilter);
+  else stoneFilters.set(openStoneFilter,new Set(checked.map(input=>input.dataset.filterValue)));
+  renderList();
+}
+$('#stone-list').addEventListener('click',event=>{
+  const sortButton=event.target.closest('[data-stone-sort]'),filterButton=event.target.closest('[data-stone-filter]');
+  if(sortButton){
+    closeStoneFilter();const key=sortButton.dataset.stoneSort;
+    stoneSort={key,direction:stoneSort.key===key&&stoneSort.direction==='ascending'?'descending':'ascending'};
+    renderList();document.querySelector(`[data-stone-sort="${key}"]`).focus();
+  }else if(filterButton)showStoneFilter(filterButton.dataset.stoneFilter);
+});
+$('#stone-column-filter').addEventListener('change',applyStoneFilter);
+$('#stone-column-filter').addEventListener('click',event=>{
+  if(event.target.closest('[data-close-stone-filter]'))closeStoneFilter(true);
+  const select=event.target.closest('[data-filter-select]');
+  if(select){for(const input of $('#stone-column-filter').querySelectorAll('input'))input.checked=select.dataset.filterSelect==='all';applyStoneFilter();}
+});
+document.addEventListener('click',event=>{
+  if(openStoneFilter&&!event.target.closest('#stone-column-filter, [data-stone-filter]'))closeStoneFilter();
+});
+document.addEventListener('focusin',event=>{
+  if(openStoneFilter&&!event.target.closest('#stone-column-filter, [data-stone-filter]'))closeStoneFilter();
+});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&openStoneFilter){event.preventDefault();closeStoneFilter(true);}});
+window.addEventListener('resize',()=>closeStoneFilter());
 function field(name,label,value,type='text',extra='') {
   return `<label>${label}<input name="${name}" type="${type}" value="${escapeHTML(value)}" ${extra}></label>`;
 }
@@ -219,7 +291,7 @@ $('#create-stone').addEventListener('click',event=>withButton(event.currentTarge
   notice('Preview ready. Add your private note, then press Create stone to save it.');
 }));
 $('#refresh').addEventListener('click',event=>withButton(event.currentTarget,async()=>{await load();notice('Latest stories loaded.');}));
-for(const selector of ['#search','#type-filter','#sort'])$(selector).addEventListener(selector==='#search'?'input':'change',renderList);
+$('#search').addEventListener('input',renderList);
 $('#refresh-stats').addEventListener('click',event=>withButton(event.currentTarget,loadStats));
 $('#stats-target').addEventListener('change',event=>{statsTarget=event.target.value;renderStats();});
 $('#statistics').addEventListener('focusin',showChartDetail);
@@ -282,7 +354,7 @@ document.addEventListener('click',event=>{
   }
   if(button.dataset.period){statsPeriod=button.dataset.period;loadStats();return;}
   if(button.dataset.statsTarget){statsTarget=button.dataset.statsTarget;renderStats();return;}
-  if(button.dataset.stone){selected=button.dataset.stone;tab='finds';history.replaceState(null,'','#stone='+selected);renderEditor();$('#editor h1').setAttribute('tabindex','-1');$('#editor h1').focus();return;}
+  if(button.dataset.stone||button.dataset.imageStone){closeStoneFilter();selected=button.dataset.stone||button.dataset.imageStone;tab='finds';history.replaceState(null,'','#stone='+selected);renderEditor();$('#editor h1').setAttribute('tabindex','-1');$('#editor h1').focus();return;}
   if(button.dataset.tab){tab=button.dataset.tab;renderEditor();return;}
   if(button.dataset.action==='cancel-draft'){
     if(draft){qrLabelCodes.delete(draft.stone.id);qrCache.delete(draft.stone.id);}

@@ -11,6 +11,8 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    const context=await browser.newContext({viewport:{width,height:900}});
    const stones=JSON.parse(JSON.stringify(fixture.stones));
    stones.forEach((s,index)=>{s.views=index+4;s.qrViews=1;s.creator=s.finds[0].nickname;s.finds.forEach((f,i)=>f.id='find-'+s.id+'-'+i);s.comments=s.finds.map((f,i)=>({id:'comment-'+s.id+'-'+i,findId:f.id,date:f.date,nickname:f.nickname,message:f.message}));});
+   stones[1].demo=false;stones[1].shortId='S0009';stones[1].privateCode='0037';stones[1].adminNote='Keep for school';stones[1].creator='Ada';
+   stones[2].demo=false;stones[2].initialized=false;stones[2].shortId='S0010';stones[2].privateCode='0100';stones[2].adminNote='Ready to paint';stones[2].creator='';
    const token='a'.repeat(64);let valid=true,ownerEmailsEnabled=true,failEmailSave=false;
    await context.route('http://127.0.0.1:8787/api/admin/**',async route=>{
     const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones,imagesAvailable:40,ownerEmailsEnabled},status=200;
@@ -48,18 +50,54 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    });
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.goto('http://127.0.0.1:8137/management/');
-   assert.equal(await page.locator('#login').isVisible(),true);assert.equal(await page.locator('.admin-stone-card').count(),0);
+   assert.equal(await page.locator('#login').isVisible(),true);assert.equal(await page.locator('.admin-stone-row').count(),0);
    await page.locator('#password').fill('wrong');await page.locator('#login-form button').click();await page.locator('#notice.error').waitFor();assert.equal(await page.locator('#login').isVisible(),true);
-   await page.locator('#password').fill('test-only-password');await page.locator('#login-form button').click();await page.locator('.admin-stone-card').first().waitFor();assert.equal(await page.locator('.admin-stone-card').count(),14);
+   await page.locator('#password').fill('test-only-password');await page.locator('#login-form button').click();await page.locator('.admin-stone-row').first().waitFor();assert.equal(await page.locator('.admin-stone-row').count(),14);
    assert.match(await page.locator('#summary').innerText(),/147\s+Story views/);
    await page.locator('#owner-email-enabled:not(:disabled)').waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),true);
    await page.locator('#owner-email-enabled').uncheck();await page.locator('#owner-email-status').filter({hasText:'Email alerts off.'}).waitFor();
-   await page.reload();await page.locator('.admin-stone-card').first().waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
+   await page.reload();await page.locator('.admin-stone-row').first().waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
    failEmailSave=true;await page.locator('#owner-email-enabled').check();await page.locator('#owner-email-status').filter({hasText:'Could not save setting.'}).waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
    await page.locator('#owner-email-enabled').check();await page.locator('#owner-email-status').filter({hasText:'Email alerts on.'}).waitFor();
-   await page.locator('#search').fill('Sunny');assert.equal(await page.locator('.admin-stone-card').count(),1);await page.locator('#search').fill('');
-   await page.locator('#type-filter').selectOption('real');assert.equal(await page.locator('.admin-stone-card').count(),0);await page.locator('#type-filter').selectOption('all');
-   await page.locator('#sort').selectOption('views');assert.match(await page.locator('.admin-stone-card').first().innerText(),/Forest Friend/);
+   await page.locator('#search').fill('Sunny');assert.equal(await page.locator('.admin-stone-row').count(),1);await page.locator('#search').fill('');
+   assert.deepEqual(await page.locator('.admin-stone-table thead th').allTextContents(),['Image','Name','Type','ID ↑','Find Code','Private note','Painted by'].map(s=>s.replace(' ↑',' ↑▾')).map((s,i)=>i&&i!==3?s+'▾':s));
+   assert.match(await page.locator('.admin-stone-row').filter({hasText:'S0009'}).innerText(),/0037/);
+   assert.match(await page.locator('.admin-stone-row').filter({hasText:'S0009'}).innerText(),/Keep for school/);
+   assert.equal(await page.locator('.stone-cell-id').first().innerText(),'A1');
+   await page.locator('[data-stone-sort="id"]').click();assert.equal(await page.locator('.stone-cell-id').first().innerText(),'S0010');
+   assert.equal(await page.locator('th[data-column="id"]').getAttribute('aria-sort'),'descending');
+   await page.locator('[data-stone-sort="id"]').click();assert.equal(await page.locator('.stone-cell-id').first().innerText(),'A1');
+   await page.locator('[data-stone-sort="name"]').click();assert.match(await page.locator('.stone-cell-name').first().innerText(),/Cloud Nine/);
+   await page.locator('[data-stone-sort="name"]').click();assert.match(await page.locator('.stone-cell-name').first().innerText(),/Wildheart/);
+   await page.locator('[data-stone-filter="type"]').click();
+   assert.equal(await page.locator('#stone-column-filter').isVisible(),true);
+   await page.locator('[data-filter-select="none"]').click();assert.equal(await page.locator('.admin-stone-row').count(),0);
+   await page.locator('[data-filter-value="Real"]').check();assert.equal(await page.locator('.admin-stone-row').count(),1);
+   await page.locator('[data-filter-value="Not born"]').check();assert.equal(await page.locator('.admin-stone-row').count(),2);
+   await page.keyboard.press('Escape');assert.equal(await page.locator('#stone-column-filter').isVisible(),false);
+   assert.equal(await page.locator('[data-stone-filter="type"]').getAttribute('aria-expanded'),'false');
+   await page.locator('[data-stone-filter="creator"]').click();await page.locator('[data-filter-select="none"]').click();
+   await page.locator('[data-filter-value="Ada"]').check();assert.equal(await page.locator('.admin-stone-row').count(),1);
+   assert.match(await page.locator('.admin-stone-row').innerText(),/S0009/);
+   await page.locator('#search').fill('no matching stone');assert.equal(await page.locator('.admin-stone-row').count(),0);
+   await page.locator('#search').fill('');assert.equal(await page.locator('.admin-stone-row').count(),1);
+   await page.locator('[data-stone-filter="creator"]').click();await page.locator('[data-filter-select="all"]').click();
+   await page.keyboard.press('Escape');
+   await page.locator('[data-stone-filter="type"]').click();await page.locator('[data-filter-select="all"]').click();
+   await page.keyboard.press('Escape');assert.equal(await page.locator('.admin-stone-row').count(),14);
+   assert.equal(await page.locator('.is-filtered').count(),0);
+   for(const [key,first,last] of [['code','0037','8464'],['creator','—','Zuzana'],['note','—','Ready to paint'],['type','Demo','Real']]){
+    await page.locator(`[data-stone-sort="${key}"]`).click();assert.equal(await page.locator(`.stone-cell-${key}`).first().innerText(),first);
+    await page.locator(`[data-stone-sort="${key}"]`).click();assert.equal(await page.locator(`.stone-cell-${key}`).first().innerText(),last);
+   }
+   await page.locator('[data-stone-filter="code"]').click();await page.locator('[data-filter-select="none"]').click();
+   await page.locator('[data-filter-value="0037"]').check();assert.equal(await page.locator('.admin-stone-row').count(),1);
+   assert.match(await page.locator('.admin-stone-row').innerText(),/S0009/);
+   await page.locator('[data-filter-select="all"]').click();await page.keyboard.press('Escape');
+
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Table does not overflow viewport');
+   if(width===375)assert.equal(await page.locator('#stone-list').evaluate(el=>el.scrollWidth>el.clientWidth),true,'Mobile table scrolls horizontally');
+   await page.locator('#admin-main').screenshot({path:`/tmp/livingstones-management-table-${width}.png`});
    await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
    assert.equal(await page.locator('[name=story]').count(),0);
    const ownerNote='My private <script>note()</script>\nA second line';
@@ -98,6 +136,15 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    assert.equal(await page.locator('#qr-code-form').count(),0);assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');
    await page.reload();await page.locator('#stone-form').waitFor();assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');
    assert.equal(await page.evaluate(()=>Object.values(sessionStorage).join(' ').includes('0372')),false);
+   await page.locator('[data-action=back]').click();
+   const sunnyRow=page.locator('.admin-stone-row').filter({has:page.locator('[data-stone="A1"]')});
+   assert.equal(await sunnyRow.locator('.stone-cell-code').innerText(),'0372');
+   assert.equal(await sunnyRow.locator('.stone-cell-note').innerText(),ownerNote);
+   assert.equal(await sunnyRow.locator('script').count(),0);
+   await page.locator('[data-stone-filter="note"]').click();
+   assert.equal(await page.locator('#stone-column-filter script').count(),0);
+   await page.keyboard.press('Escape');
+   await page.locator('button[data-stone="A1"]').click();
    const privateDownload=page.waitForEvent('download');await page.locator('[data-download-qr="svg"]').click();
    const privateSVG=fs.readFileSync(await (await privateDownload).path(),'utf8');assert.match(privateSVG,/>0372<\/text>/);
 
@@ -128,11 +175,12 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('[data-tab="finds"]').click();assert.equal(await page.locator('.admin-record').count(),5);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`Management fits at ${width}`);
    await page.locator('#admin-main').screenshot({path:`/tmp/livingstones-management-${width}.png`});
-   page.once('dialog',d=>d.accept());await page.locator('[data-action="delete-stone"]').click();await page.locator('#dashboard').waitFor();assert.equal(await page.locator('.admin-stone-card').count(),13);
+   page.once('dialog',d=>d.accept());await page.locator('[data-action="delete-stone"]').click();await page.locator('#dashboard').waitFor();assert.equal(await page.locator('.admin-stone-row').count(),13);
    await page.locator('#logout').click();await page.locator('#login').waitFor();assert.equal(await page.evaluate(()=>sessionStorage.getItem('livingstones-management-session')),null);
+   assert.equal(await page.locator('#stone-list').innerText(),'');
    await page.reload();assert.equal(await page.locator('#login').isVisible(),true);assert.deepEqual(errors,[]);
    await context.close();
   }
-  console.log('Passed: management sign-in, persistent sessions, filters, view totals, stone/find/comment editing, escaped user text, deletion confirmation, sign-out and responsive layouts.');
+  console.log('Passed: management sign-in, seven table columns, sorting both directions, combined checkbox filters and search, leading-zero codes, escaped private notes, view totals, stone/find/comment editing, deletion confirmation, sign-out clearing and responsive scrolling.');
  }finally{await browser.close();server.kill()}
 })().catch(e=>{console.error(e);process.exitCode=1});

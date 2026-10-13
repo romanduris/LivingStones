@@ -99,13 +99,13 @@ process.on('exit',()=>server.kill());
    await page.reload();await page.locator('#private-note-form').waitFor();
    assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'0372');assert.equal(await page.locator('#qr-code-form').count(),0);
    assert.equal(await page.locator('#admin-note').inputValue(),note);assert.equal(await page.locator('.private-note-panel script').count(),0);
-   await page.locator('[data-action=back]').click();await page.locator('#type-filter').selectOption('new');assert.equal(await page.locator('.admin-stone-card').count(),1);
-   assert.match(await page.locator('.admin-stone-card').innerText(),/Not born/);assert.match(await page.locator('.admin-stone-card .card-meta').first().textContent(),/S0001/);
+   await page.locator('[data-action=back]').click();await page.locator('[data-stone-filter=type]').click();await page.locator('[data-filter-select=none]').click();await page.locator('[data-filter-value="Not born"]').check();await page.keyboard.press('Escape');assert.equal(await page.locator('.admin-stone-row').count(),1);
+   assert.match(await page.locator('.admin-stone-row').innerText(),/Not born/);assert.match(await page.locator('.admin-stone-row .stone-cell-id').first().textContent(),/S0001/);
    await page.locator('#create-stone').click();await page.locator('#draft-create-form').waitFor();
    assert.match(await page.locator('.qr-link').textContent(),/SNEXT456/);
    assert.equal(createWrites,1);assert.equal(await page.locator('.stone-qr .qr-code-value').textContent(),'1594');
    await page.locator('[data-action=cancel-draft]').last().click();
-   assert.equal(createWrites,1);assert.equal(await page.locator('.admin-stone-card').count(),1);
+   assert.equal(createWrites,1);assert.equal(await page.locator('.admin-stone-row').count(),1);
    await page.locator('#logout').click();
    // The very same printed QR opens setup until the birth is saved.
    await page.goto('http://127.0.0.1:8137/?stone=SNEW123&source=qr');
