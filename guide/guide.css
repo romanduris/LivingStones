@@ -31,7 +31,8 @@ h1 { margin:0 0 10px; font-size:43px; line-height:1.08; letter-spacing:-.5px; }
 .step-number { width:32px; height:32px; border-radius:50%; display:grid; place-items:center; background:#f0eafa; color:var(--purple); font-weight:600; font-size:16px; }
 .steps li:nth-child(even) .step-number { background:#eaf5f2; color:var(--teal); }
 .steps h3 { margin:0 0 3px; font-size:18px; line-height:1.3; }
-.steps p { margin:0; font-size:12.5px; line-height:1.55; }
+.steps p { margin:0; font-family:"Nunito Sans",sans-serif; font-size:12.5px; font-weight:400; line-height:1.55; color:#25323d; }
+.steps p strong { font-weight:inherit; }
 strong { font-weight:600; }
 .steps .activation-step { background:#f8f6fc; border-color:#d8cdec; }
 .activation-path { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; color:var(--purple); font-size:10px; }
@@ -57,7 +58,8 @@ figcaption { margin-top:5px; font-size:9px; color:#536470; }
 @media print {
   :root { background:white; }body { background:white; }.toolbar { display:none; }
   .sheet { width:100%; min-height:272mm; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
-  .sheet-header { padding-bottom:14px; }.hero { margin:20px 0; }.sheet-footer { padding-top:18px; }
+  .sheet-header { padding-bottom:14px; }.hero { margin:16px 0; }.sheet-footer { padding-top:14px; }
+  .steps { gap:8px; }.steps li { padding:10px 14px; }
   a { text-decoration:none; }
 }
 .toolbar-controls { display:flex; align-items:center; gap:10px; }
