@@ -8,12 +8,12 @@
   <link rel="icon" href="logo.svg" type="image/svg+xml">
   <title>Management · Living Stones</title>
   <link rel="stylesheet" href="../docs/style.css?v=50">
-  <link rel="stylesheet" href="management.css?v=13">
+  <link rel="stylesheet" href="management.css?v=14">
   <script src="../docs/config.js?v=1" defer></script>
   <script src="vendor/qrcode.js?v=2.0.4" defer></script>
   <script src="statistics.js?v=2" defer></script>
   <script src="../docs/stone-images.js?v=1" defer></script>
-  <script src="management.js?v=19" defer></script>
+  <script src="management.js?v=20" defer></script>
 </head>
 <body>
   <header class="admin-header"><a class="admin-brand" href="../"><img class="admin-logo" src="logo.svg" alt=""><span class="admin-brand-name">Living Stones <span>Management</span></span></a><div><a href="../">Visit website ↗</a><button id="logout" hidden>Sign out</button></div></header>
@@ -32,7 +32,7 @@
       <div class="page-heading"><div><p class="eyebrow">LIVING STONES MANAGEMENT</p><h1>Every stone. Every little hello.</h1></div><div class="heading-actions"><a class="button" href="../guide/" target="_blank" rel="noopener">Printable guide ↗</a><button id="create-stone" class="primary">＋ Create new stone</button><button id="refresh">Refresh</button></div></div>
       <div id="summary" class="admin-stats"></div>
       <div class="admin-toolbar"><label>Search stones<input id="search" type="search" placeholder="Name, ID or city"></label></div>
-      <p id="stone-table-count" class="form-hint" role="status"></p>
+      <div class="stone-table-tools"><p id="stone-table-count" class="form-hint" role="status"></p><button id="reset-column-widths" type="button">Reset column widths</button></div>
       <div id="stone-list" class="stone-table-scroll" role="region" aria-label="Stones table" tabindex="0"></div>
       <div id="stone-column-filter" class="stone-column-filter" role="dialog" aria-modal="false" aria-labelledby="stone-filter-title" hidden></div>
       <p class="admin-footnote">Views count story openings since tracking began. They are not a count of unique people.</p>

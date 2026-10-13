@@ -15,7 +15,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    stones[2].demo=false;stones[2].initialized=false;stones[2].shortId='S0010';stones[2].privateCode='0100';stones[2].adminNote='Ready to paint';stones[2].creator='';
    stones[12].id='SF70489F2C749F909';stones[12].shortId='S0007';
    stones[13].id='S2A563A3C160F96BA';stones[13].shortId='S0008';
-   const token='a'.repeat(64);let valid=true,ownerEmailsEnabled=true,failEmailSave=false,failNoteSave=false;
+   const token='a'.repeat(64);let valid=true,ownerEmailsEnabled=true,failEmailSave=false,failNoteSave=false,failStoneDelete=false,stoneDeleteRequests=0;
    await context.route('http://127.0.0.1:8787/api/admin/**',async route=>{
     const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones,imagesAvailable:40,ownerEmailsEnabled},status=200;
     if(parts[3]==='login'){
@@ -32,7 +32,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
     }else if(parts[4]){
      const s=stones.find(s=>s.id===parts[4]);
      if(parts[5]==='note'){
-      if(failNoteSave){failNoteSave=false;return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Could not save private note.'})});}
+      if(failNoteSave){failNoteSave=false,failStoneDelete=false,stoneDeleteRequests=0;return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Could not save private note.'})});}
       s.adminNote=req.postDataJSON().note;
       return route.fulfill({contentType:'application/json',body:JSON.stringify({stone:s})});
      }
@@ -46,7 +46,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
       result={stone:s};
      }else if(method==='PATCH'){Object.assign(s,req.postDataJSON());result={stone:s};}
      else if(method==='DELETE'&&parts[5]){s[parts[5]]=s[parts[5]].filter(r=>r.id!==parts[6]);result={stone:s};}
-     else if(method==='DELETE'){stones.splice(stones.indexOf(s),1);result={ok:true};}
+     else if(method==='DELETE'){stoneDeleteRequests++;if(failStoneDelete){failStoneDelete=false;return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Could not delete stone.'})});}stones.splice(stones.indexOf(s),1);result={ok:true};}
      else result={stone:s};
     }
     await route.fulfill({status,contentType:'application/json',body:JSON.stringify(result)});
@@ -64,7 +64,47 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#owner-email-enabled').check();await page.locator('#owner-email-status').filter({hasText:'Email alerts on.'}).waitFor();
    await page.locator('#search').fill('Sunny');assert.equal(await page.locator('.admin-stone-row').count(),1);await page.locator('#search').fill('');
    await page.setViewportSize({width:1440,height:900});
-   assert.deepEqual(await page.locator('.admin-stone-table thead th').allTextContents(),['Image','Name','Type','ID ↑','Find Code','Private note','Painted by'].map(s=>s.replace(' ↑',' ↑▾')).map((s,i)=>i&&i!==3?s+'▾':s));
+   assert.deepEqual(await page.locator('.admin-stone-table thead [data-stone-sort]').evaluateAll(buttons=>buttons.map(button=>button.textContent.trim())),['Name','Type','ID ↑','Find Code','Private note','Painted by','Views','Finds']);
+   assert.equal(await page.locator('.admin-stone-table thead th').count(),10);
+   for(const key of ['views','finds']){
+    await page.locator(`[data-stone-sort="${key}"]`).click();
+    const ascending=(await page.locator(`.stone-cell-${key}`).allTextContents()).map(Number);
+    assert.ok(ascending.every((number,index)=>index===0||number>=ascending[index-1]));
+    await page.locator(`[data-stone-sort="${key}"]`).click();
+    const descending=(await page.locator(`.stone-cell-${key}`).allTextContents()).map(Number);
+    assert.ok(descending.every((number,index)=>index===0||number<=descending[index-1]));
+    await page.locator(`[data-stone-filter="${key}"]`).click();await page.locator('[data-filter-select="none"]').click();
+    await page.locator(`[data-filter-value="${ascending[0]}"]`).check();
+    assert.ok((await page.locator(`.stone-cell-${key}`).allTextContents()).every(value=>Number(value)===ascending[0]));
+    await page.locator('[data-filter-select="all"]').click();await page.keyboard.press('Escape');
+   }
+   await page.locator('[data-stone-sort="id"]').click();
+   const nameHeader=page.locator('th[data-column="name"]'),typeHeader=page.locator('th[data-column="type"]');
+   const headerBefore=await nameHeader.boundingBox(),typeBefore=await typeHeader.boundingBox();
+   const handle=page.locator('[data-resize-column="name"]');await handle.scrollIntoViewIfNeeded();
+   const box=await handle.boundingBox();await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+25,box.y+box.height/2,{steps:5});await page.mouse.up();
+   const resized=await nameHeader.boundingBox(),typeResized=await typeHeader.boundingBox();
+   assert.ok(resized.width>headerBefore.width+20);assert.ok(typeResized.width<typeBefore.width-20);
+   assert.equal(await page.locator('th[data-column="id"]').getAttribute('aria-sort'),'ascending','Resizing does not change sorting');
+   await page.locator('#search').fill('Sunny');await page.locator('#search').fill('');
+   assert.ok(Math.abs((await nameHeader.boundingBox()).width-resized.width)<2,'Widths survive filtering');
+   await page.reload();await page.locator('.admin-stone-row').first().waitFor();
+   assert.ok(Math.abs((await nameHeader.boundingBox()).width-resized.width)<2,'Widths survive reload');
+   await page.locator('[data-resize-column="name"]').focus();await page.keyboard.press('ArrowRight');
+   assert.ok((await nameHeader.boundingBox()).width>resized.width+8,'Keyboard resizing works');
+   await page.setViewportSize({width:320,height:900});
+   assert.equal(await page.locator('#stone-list').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Saved widths adapt to phone');
+   assert.ok(await page.locator('.admin-stone-row').first().evaluate(row=>row.querySelector('img').getBoundingClientRect().right<=row.querySelector('.stone-cell-name').getBoundingClientRect().left+1),'Saved widths leave room for portraits');
+   await page.setViewportSize({width:1440,height:900});
+   await page.locator('#reset-column-widths').click();
+   assert.ok(Math.abs((await nameHeader.boundingBox()).width-headerBefore.width)<2,'Reset restores defaults');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('livingstones-management-column-widths-v1')),null);
+   page.once('dialog',dialog=>{assert.match(dialog.message(),/S0009/);dialog.dismiss();});
+   await page.locator('[data-delete-stone="'+stones[1].id+'"]').click();assert.equal(stoneDeleteRequests,0);assert.equal(stones.length,14);
+   failStoneDelete=true;page.once('dialog',dialog=>dialog.accept());await page.locator('[data-delete-stone="'+stones[1].id+'"]').click();
+   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Could not delete stone.');
+   assert.equal(stones.length,14);assert.equal(await page.locator('.admin-stone-row').count(),14);
+
    assert.match(await page.locator('.admin-stone-row').filter({hasText:'S0009'}).innerText(),/0037/);
    assert.match(await page.locator('.admin-stone-row').filter({hasText:'S0009'}).innerText(),/Keep for school/);
    assert.equal(await page.locator('.stone-cell-id').first().innerText(),'A1');
@@ -105,6 +145,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
     const tableWidth=await page.locator('#stone-list').evaluate(el=>el.clientWidth);
     assert.equal(await page.locator('th[data-column="id"]').isVisible(),tableWidth>1000,'ID hides first at '+screenWidth);
     assert.equal(await page.locator('th[data-column="creator"]').isVisible(),tableWidth>760,'Painter hides next at '+screenWidth);
+    assert.equal(await page.locator('th[data-column="views"]').isVisible(),tableWidth>600,'Counts move below name on phones');
     assert.equal(await page.locator('#stone-list').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Table fits without horizontal scrolling at '+screenWidth);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    }
@@ -203,11 +244,13 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`Management fits at ${width}`);
    await page.locator('#admin-main').screenshot({path:`/tmp/livingstones-management-${width}.png`});
    page.once('dialog',d=>d.accept());await page.locator('[data-action="delete-stone"]').click();await page.locator('#dashboard').waitFor();assert.equal(await page.locator('.admin-stone-row').count(),13);
+   page.once('dialog',dialog=>dialog.accept());await page.locator('[data-delete-stone="S2A563A3C160F96BA"]').click();
+   await page.waitForFunction(()=>document.querySelectorAll('.admin-stone-row').length===12);assert.equal(stones.length,12);
    await page.locator('#logout').click();await page.locator('#login').waitFor();assert.equal(await page.evaluate(()=>sessionStorage.getItem('livingstones-management-session')),null);
    assert.equal(await page.locator('#stone-list').innerText(),'');
    await page.reload();assert.equal(await page.locator('#login').isVisible(),true);assert.deepEqual(errors,[]);
    await context.close();
   }
-  console.log('Passed: management sign-in, seven table columns, sorting both directions, combined checkbox filters and search, leading-zero codes, escaped private notes, view totals, stone/find/comment editing, deletion confirmation, sign-out clearing, matching stone photographs, save returns and responsive columns without horizontal scrolling.');
+  console.log('Passed: management sign-in, counts, adjustable persisted widths and row trash buttons, sorting both directions, combined checkbox filters and search, leading-zero codes, escaped private notes, view totals, stone/find/comment editing, deletion confirmation, sign-out clearing, matching stone photographs, save returns and responsive columns without horizontal scrolling.');
  }finally{await browser.close();server.kill()}
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -41,7 +41,8 @@ const formatMoment = value => new Intl.DateTimeFormat('en-GB',{day:'numeric',mon
 const statsHTML = items => items.map(([number,label])=>`<div><strong>${number}</strong><span>${label}</span></div>`).join('');
 const stoneColumns = [
   {key:'name',label:'Name'}, {key:'type',label:'Type'}, {key:'id',label:'ID'},
-  {key:'code',label:'Find Code'}, {key:'note',label:'Private note'}, {key:'creator',label:'Painted by'}
+  {key:'code',label:'Find Code'}, {key:'note',label:'Private note'}, {key:'creator',label:'Painted by'},
+  {key:'views',label:'Views'}, {key:'finds',label:'Finds'}
 ];
 const stoneCollator = new Intl.Collator('en',{numeric:true,sensitivity:'base'});
 let stoneSort={key:'id',direction:'ascending'},stoneFilters=new Map(),openStoneFilter=null;
@@ -50,6 +51,8 @@ function stoneValue(stone,key) {
   if(key==='id')return String(stone.shortId||stone.id);
   if(key==='code')return String(labelCode(stone)||'');
   if(key==='note')return stone.adminNote||'';
+  if(key==='views')return String(stone.views||0);
+  if(key==='finds')return String(stone.finds.length);
   return stone[key]||'';
 }
 function renderList() {
@@ -62,14 +65,106 @@ function renderList() {
   $('#stone-table-count').textContent=`${all.length} of ${stones.length} stones`;
   const headers=stoneColumns.map(({key,label})=>{
     const active=stoneSort.key===key,filtered=stoneFilters.has(key);
-    return `<th scope="col" data-column="${key}" aria-sort="${active?stoneSort.direction:'none'}"><div class="stone-column-heading"><button data-stone-sort="${key}" aria-label="Sort by ${label}${active?', currently '+stoneSort.direction:''}">${label}<span aria-hidden="true">${active?(stoneSort.direction==='ascending'?' ↑':' ↓'):''}</span></button><button class="stone-filter-toggle${filtered?' is-filtered':''}" data-stone-filter="${key}" aria-label="Filter ${label}${filtered?', filter active':''}" aria-controls="stone-column-filter" aria-haspopup="dialog" aria-expanded="${openStoneFilter===key}"><span aria-hidden="true">▾</span></button></div></th>`;
+    return `<th scope="col" data-column="${key}" aria-sort="${active?stoneSort.direction:'none'}"><div class="stone-column-heading"><button data-stone-sort="${key}" aria-label="Sort by ${label}${active?', currently '+stoneSort.direction:''}">${label}<span aria-hidden="true">${active?(stoneSort.direction==='ascending'?' ↑':' ↓'):''}</span></button><button class="stone-filter-toggle${filtered?' is-filtered':''}" data-stone-filter="${key}" aria-label="Filter ${label}${filtered?', filter active':''}" aria-controls="stone-column-filter" aria-haspopup="dialog" aria-expanded="${openStoneFilter===key}"><span aria-hidden="true">▾</span></button></div>${columnResizeHandle(key,label)}</th>`;
   }).join('');
   const rows=all.map(stone=>`<tr class="admin-stone-row"><td><button class="stone-image-button" data-image-stone="${escapeHTML(stone.id)}" aria-label="Open ${escapeHTML(stone.name)}"><img src="${escapeHTML(imageURL(stone))}" alt="" width="44" height="44" loading="lazy"></button></td>${stoneColumns.map(({key})=>{
     const value=stoneValue(stone,key),text=escapeHTML(value)||'<span class="admin-cell-empty">—</span>';
-    return `<td class="stone-cell-${key}">${key==='name'?`<button class="stone-name-button" data-stone="${escapeHTML(stone.id)}">${text}</button>`:key==='type'?`<span class="stone-table-type${value==='Real'?' real':''}">${text}</span>`:text}</td>`;
-  }).join('')}</tr>`).join('');
-  $('#stone-list').innerHTML=`<table class="admin-stone-table"><caption class="sr-only">Manage stones. Sort by a column name or filter using its arrow.</caption><thead><tr><th scope="col" data-column="image">Image</th>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="7" class="stone-table-empty">No stones match your search or filters.</td></tr>'}</tbody></table>`;
+    return `<td class="stone-cell-${key}">${key==='name'?`<button class="stone-name-button" data-stone="${escapeHTML(stone.id)}">${text}</button><span class="stone-mobile-counts">${stone.views||0} views · ${stone.finds.length} finds</span>`:key==='type'?`<span class="stone-table-type${value==='Real'?' real':''}">${text}</span>`:text}</td>`;
+  }).join('')}<td class="stone-cell-actions"><button class="stone-row-delete" data-delete-stone="${escapeHTML(stone.id)}" aria-label="Delete ${escapeHTML(stone.name)} (${escapeHTML(stone.shortId||stone.id)})" title="Delete stone"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></td></tr>`).join('');
+  $('#stone-list').innerHTML=`<table class="admin-stone-table"><caption class="sr-only">Manage stones. Sort by a column name or filter using its arrow.</caption><thead><tr><th scope="col" data-column="image">Image${columnResizeHandle('image','Image')}</th>${headers}<th scope="col" data-column="actions"><span class="sr-only">Delete</span></th></tr></thead><tbody>${rows||'<tr><td colspan="10" class="stone-table-empty">No stones match your search or filters.</td></tr>'}</tbody></table>`;
+  applyColumnWidths();
 }
+const columnWidthKey='livingstones-management-column-widths-v1';
+let columnWidths={},columnDrag=null;
+try{
+  const stored=JSON.parse(localStorage.getItem(columnWidthKey));
+  for(const key of ['image',...stoneColumns.map(column=>column.key)]){
+    if(typeof stored?.[key]==='number'&&stored[key]>0&&stored[key]<=1)columnWidths[key]=stored[key];
+  }
+}catch{}
+function columnResizeHandle(key,label){
+  return `<span class="column-resize" data-resize-column="${key}" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize ${label} column" title="Drag to resize; use arrow keys when focused"></span>`;
+}
+function columnHeaders(){return [...document.querySelectorAll('.admin-stone-table th[data-column]')].filter(header=>header.offsetWidth&&header.dataset.column!=='actions');}
+function updateResizeValues(){
+  const headers=columnHeaders();
+  for(const [index,header] of headers.entries()){
+    const handle=header.querySelector('.column-resize');
+    if(handle){handle.hidden=index===headers.length-1;handle.setAttribute('aria-valuenow',String(Math.round(header.getBoundingClientRect().width)));handle.setAttribute('aria-valuemin','1');handle.setAttribute('aria-valuemax',String(Math.round($('.admin-stone-table').getBoundingClientRect().width)));}
+  }
+}
+function columnMinimum(header,tableWidth){
+  const key=header.dataset.column,phone=tableWidth<=450;
+  if(key==='image')return phone?36:52;
+  if(['name','note','creator'].includes(key))return phone?48:70;
+  return phone?34:50;
+}
+function applyColumnWidths(){
+  if(columnDrag)return;
+  const all=[...document.querySelectorAll('.admin-stone-table th[data-column]')];
+  for(const header of all)header.style.removeProperty('width');
+  const headers=columnHeaders();
+  if(!headers.length)return;
+  if(Object.keys(columnWidths).length){
+    const tableWidth=$('.admin-stone-table').getBoundingClientRect().width;
+    const actionWidth=document.querySelector('th[data-column="actions"]').getBoundingClientRect().width;
+    const available=tableWidth-actionWidth;
+    const weights=headers.map(header=>columnWidths[header.dataset.column]||header.getBoundingClientRect().width/available);
+    const sizes=Array(headers.length).fill(0);let remaining=available,pending=headers.map((_,index)=>index);
+    while(pending.length){
+      const total=pending.reduce((sum,index)=>sum+weights[index],0);
+      const small=pending.filter(index=>weights[index]/total*remaining<columnMinimum(headers[index],tableWidth));
+      if(!small.length){for(const index of pending)sizes[index]=weights[index]/total*remaining;break;}
+      for(const index of small){sizes[index]=columnMinimum(headers[index],tableWidth);remaining-=sizes[index];}
+      pending=pending.filter(index=>!small.includes(index));
+    }
+    headers.forEach((header,index)=>header.style.width=(sizes[index]/tableWidth*100)+'%');
+  }
+  updateResizeValues();
+}
+function saveColumnWidths(){
+  const headers=columnHeaders(),available=headers.reduce((sum,header)=>sum+header.getBoundingClientRect().width,0);
+  for(const header of headers)columnWidths[header.dataset.column]=header.getBoundingClientRect().width/available;
+  try{localStorage.setItem(columnWidthKey,JSON.stringify(columnWidths));}catch{}
+}
+function startColumnResize(handle){
+  const headers=columnHeaders(),index=headers.findIndex(header=>header.dataset.column===handle.dataset.resizeColumn);
+  if(index<0||index===headers.length-1)return null;
+  const left=headers[index],right=headers[index+1];
+  const leftWidth=left.getBoundingClientRect().width,rightWidth=right.getBoundingClientRect().width,tableWidth=$('.admin-stone-table').getBoundingClientRect().width;
+  return {left,right,leftWidth,rightWidth,tableWidth,leftMinimum:Math.min(leftWidth,columnMinimum(left,tableWidth)),rightMinimum:Math.min(rightWidth,columnMinimum(right,tableWidth))};
+}
+function moveColumnResize(resize,delta){
+  const change=Math.max(resize.leftMinimum-resize.leftWidth,Math.min(delta,resize.rightWidth-resize.rightMinimum));
+  resize.left.style.width=((resize.leftWidth+change)/resize.tableWidth*100)+'%';
+  resize.right.style.width=((resize.rightWidth-change)/resize.tableWidth*100)+'%';
+  updateResizeValues();
+}
+$('#stone-list').addEventListener('pointerdown',event=>{
+  const handle=event.target.closest('[data-resize-column]');if(!handle||event.button!==0)return;
+  const resize=startColumnResize(handle);if(!resize)return;
+  event.preventDefault();closeStoneFilter();handle.focus();handle.setPointerCapture(event.pointerId);
+  columnDrag={...resize,handle,pointerId:event.pointerId,startX:event.clientX};document.body.classList.add('resizing-columns');
+});
+$('#stone-list').addEventListener('pointermove',event=>{
+  if(columnDrag&&event.pointerId===columnDrag.pointerId)moveColumnResize(columnDrag,event.clientX-columnDrag.startX);
+});
+function endColumnResize(event){
+  if(!columnDrag||event.pointerId!==columnDrag.pointerId)return;
+  columnDrag=null;document.body.classList.remove('resizing-columns');saveColumnWidths();
+}
+$('#stone-list').addEventListener('pointerup',endColumnResize);
+$('#stone-list').addEventListener('pointercancel',endColumnResize);
+$('#stone-list').addEventListener('lostpointercapture',endColumnResize);
+$('#stone-list').addEventListener('keydown',event=>{
+  const handle=event.target.closest('[data-resize-column]');if(!handle||!['ArrowLeft','ArrowRight'].includes(event.key))return;
+  const resize=startColumnResize(handle);if(!resize)return;
+  event.preventDefault();moveColumnResize(resize,(event.key==='ArrowRight'?1:-1)*(event.shiftKey?30:10));saveColumnWidths();
+});
+$('#reset-column-widths').addEventListener('click',()=>{
+  columnWidths={};try{localStorage.removeItem(columnWidthKey);}catch{}applyColumnWidths();notice('Column widths reset.');
+});
+new ResizeObserver(()=>applyColumnWidths()).observe($('#stone-list'));
 function closeStoneFilter(restoreFocus=false) {
   const key=openStoneFilter;openStoneFilter=null;
   $('#stone-column-filter').hidden=true;$('#stone-column-filter').replaceChildren();
@@ -370,10 +465,11 @@ document.addEventListener('click',event=>{
   if(button.dataset.action==='cancel-record'){$('#record-dialog').close();return;}
   if(button.dataset.editFind){openRecord('finds',button.dataset.editFind);return;}
   if(button.dataset.editComment){openRecord('comments',button.dataset.editComment);return;}
-  const stone=stones.find(s=>s.id===selected);
-  if(button.dataset.action==='delete-stone'){
-    if(!confirm(`Delete ${stone.name} and all its finds and comments? Historical traffic totals will remain. This cannot be undone.`))return;
-    withButton(button,async()=>{await api('stones/'+selected,'DELETE');selected=null;await load();notice('Stone deleted.');});return;
+  const stoneId=button.dataset.deleteStone||selected,stone=stones.find(s=>s.id===stoneId);
+  if(button.dataset.deleteStone||button.dataset.action==='delete-stone'){
+    if(!stone)return;
+    if(!confirm(`Delete ${stone.name} (${stone.shortId||stone.id}) and all its finds and comments? Historical traffic totals will remain. This cannot be undone.`))return;
+    withButton(button,async()=>{await api('stones/'+stoneId,'DELETE');qrCache.delete(stoneId);qrLabelCodes.delete(stoneId);if(selected===stoneId)selected=null;await load();notice('Stone deleted.');});return;
   }
   const kind=button.dataset.deleteFind?'finds':button.dataset.deleteComment?'comments':null,id=button.dataset.deleteFind||button.dataset.deleteComment;
   if(kind&&confirm(kind==='finds'?'Delete this find and its attached comment? This cannot be undone.':'Delete this comment? The find will remain.'))withButton(button,async()=>{const data=await api(`stones/${selected}/${kind}/${id}`,'DELETE');updateStone(data);notice('Record deleted.');});
