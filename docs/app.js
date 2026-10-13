@@ -4,13 +4,8 @@ const assetBase = new URL(
   "assets/",
   document.querySelector('script[src*="app.js"]').src,
 ).href;
-// Keep real portraits tied to stone IDs, even if their names change.
-const stonePhotos = {
-  SF70489F2C749F909: "stone-photos/kvetko.png",
-  S2A563A3C160F96BA: "stone-photos/obrazko.png",
-};
 const stoneImageURL = (stone) => {
-  const image = stonePhotos[stone.id] || stone.image;
+  const image = stoneImagePath(stone);
   const url = new URL(image, assetBase);
   if (url.origin === new URL(assetBase).origin) url.searchParams.set("v", "60");
   return url.href;

@@ -35,7 +35,7 @@ async function api(path,method='GET',body,key) {
     throw error;
   } finally {clearTimeout(timer);}
 }
-const imageURL = s => new URL(s.image,new URL('../docs/assets/',location.href)).href;
+const imageURL = s => new URL(stoneImagePath(s),new URL('../docs/assets/',location.href)).href;
 const formatDate = value => new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value));
 const formatMoment = value => new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(value));
 const statsHTML = items => items.map(([number,label])=>`<div><strong>${number}</strong><span>${label}</span></div>`).join('');
@@ -68,7 +68,7 @@ function renderList() {
     const value=stoneValue(stone,key),text=escapeHTML(value)||'<span class="admin-cell-empty">—</span>';
     return `<td class="stone-cell-${key}">${key==='name'?`<button class="stone-name-button" data-stone="${escapeHTML(stone.id)}">${text}</button>`:key==='type'?`<span class="stone-table-type${value==='Real'?' real':''}">${text}</span>`:text}</td>`;
   }).join('')}</tr>`).join('');
-  $('#stone-list').innerHTML=`<table class="admin-stone-table"><caption class="sr-only">Manage stones. Sort by a column name or filter using its arrow.</caption><thead><tr><th scope="col">Image</th>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="7" class="stone-table-empty">No stones match your search or filters.</td></tr>'}</tbody></table>`;
+  $('#stone-list').innerHTML=`<table class="admin-stone-table"><caption class="sr-only">Manage stones. Sort by a column name or filter using its arrow.</caption><thead><tr><th scope="col" data-column="image">Image</th>${headers}</tr></thead><tbody>${rows||'<tr><td colspan="7" class="stone-table-empty">No stones match your search or filters.</td></tr>'}</tbody></table>`;
 }
 function closeStoneFilter(restoreFocus=false) {
   const key=openStoneFilter;openStoneFilter=null;
@@ -264,6 +264,13 @@ function renderStats(){
   $('#tracking-note').textContent='Homepage tracking started '+formatDate(statsData.since)+'. Counts are opens, not unique people. Days use UTC. Stone totals retain earlier recorded views. QR opens are included in story opens and tracked since '+formatDate(statsData.qrSince||statsData.since)+'. Earlier visit sources are unknown.';
   history.replaceState(null,'','#'+new URLSearchParams({tab:'stats',period:statsPeriod,target:statsTarget}));
 }
+function savedStone(data,stoneId) {
+  if(data.imagesAvailable!=null)$('#available-images').textContent=data.imagesAvailable;
+  if(data.stone)stones=stones.map(stone=>stone.id===data.stone.id?data.stone:stone);
+  if(selected===stoneId&&section==='management'){
+    showList();window.scrollTo({top:0,behavior:'instant'});$('#search').focus({preventScroll:true});
+  }
+}
 function updateStone(data) {if(data.imagesAvailable!=null)$('#available-images').textContent=data.imagesAvailable;if(data.stone)stones=stones.map(s=>s.id===data.stone.id?data.stone:s);renderEditor();}
 async function withButton(button,action) {
   if(button.disabled)return;button.disabled=true;
@@ -332,15 +339,14 @@ $('#editor').addEventListener('submit',event=>{
     event.preventDefault();const stoneId=selected,note=new FormData(event.target).get('note');
     withButton(event.submitter,async()=>{
       const data=await api('stones/'+stoneId+'/note','PATCH',{note});
-      stones=stones.map(s=>s.id===stoneId?data.stone:s);
-      if(selected===stoneId&&$('#admin-note'))$('#admin-note').value=data.stone.adminNote;
+      savedStone(data,stoneId);
       notice('Private note saved.');
     });return;
   }
   if(event.target.id==='qr-code-form'){
     event.preventDefault();withButton(event.submitter,async()=>{const code=new FormData(event.target).get('code');const data=await api('stones/'+selected+'/label-code','POST',{code});qrLabelCodes.set(selected,data.code);renderEditor();});return;
   }
-  if(event.target.id!=='stone-form')return;event.preventDefault();const body=Object.fromEntries(new FormData(event.target));body.demo=stones.find(s=>s.id===selected).demo;withButton(event.submitter,async()=>{const data=await api('stones/'+selected,'PATCH',body);updateStone(data);notice('Stone saved.');});
+  if(event.target.id!=='stone-form')return;event.preventDefault();const stoneId=selected,body=Object.fromEntries(new FormData(event.target));body.demo=stones.find(s=>s.id===selected).demo;withButton(event.submitter,async()=>{const data=await api('stones/'+stoneId,'PATCH',body);savedStone(data,stoneId);notice('Stone saved.');});
 });
 document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;

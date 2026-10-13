@@ -13,7 +13,9 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    stones.forEach((s,index)=>{s.views=index+4;s.qrViews=1;s.creator=s.finds[0].nickname;s.finds.forEach((f,i)=>f.id='find-'+s.id+'-'+i);s.comments=s.finds.map((f,i)=>({id:'comment-'+s.id+'-'+i,findId:f.id,date:f.date,nickname:f.nickname,message:f.message}));});
    stones[1].demo=false;stones[1].shortId='S0009';stones[1].privateCode='0037';stones[1].adminNote='Keep for school';stones[1].creator='Ada';
    stones[2].demo=false;stones[2].initialized=false;stones[2].shortId='S0010';stones[2].privateCode='0100';stones[2].adminNote='Ready to paint';stones[2].creator='';
-   const token='a'.repeat(64);let valid=true,ownerEmailsEnabled=true,failEmailSave=false;
+   stones[12].id='SF70489F2C749F909';stones[12].shortId='S0007';
+   stones[13].id='S2A563A3C160F96BA';stones[13].shortId='S0008';
+   const token='a'.repeat(64);let valid=true,ownerEmailsEnabled=true,failEmailSave=false,failNoteSave=false;
    await context.route('http://127.0.0.1:8787/api/admin/**',async route=>{
     const req=route.request(),parts=new URL(req.url()).pathname.split('/'),method=req.method();let result={stones,imagesAvailable:40,ownerEmailsEnabled},status=200;
     if(parts[3]==='login'){
@@ -30,6 +32,7 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
     }else if(parts[4]){
      const s=stones.find(s=>s.id===parts[4]);
      if(parts[5]==='note'){
+      if(failNoteSave){failNoteSave=false;return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Could not save private note.'})});}
       s.adminNote=req.postDataJSON().note;
       return route.fulfill({contentType:'application/json',body:JSON.stringify({stone:s})});
      }
@@ -57,9 +60,10 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#owner-email-enabled:not(:disabled)').waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),true);
    await page.locator('#owner-email-enabled').uncheck();await page.locator('#owner-email-status').filter({hasText:'Email alerts off.'}).waitFor();
    await page.reload();await page.locator('.admin-stone-row').first().waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
-   failEmailSave=true;await page.locator('#owner-email-enabled').check();await page.locator('#owner-email-status').filter({hasText:'Could not save setting.'}).waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
+   failEmailSave=true;await page.locator('#owner-email-enabled').click();await page.locator('#owner-email-status').filter({hasText:'Could not save setting.'}).waitFor();assert.equal(await page.locator('#owner-email-enabled').isChecked(),false);
    await page.locator('#owner-email-enabled').check();await page.locator('#owner-email-status').filter({hasText:'Email alerts on.'}).waitFor();
    await page.locator('#search').fill('Sunny');assert.equal(await page.locator('.admin-stone-row').count(),1);await page.locator('#search').fill('');
+   await page.setViewportSize({width:1440,height:900});
    assert.deepEqual(await page.locator('.admin-stone-table thead th').allTextContents(),['Image','Name','Type','ID ↑','Find Code','Private note','Painted by'].map(s=>s.replace(' ↑',' ↑▾')).map((s,i)=>i&&i!==3?s+'▾':s));
    assert.match(await page.locator('.admin-stone-row').filter({hasText:'S0009'}).innerText(),/0037/);
    assert.match(await page.locator('.admin-stone-row').filter({hasText:'S0009'}).innerText(),/Keep for school/);
@@ -96,14 +100,35 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('[data-filter-select="all"]').click();await page.keyboard.press('Escape');
 
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Table does not overflow viewport');
-   if(width===375)assert.equal(await page.locator('#stone-list').evaluate(el=>el.scrollWidth>el.clientWidth),true,'Mobile table scrolls horizontally');
+   for(const screenWidth of [1440,1050,900,790,620,390,375,320,1440]){
+    await page.setViewportSize({width:screenWidth,height:900});
+    const tableWidth=await page.locator('#stone-list').evaluate(el=>el.clientWidth);
+    assert.equal(await page.locator('th[data-column="id"]').isVisible(),tableWidth>1000,'ID hides first at '+screenWidth);
+    assert.equal(await page.locator('th[data-column="creator"]').isVisible(),tableWidth>760,'Painter hides next at '+screenWidth);
+    assert.equal(await page.locator('#stone-list').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,'Table fits without horizontal scrolling at '+screenWidth);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+   }
+   for(const [id,file] of [['SF70489F2C749F909','kvetko.png'],['S2A563A3C160F96BA','obrazko.png']]){
+    const image=page.locator(`[data-image-stone="${id}"] img`);
+    assert.match(await image.getAttribute('src'),new RegExp('stone-photos/'+file));
+    await image.scrollIntoViewIfNeeded();await image.evaluate(img=>img.decode());
+    assert.equal(await image.evaluate(img=>img.naturalWidth>0),true);
+    await page.locator(`[data-image-stone="${id}"]`).click();
+    assert.match(await page.locator('.editor-top img').getAttribute('src'),new RegExp('stone-photos/'+file));
+    await page.locator('[data-action=back]').click();
+   }
+   await page.setViewportSize({width,height:900});
    await page.locator('#admin-main').screenshot({path:`/tmp/livingstones-management-table-${width}.png`});
    await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
    assert.equal(await page.locator('[name=story]').count(),0);
    const ownerNote='My private <script>note()</script>\nA second line';
-   await page.locator('#admin-note').fill(ownerNote);await page.locator('#private-note-form button').click();
+   await page.locator('#admin-note').fill(ownerNote);failNoteSave=true;await page.locator('#private-note-form button').click();
+   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Could not save private note.');
+   assert.equal(await page.locator('#editor').isVisible(),true);assert.equal(await page.locator('#admin-note').inputValue(),ownerNote);
+   await page.locator('#private-note-form button').click();
    await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Private note saved.');
-   await page.reload();await page.locator('#stone-form').waitFor();
+   assert.equal(await page.locator('#dashboard').isVisible(),true);assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(new URL(page.url()).hash,'');
+   await page.reload();await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
    assert.equal(await page.locator('#admin-note').inputValue(),ownerNote);assert.equal(await page.locator('.private-note-panel script').count(),0);
    assert.equal(await page.locator('#available-images').textContent(),'40');
 
@@ -162,8 +187,10 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.locator('#admin-main').screenshot({path:`/tmp/livingstones-stats-${width}.png`});
    await page.reload();await page.locator('#traffic-summary strong').first().waitFor();assert.equal(await page.locator('#stats-target').inputValue(),'stone:A1');
    await page.locator('[data-section=management]').click();await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();
-   await page.locator('#stone-form input[name="name"]').fill('Sunny Updated');await page.locator('#stone-form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('#editor h1').textContent==='Sunny Updated');
-   await page.reload();await page.locator('#stone-form').waitFor();assert.equal(await page.locator('#editor h1').innerText(),'Sunny Updated');
+   await page.locator('#stone-form input[name="name"]').fill('Sunny Updated');await page.locator('#stone-form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Stone saved.');
+   assert.equal(await page.locator('#dashboard').isVisible(),true);assert.equal(await page.locator('#editor').isVisible(),false);assert.equal(new URL(page.url()).hash,'');
+   assert.match(await page.locator('.stone-cell-name').filter({hasText:'Sunny Updated'}).innerText(),/Sunny Updated/);
+   await page.reload();await page.locator('button[data-stone="A1"]').click();await page.locator('#stone-form').waitFor();assert.equal(await page.locator('#editor h1').innerText(),'Sunny Updated');
    await page.locator('[data-tab="comments"]').click();await page.locator('[data-edit-comment]').first().click();
    await page.locator('#record-form input[name="nickname"]').fill('<img src=x onerror=alert(1)>');await page.locator('#record-form textarea').fill('<script>window.adminInjected=true</script> Test edit');
    await page.locator('#record-form button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('#record-dialog').open);
@@ -181,6 +208,6 @@ const server=spawn('python3',['-u','-m','http.server','8137']);process.on('exit'
    await page.reload();assert.equal(await page.locator('#login').isVisible(),true);assert.deepEqual(errors,[]);
    await context.close();
   }
-  console.log('Passed: management sign-in, seven table columns, sorting both directions, combined checkbox filters and search, leading-zero codes, escaped private notes, view totals, stone/find/comment editing, deletion confirmation, sign-out clearing and responsive scrolling.');
+  console.log('Passed: management sign-in, seven table columns, sorting both directions, combined checkbox filters and search, leading-zero codes, escaped private notes, view totals, stone/find/comment editing, deletion confirmation, sign-out clearing, matching stone photographs, save returns and responsive columns without horizontal scrolling.');
  }finally{await browser.close();server.kill()}
 })().catch(e=>{console.error(e);process.exitCode=1});
